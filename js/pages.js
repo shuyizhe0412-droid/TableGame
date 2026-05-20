@@ -13,5 +13,6 @@ window._pages = {};
 window.App = {
     registerPage: function(name, component) {
         window._pages[name] = component;
+        console.log('[pages.js] ★ 注册页面:', name, 'hasInit:', typeof component.init === 'function');
     }
 };

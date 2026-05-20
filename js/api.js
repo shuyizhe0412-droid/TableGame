@@ -40,7 +40,8 @@ async function getGames(options = {}) {
     var query = SUPABASE_URL + '/rest/v1/games?' + queryParams.join('&');
 
     try {
-        console.log('[DEBUG] 发送请求到:', query);
+        console.log('[getGames] 请求URL:', query);
+        console.log('[getGames] headers:', { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY });
         var response = await fetch(query, {
             headers: {
                 'apikey': SUPABASE_ANON_KEY,

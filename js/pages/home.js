@@ -1,6 +1,8 @@
 /**
  * 桌游AI教练 - 首页
  */
+console.log('[home.js] 文件开始加载');
+
 App.registerPage('home', (function() {
     // ==================== 状态管理 ====================
     var state = {
@@ -151,7 +153,7 @@ App.registerPage('home', (function() {
 
     // 从 API 加载游戏列表
     function loadGames() {
-        console.log('[DEBUG] loadGames 被调用');
+        console.log('[home.js] ★ loadGames() 函数被调用!');
         console.log('[DEBUG] getGames 类型:', typeof window.getGames);
         state.isLoading = true;
         state.error = null;
@@ -247,7 +249,7 @@ App.registerPage('home', (function() {
 
     // ==================== 初始化 ====================
     function init() {
-        console.log('[DEBUG] home init() 被调用');
+        console.log('[home.js] ★ init() 函数被调用!');
         // 加载游戏列表
         loadGames();
 

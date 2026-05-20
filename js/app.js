@@ -78,7 +78,7 @@ function renderPageContent(pageName, params) {
  * 初始化应用
  */
 function initApp() {
-    console.log('[DEBUG] initApp 被调用');
+    console.log('[app.js] ★★★ initApp() 函数被调用! ★★★');
     console.log('[DEBUG] window.parseHash:', typeof window.parseHash);
     console.log('[DEBUG] window._pages:', Object.keys(window._pages || {}));
     console.log('[DEBUG] window.location.hash:', window.location.hash);
