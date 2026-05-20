@@ -8,7 +8,6 @@
  * @param {object} filters - 筛选条件（可选）
  * @returns {Promise<Array>} 游戏列表
  */
-<<<<<<< HEAD
 async function getGames(filters) {
     filters = filters || {};
     try {
@@ -61,11 +60,6 @@ async function getGames(filters) {
         console.log('获取到游戏数量:', undefined, '错误:', error.message);
         throw error;
     }
-=======
-async function getGames(filters = {}) {
-    // TODO: 实现获取游戏列表逻辑
-    return [];
->>>>>>> parent of 5761cea (修复桌游数量：从10个改为72个)
 }
 
 /**
@@ -74,8 +68,28 @@ async function getGames(filters = {}) {
  * @returns {Promise<object>} 游戏详情
  */
 async function getGameDetail(id) {
-    // TODO: 实现获取游戏详情逻辑
-    return null;
+    try {
+        var url = SUPABASE_URL + '/rest/v1/games?id=eq.' + encodeURIComponent(id) + '&limit=1';
+
+        var response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('获取游戏详情失败 (HTTP ' + response.status + ')');
+        }
+
+        var games = await response.json();
+        return (games && games.length > 0) ? games[0] : null;
+    } catch (error) {
+        console.error('[getGameDetail] 请求失败:', error);
+        throw error;
+    }
 }
 
 /**
@@ -87,14 +101,8 @@ async function getGameDetail(id) {
  * @returns {Promise<string>} AI 回复
  */
 async function aiChat(messages, gameName, mode, style) {
-<<<<<<< HEAD
-    var SUPABASE_FUNCTION_URL = 'https://theaenpzcmydorhsjqf.supabase.co/functions/v1/deepseek-proxy';
-=======
-    // Supabase Edge Function 地址
-    var SUPABASE_FUNCTION_URL = 'https://theaenpzcmydorhsjquf.supabase.co/functions/v1/deepseek-proxy';
->>>>>>> parent of 5761cea (修复桌游数量：从10个改为72个)
+    var SUPABASE_FUNCTION_URL = SUPABASE_URL + '/functions/v1/deepseek-proxy';
 
-    // 构建系统提示词
     var systemPrompts = {
         teacher: '你是一位专业的桌游教练"正经老师"。你正在教用户玩《' + gameName + '》。\n' +
             '当前模式：' + (mode === 'setup' ? '摆盘引导' : mode === 'teach' ? '规则教学' : '规则速查') + '。\n' +
@@ -118,7 +126,7 @@ async function aiChat(messages, gameName, mode, style) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer sb_publishable_hZ3n61OfYkOXuqpt9gqKBw_UMA8--10c'
+                'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
             },
             body: JSON.stringify({
                 messages: [
@@ -131,10 +139,8 @@ async function aiChat(messages, gameName, mode, style) {
         });
 
         var data = await response.json();
-        console.log('Edge Function 返回:', data);
 
         if (data.error) {
-            console.error('具体错误:', JSON.stringify(data));
             throw new Error('API 返回错误: ' + (data.error.message || data.error));
         }
 
@@ -154,6 +160,11 @@ async function aiChat(messages, gameName, mode, style) {
  * @returns {Promise<boolean>} 是否保存成功
  */
 async function saveConversation(conversation) {
-    // TODO: 实现保存对话记录逻辑
     return true;
 }
+
+// 挂载到全局
+window.getGames = getGames;
+window.getGameDetail = getGameDetail;
+window.aiChat = aiChat;
+window.saveConversation = saveConversation;
