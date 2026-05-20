@@ -551,7 +551,7 @@ App.registerPage('detail', (function() {
         if (app) {
             app.innerHTML = page.render();
             window.bindTabBarEvents();
-            page.init();
+            // 注意：不在这里调用 init()，避免无限递归
         }
     };
 
