@@ -3,7 +3,7 @@
  */
 
 // Supabase 配置
-const SUPABASE_URL = 'https://theaenpzcmydorhsjqf.supabase.co';
+const SUPABASE_URL = 'https://theaenpzcmydorhsjquf.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRoZWFlbnB6Y215ZG9yaHNqcXVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNjM0MTcsImV4cCI6MjA5NDgzOTQxN30.r2sLp5nbpYzQRkeO6DmqlbcFGYOQ81UekxOm9S18O-g';
 
 // DeepSeek API 配置
