@@ -5,7 +5,7 @@
 
 // ==================== Supabase 配置 ====================
 var SUPABASE_URL = 'https://theaenpzcmydorhsjquf.supabase.co';
-var SUPABASE_ANON_KEY = 'sb_publishable_hZ3n61OfYkOXuqpt9gqKBw_UMA8--10c';
+var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRoZWFlbnB6Y215ZG9yaHNqcXVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNjM0MTcsImV4cCI6MjA5NDgzOTQxN30.r2sLp5nbpYzQRkeO6DmqlbcFGYOQ81UekxOm9S18O-g';
 
 /**
  * 获取游戏列表（支持分类筛选和搜索）
@@ -126,7 +126,7 @@ async function aiChat(messages, gameName, mode, style) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer sb_publishable_hZ3n61OfYkOXuqpt9gqKBw_UMA8--10c'
+                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRoZWFlbnB6Y215ZG9yaHNqcXVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNjM0MTcsImV4cCI6MjA5NDgzOTQxN30.r2sLp5nbpYzQRkeO6DmqlbcFGYOQ81UekxOm9S18O-g'
             },
             body: JSON.stringify({
                 messages: [
