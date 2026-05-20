@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>桌游AI教练</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ===== 全局变量 ===== */
+    :root {
+      --bg: #FDF8F3;
+      --surface: #FFFFFF;
+      --accent: #D4893F;
+      --accent-light: #F5E6D0;
+      --accent-dark: #A86A2E;
+      --secondary: #7B9E87;
+      --secondary-light: #E8F0EB;
+      --text: #2C2418;
+      --text-secondary: #7A6E5F;
+      --text-muted: #B5A998;
+      --border: #EDE6DB;
+      --ai-bubble: #FFF5E8;
+      --shadow: rgba(44, 36, 24, 0.06);
+      --radius: 16px;
+      --radius-sm: 12px;
+    }
+
+    /* ===== 重置 ===== */
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: 'Noto Serif SC', -apple-system, 'PingFang SC', serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ===== 页面容器 ===== */
+    .page { display: none; min-height: 100vh; }
+    .page.active { display: flex; flex-direction: column; }
+
+    /* ===== 顶部导航 ===== */
+    .nav-bar {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px 20px; background: var(--bg);
+      position: sticky; top: 0; z-index: 100;
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-bar .back-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--surface); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; color: var(--text); cursor: pointer;
+      transition: all 0.2s;
+    }
+    .nav-bar .back-btn:active { background: var(--accent-light); }
+    .nav-bar .title { font-size: 17px; font-weight: 600; color: var(--text); }
+
+    /* ===== 首页 ===== */
+    .home-content { flex: 1; padding: 20px; padding-bottom: 90px; overflow-y: auto; }
+
+    .logo-section { text-align: center; padding: 30px 0 20px; }
+    .logo-icon { font-size: 48px; margin-bottom: 8px; }
+    .logo-title { font-size: 26px; font-weight: 700; color: var(--text); letter-spacing: 2px; }
+    .logo-sub { font-size: 14px; color: var(--text-muted); margin-top: 6px; }
+
+    /* API Key 输入区 */
+    .api-section {
+      background: var(--surface); border-radius: var(--radius);
+      padding: 20px; margin-bottom: 24px;
+      box-shadow: 0 2px 12px var(--shadow);
+      border: 1px solid var(--border);
+    }
+    .api-section.hidden { display: none; }
+    .api-label { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 8px; display: block; }
+    .api-hint { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; display: block; line-height: 1.6; }
+    .api-row { display: flex; gap: 10px; }
+    .api-input {
+      flex: 1; padding: 12px 16px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border); font-size: 14px; color: var(--text);
+      background: var(--bg); outline: none; transition: border 0.2s;
+    }
+    .api-input:focus { border-color: var(--accent); }
+    .api-input::placeholder { color: var(--text-muted); }
+    .api-save-btn {
+      padding: 12px 20px; background: var(--accent); color: #fff;
+      border: none; border-radius: var(--radius-sm); font-size: 14px;
+      font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s;
+    }
+    .api-save-btn:active { background: var(--accent-dark); transform: scale(0.96); }
+
+    /* 搜索框 */
+    .search-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 40px; padding: 14px 20px; display: flex;
+      align-items: center; gap: 10px; margin-bottom: 20px;
+      box-shadow: 0 2px 8px var(--shadow); transition: border 0.2s;
+    }
+    .search-box:focus-within { border-color: var(--accent); }
+    .search-box input {
+      flex: 1; border: none; outline: none; font-size: 15px;
+      background: transparent; color: var(--text);
+    }
+    .search-box input::placeholder { color: var(--text-muted); }
+    .search-icon { font-size: 16px; color: var(--text-muted); }
+
+    /* 分类标签 */
+    .tags-row {
+      display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px;
+      margin-bottom: 20px; -webkit-overflow-scrolling: touch;
+    }
+    .tags-row::-webkit-scrollbar { display: none; }
+    .tag-pill {
+      padding: 8px 20px; border-radius: 30px; font-size: 13px;
+      font-weight: 500; white-space: nowrap; cursor: pointer;
+      background: var(--surface); color: var(--text-secondary);
+      border: 1px solid var(--border); transition: all 0.25s;
+    }
+    .tag-pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .tag-pill:active { transform: scale(0.95); }
+
+    /* 区块标题 */
+    .section-title {
+      font-size: 15px; font-weight: 600; color: var(--text-secondary);
+      margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+    }
+    .section-title::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    /* 游戏卡片 */
+    .game-card {
+      display: flex; align-items: center; gap: 16px;
+      background: var(--surface); border-radius: var(--radius);
+      padding: 16px; margin-bottom: 14px;
+      box-shadow: 0 2px 12px var(--shadow);
+      cursor: pointer; transition: all 0.2s;
+      opacity: 0; animation: cardIn 0.4s ease forwards;
+    }
+    .game-card:active { transform: scale(0.97); }
+    @keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+    .game-cover {
+      width: 72px; height: 72px; border-radius: var(--radius-sm);
+      background: var(--accent-light); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px; overflow: hidden;
+    }
+    .game-info { flex: 1; min-width: 0; }
+    .game-name { font-size: 16px; font-weight: 600; display: block; margin-bottom: 4px; }
+    .game-meta { font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 6px; }
+    .game-stars { display: flex; gap: 2px; margin-bottom: 6px; }
+    .star { font-size: 12px; }
+    .star.filled { color: var(--accent); }
+    .star.empty { color: var(--border); }
+    .game-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+    .game-tag {
+      font-size: 11px; padding: 2px 10px; border-radius: 6px;
+      background: var(--accent-light); color: var(--accent-dark); font-weight: 500;
+    }
+    .card-arrow { font-size: 22px; color: var(--text-muted); flex-shrink: 0; }
+
+    /* 空状态 */
+    .empty-state { text-align: center; padding: 60px 20px; }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-text { font-size: 15px; color: var(--text-muted); }
+
+    /* ===== 详情页 ===== */
+    .detail-content { flex: 1; overflow-y: auto; }
+    .detail-cover {
+      width: 100%; height: 220px; background: var(--accent-light);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 72px;
+    }
+    .detail-body { padding: 24px 20px; }
+    .detail-name { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+    .detail-name-en { font-size: 14px; color: var(--text-muted); margin-bottom: 16px; }
+    .detail-meta-row { display: flex; gap: 20px; margin-bottom: 16px; }
+    .detail-meta-item { font-size: 14px; color: var(--text-secondary); }
+    .detail-meta-item strong { color: var(--text); }
+    .detail-tags { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .detail-desc {
+      font-size: 15px; line-height: 1.8; color: var(--text-secondary);
+      margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--border);
+    }
+    .detail-actions-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 16px; }
+    .action-btn {
+      width: 100%; padding: 16px 20px; border-radius: var(--radius);
+      font-size: 16px; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+      transition: all 0.2s;
+    }
+    .action-btn:active { transform: scale(0.97); }
+    .action-btn.primary { background: var(--accent); color: #fff; border: none; }
+    .action-btn.primary:active { background: var(--accent-dark); }
+    .action-btn.secondary { background: transparent; color: var(--accent); border: 2px solid var(--accent); }
+    .action-btn.secondary:active { background: var(--accent-light); }
+    .action-btn .icon { font-size: 20px; }
+    .action-btn .desc { font-size: 12px; font-weight: 400; color: rgba(255,255,255,0.7); display: block; margin-top: 2px; }
+    .action-btn.secondary .desc { color: var(--text-muted); }
+
+    /* ===== 对话页 ===== */
+    .chat-page { position: relative; }
+    .chat-messages {
+      flex: 1; overflow-y: auto; padding: 16px 16px 8px;
+      scroll-behavior: smooth;
+    }
+    .msg { display: flex; margin-bottom: 16px; max-width: 88%; }
+    .msg.ai { align-self: flex-start; }
+    .msg.user { align-self: flex-end; margin-left: auto; }
+    .msg-bubble {
+      padding: 14px 18px; border-radius: 18px; font-size: 15px;
+      line-height: 1.7; word-break: break-word; white-space: pre-wrap;
+    }
+    .msg.ai .msg-bubble {
+      background: var(--ai-bubble); color: var(--text);
+      border-top-left-radius: 4px;
+    }
+    .msg.user .msg-bubble {
+      background: var(--accent); color: #fff;
+      border-top-right-radius: 4px;
+    }
+    .msg-label {
+      font-size: 11px; color: var(--text-muted); margin-bottom: 4px;
+      padding: 0 4px;
+    }
+    .msg.user .msg-label { text-align: right; }
+
+    /* 思考中动画 */
+    .typing-indicator { display: flex; gap: 6px; padding: 14px 18px; }
+    .typing-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
+      animation: typeBounce 1.2s ease-in-out infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typeBounce {
+      0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+      40% { transform: translateY(-8px); opacity: 1; }
+    }
+
+    /* 快捷问题 */
+    .quick-questions {
+      display: flex; gap: 8px; overflow-x: auto; padding: 8px 16px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .quick-questions::-webkit-scrollbar { display: none; }
+    .quick-btn {
+      padding: 8px 16px; border-radius: 20px; font-size: 13px;
+      white-space: nowrap; cursor: pointer; transition: all 0.2s;
+      background: var(--surface); color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+    .quick-btn:active { background: var(--accent); color: #fff; }
+
+    /* 输入框 */
+    .chat-input-area {
+      padding: 12px 16px; padding-bottom: max(12px, env(safe-area-inset-bottom));
+      background: var(--surface); border-top: 1px solid var(--border);
+      display: flex; gap: 10px; align-items: flex-end;
+    }
+    .chat-input {
+      flex: 1; padding: 12px 16px; border-radius: 24px;
+      border: 1px solid var(--border); font-size: 15px; color: var(--text);
+      background: var(--bg); outline: none; resize: none;
+      max-height: 100px; min-height: 44px; line-height: 1.4;
+      transition: border 0.2s; font-family: inherit;
+    }
+    .chat-input:focus { border-color: var(--accent); }
+    .chat-input::placeholder { color: var(--text-muted); }
+    .send-btn {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--accent); color: #fff; border: none;
+      font-size: 18px; cursor: pointer; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .send-btn:active { background: var(--accent-dark); transform: scale(0.9); }
+    .send-btn:disabled { background: var(--border); cursor: not-allowed; }
+
+    /* AI声明 */
+    .ai-disclaimer {
+      text-align: center; padding: 12px 20px;
+      font-size: 11px; color: var(--text-muted); line-height: 1.5;
+    }
+
+    /* ===== 动画 ===== */
+    .fade-in { animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .slide-up { animation: slideUp 0.3s ease; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+
+  <!-- ===== 首页 ===== -->
+  <div class="page active" id="page-home">
+    <div class="home-content">
+      <!-- Logo -->
+      <div class="logo-section">
+        <div class="logo-icon">🎲</div>
+        <div class="logo-title">桌游AI教练</div>
+        <div class="logo-sub">扫码即可学会桌游规则</div>
+      </div>
+
+      <!-- API Key -->
+      <div class="api-section" id="api-section">
+        <span class="api-label">🔑 设置 API Key</span>
+        <span class="api-hint">请输入 DeepSeek API Key（sk-开头），<a href="https://platform.deepseek.com" target="_blank" style="color:var(--accent);">点此获取</a></span>
+        <div class="api-row">
+          <input type="password" class="api-input" id="api-key-input" placeholder="sk-...">
+          <button class="api-save-btn" onclick="saveApiKey()">保存</button>
+        </div>
+      </div>
+
+      <!-- 搜索 -->
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-input" placeholder="搜索桌游名称..." oninput="filterGames()">
+      </div>
+
+      <!-- 分类标签 -->
+      <div class="tags-row" id="tags-row">
+        <div class="tag-pill active" data-tag="all" onclick="selectTag(this)">全部</div>
+        <div class="tag-pill" data-tag="party" onclick="selectTag(this)">聚会</div>
+        <div class="tag-pill" data-tag="deduction" onclick="selectTag(this)">推理</div>
+        <div class="tag-pill" data-tag="strategy" onclick="selectTag(this)">策略</div>
+        <div class="tag-pill" data-tag="beginner" onclick="selectTag(this)">入门</div>
+        <div class="tag-pill" data-tag="two" onclick="selectTag(this)">双人</div>
+      </div>
+
+      <!-- 推荐 -->
+      <div class="section-title">为你推荐</div>
+      <div id="game-list"></div>
+      <div class="empty-state" id="empty-state" style="display:none;">
+        <div class="empty-icon">🎲</div>
+        <div class="empty-text">没有找到匹配的桌游</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 详情页 ===== -->
+  <div class="page" id="page-detail">
+    <div class="nav-bar">
+      <div class="back-btn" onclick="goHome()">←</div>
+      <div class="title" id="detail-nav-title">游戏详情</div>
+    </div>
+    <div class="detail-content">
+      <div class="detail-cover" id="detail-cover">🎲</div>
+      <div class="detail-body slide-up">
+        <div class="detail-name" id="detail-name"></div>
+        <div class="detail-name-en" id="detail-name-en"></div>
+        <div class="detail-meta-row">
+          <div class="detail-meta-item" id="detail-players"></div>
+          <div class="detail-meta-item" id="detail-duration"></div>
+        </div>
+        <div class="game-stars" id="detail-stars" style="margin-bottom:16px;"></div>
+        <div class="detail-tags" id="detail-tags"></div>
+        <div class="detail-desc" id="detail-desc"></div>
+        <div class="detail-actions-title">你想怎么开始？</div>
+        <button class="action-btn primary" onclick="startChat('setup')">
+          <span class="icon">🎯</span>
+          <div>AI摆盘引导<span class="desc">手把手教你把配件摆好</span></div>
+        </button>
+        <button class="action-btn secondary" onclick="startChat('teach')">
+          <span class="icon">📖</span>
+          <div>AI规则教学<span class="desc">像玩游戏一样学规则</span></div>
+        </button>
+        <button class="action-btn secondary" onclick="startChat('faq')">
+          <span class="icon">🔍</span>
+          <div>规则速查<span class="desc">遇到问题随时查</span></div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 对话页 ===== -->
+  <div class="page chat-page" id="page-chat">
+    <div class="nav-bar">
+      <div class="back-btn" onclick="goDetail()">←</div>
+      <div class="title" id="chat-nav-title">AI教练</div>
+    </div>
+    <div class="chat-messages" id="chat-messages"></div>
+    <div class="quick-questions" id="quick-questions">
+      <div class="quick-btn" onclick="sendQuick(this)">继续下一步</div>
+      <div class="quick-btn" onclick="sendQuick(this)">还不太明白</div>
+      <div class="quick-btn" onclick="sendQuick(this)">这是什么意思？</div>
+      <div class="quick-btn" onclick="sendQuick(this)">能举个例子吗？</div>
+      <div class="quick-btn" onclick="sendQuick(this)">重新讲一遍</div>
+    </div>
+    <div class="ai-disclaimer">以上内容由AI生成，仅供参考，如有争议以实体规则书为准</div>
+    <div class="chat-input-area">
+      <textarea class="chat-input" id="chat-input" placeholder="输入你的问题..." rows="1" onkeydown="handleKey(event)"></textarea>
+      <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
+    </div>
+  </div>
+
+  <!-- ===== 游戏数据 ===== -->
+  <script>
+    const GAMES = [
+      {
+        id: 'catan', name: '卡坦岛', nameEn: 'Catan', emoji: '🏝️',
+        minPlayers: 3, maxPlayers: 4, duration: '60-90min', difficulty: 2,
+        tags: ['策略', '交易', '建设'], category: 'strategy',
+        description: '在卡坦岛上，玩家们扮演拓荒者，通过交易资源、建造道路和定居点来争夺岛屿的控制权。每次游戏的地图都是随机生成的，保证了极高的重玩性。新手友好，是桌游入坑的经典选择。',
+        rules: '卡坦岛是一款3-4人的资源管理和交易游戏。游戏版图由19块六边形地形板块随机拼成，每块地形产出不同资源（木材、砖块、羊毛、麦子、矿石）。玩家轮流掷两个骰子，骰子总和对应编号的地形板块产出资源。玩家可以在自己的回合与其他玩家自由交易资源，也可以用4:1的比例与银行交易。资源用来建造道路（1木1砖）、定居点（1木1砖1麦1羊）、城市（2矿3麦），或购买发展卡。道路建在板块边缘，定居点建在道路交汇处且相邻节点不能有其他定居点。定居点得1分，城市得2分，最长道路和最大军队各得2分，发展卡也可能给分，先到10分的玩家获胜。当掷出7点时，所有手牌超过7张的玩家丢弃一半，然后当前玩家移动强盗到一个地形上，阻止该地形产出并从相邻玩家偷一张牌。'
+      },
+      {
+        id: 'avalon', name: '阿瓦隆', nameEn: 'Avalon', emoji: '⚔️',
+        minPlayers: 5, maxPlayers: 10, duration: '30min', difficulty: 2,
+        tags: ['推理', '社交', '阵营'], category: 'deduction',
+        description: '亚瑟王的骑士们需要完成远征任务，但邪恶的爪牙混入了队伍。通过投票、发言和推理，找出隐藏的坏人——或者作为坏人成功破坏任务。',
+        rules: '阿瓦隆是一款5-10人的社交推理游戏，分为好人方（蓝方）和坏人方（红方）。游戏共进行5轮任务。每轮由当前队长选择一支队伍出征，所有人投票同意或反对这次组队。如果多数同意，队伍出发执行任务；如果多数反对，换下一个队长重新组队。执行任务时，出征队员秘密投票"成功"或"失败"。好人必须投成功，坏人可以选择投失败。如果任务中失败票达到一定数量（通常1张），任务失败。坏人方累计3次任务失败则获胜；好人方累计3次任务成功则获胜。特殊角色：梅林知道所有坏人身份，但如果坏人在最后猜出梅林是谁，坏人逆转获胜。刺客可以在游戏结束后刺杀梅林。'
+      },
+      {
+        id: 'werewolf', name: '狼人杀', nameEn: 'Werewolf', emoji: '🐺',
+        minPlayers: 6, maxPlayers: 18, duration: '30-60min', difficulty: 2,
+        tags: ['推理', '社交', '阵营'], category: 'deduction',
+        description: '经典社交推理游戏。村民需要在白天的讨论中找出隐藏的狼人，而狼人则在夜晚悄悄消灭村民。谎言与推理的终极较量。',
+        rules: '狼人杀分为夜晚和白天两个阶段交替进行。夜晚：所有人闭眼。狼人睁眼互相确认并选择一名玩家击杀。预言家睁眼可以查验一名玩家的身份。女巫有两瓶药：解药可以救活被杀的人，毒药可以毒杀一个人，每种只能用一次。白天：所有人睁眼，宣布昨晚的死亡情况（如果没人被救）。存活的玩家依次发言，讨论谁是狼人。发言结束后投票放逐一名玩家。被放逐的玩家出局并发表遗言。游戏持续到狼人全部出局（好人胜）或狼人数量等于或超过好人数量（狼人胜）。'
+      },
+      {
+        id: 'codenames', name: '机密代号', nameEn: 'Codenames', emoji: '🕵️',
+        minPlayers: 4, maxPlayers: 8, duration: '20min', difficulty: 1,
+        tags: ['聚会', '团队', '猜词'], category: 'party',
+        description: '两个间谍头目分别给自己队伍发送加密线索，队员需要根据一个词猜出哪些是自己人的代号。考验默契和联想力的团队对抗游戏。',
+        rules: '机密代号是一款4-8人的团队对抗猜词游戏。将玩家分为红蓝两队，每队选一名队长（间谍头目）。在桌面上摆放5x4共20张词语卡。队长看到一张密钥卡，上面标注了哪些词属于红队、蓝队、中立和暗杀。队长每次用一个词加一个数字作为线索，比如"动物 3"，意思是"有3个词跟动物有关"。队员们讨论后猜词。猜对本队的词可以继续猜，猜到中立词则停止，猜到对方的词等于帮对方，猜到暗杀词则直接输。先猜完所有己方词的队伍获胜。'
+      },
+      {
+        id: 'love-letter', name: '情书', nameEn: 'Love Letter', emoji: '💌',
+        minPlayers: 2, maxPlayers: 4, duration: '15min', difficulty: 1,
+        tags: ['入门', '推理', '运气'], category: 'beginner',
+        description: '极简的推理卡牌游戏，只有16张牌却充满策略和心理博弈。你的目标是成为最后留在游戏中的玩家，或者手牌点数最高。',
+        rules: '情书只有16张牌，数字从1到8。每人开始时拿1张手牌，每回合摸1张然后打出1张，执行卡牌效果：1（守卫）猜一名玩家的手牌，猜对则该玩家出局；2（牧师）偷看一名玩家的手牌；3（男爵）与一名玩家比手牌大小，小的出局；4（侍女）本轮免疫一切效果；5（王子）让一名玩家弃牌重摸；6（伯爵夫人）如果你手里同时有6或7必须打出；7（国王）与一名玩家交换手牌；8（公主）打出就出局。当牌堆摸完时，比较剩余玩家的手牌大小，最大者赢得一轮。先赢到指定轮数的玩家获胜。'
+      },
+      {
+        id: 'coup', name: '政变', nameEn: 'Coup', emoji: '👑',
+        minPlayers: 2, maxPlayers: 6, duration: '15min', difficulty: 2,
+        tags: ['推理', '嘴炮', '策略'], category: 'deduction',
+        description: '在一个反乌托邦的未来，每位玩家扮演一个有两张身份牌的贵族。你可以声称自己是任何角色——但别人可以质疑你。谎言还是真相？',
+        rules: '政变中每人开始有2张暗扣的身份牌和2枚金币。身份牌有5种：队长（收2金币）、刺客（花3金币暗杀）、大使（换牌）、伯爵（收税3金币）、将军（花3金币攻击偷回金币）。每回合选择一个行动：收入（拿1金币）、外援（拿2金币但会被队长反制）、或执行角色技能。你可以声称自己是任何角色来执行行动。其他人可以质疑你是否真的是那个角色。如果质疑成功，你丢一张牌；如果质疑失败，质疑者丢一张牌。你可以花7金币发动政变，强制一名玩家丢一张牌（不可被质疑）。当一个玩家两张牌都丢完就出局。最后存活的玩家获胜。'
+      },
+      {
+        id: 'azul', name: '花砖物语', nameEn: 'Azul', emoji: '🎨',
+        minPlayers: 2, maxPlayers: 4, duration: '30-45min', difficulty: 2,
+        tags: ['策略', '抽象', '拼图'], category: 'strategy',
+        description: '灵感来自葡萄牙阿兹勒赫瓷砖艺术。玩家轮流选取彩色花砖，在自己的5x5墙壁上拼出最美的图案。简单规则下隐藏着深度策略。',
+        rules: '花砖物语每局由多轮组成。每轮包含两个阶段：拿取阶段和铺设阶段。拿取阶段：从圆盘工厂展示区（数量=玩家数×2+1个）轮流拿取花砖。每个展示区有4颗随机颜色的花砖。选择一个展示区，拿走所有同色花砖，剩下的推到中央。也可以从中央拿（但先拿中央的可能扣分）。铺设阶段：把拿到的花砖放到个人版图左侧的"铺排轨道"上。每条轨道只能放同色花砖，长度限制为1-5。轨道填满后，最右边一颗移到右侧5x5墙壁对应行的位置，多余的丢弃扣分。在墙壁上，同色不能出现在同一行。每颗放好的砖得1分，如果上下左右有相邻的砖额外加分。多余的砖每颗扣1分。游戏进行到有人在墙壁上完成一行结束，完成列和对角线有额外加分。'
+      },
+      {
+        id: 'deception', name: '犯罪现场', nameEn: 'Deception: Murder in HK', emoji: '🔍',
+        minPlayers: 4, maxPlayers: 12, duration: '20-30min', difficulty: 2,
+        tags: ['推理', '社交', '破案'], category: 'deduction',
+        description: '一起谋杀案发生了。法医知道真相但不能直说，侦探需要通过线索推理，而凶手就混在侦探之中试图混淆视听。',
+        rules: '犯罪现场是一款4-12人的推理游戏。一人扮演主持人，其余人中随机分配：一名凶手、一名法医，其余都是侦探。凶手在游戏开始时秘密选择一张"凶器"线索卡和一张"犯罪现场"卡作为真相。每位侦探面前有4张线索卡和4张凶器卡（从公共牌堆获取）。法医会暗中指出凶手面前哪些牌组合代表真相（但不能说话）。游戏进行中，法医每轮可以给出一个笼统的暗示词（如"水""建筑"）。侦探们讨论推理，尝试找出凶手和真相。凶手则假装是侦探，试图误导大家。限时结束后投票指认凶手，如果指对且猜对凶器和现场则侦探胜；否则凶手胜。'
+      }
+    ];
+
+    // ===== 全局状态 =====
+    let currentGame = null;
+    let currentMode = '';
+    let chatHistory = [];
+    let currentTag = 'all';
+
+    // ===== API Key =====
+    function getApiKey() { return localStorage.getItem('deepseek_api_key') || ''; }
+    function saveApiKey() {
+      const key = document.getElementById('api-key-input').value.trim();
+      if (!key) { alert('请输入API Key'); return; }
+      localStorage.setItem('deepseek_api_key', key);
+      document.getElementById('api-section').classList.add('hidden');
+    }
+    (function initApiKey() {
+      if (getApiKey()) document.getElementById('api-section').classList.add('hidden');
+    })();
+
+    // ===== 页面切换 =====
+    function showPage(id) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      window.scrollTo(0, 0);
+    }
+    function goHome() { showPage('page-home'); }
+    function goDetail() {
+      if (currentGame) showPage('page-detail');
+      else goHome();
+    }
+
+    // ===== 首页：渲染游戏列表 =====
+    function renderGames(games) {
+      const container = document.getElementById('game-list');
+      const empty = document.getElementById('empty-state');
+      if (games.length === 0) {
+        container.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none';
+      container.innerHTML = games.map((g, i) => `
+        <div class="game-card" style="animation-delay:${i * 0.06}s" onclick="openGame('${g.id}')">
+          <div class="game-cover">${g.emoji}</div>
+          <div class="game-info">
+            <span class="game-name">${g.name}</span>
+            <span class="game-meta">${g.minPlayers}-${g.maxPlayers}人 · ${g.duration}</span>
+            <div class="game-stars">
+              ${[1,2,3,4,5].map(s => `<span class="star ${s <= g.difficulty ? 'filled' : 'empty'}">★</span>`).join('')}
+            </div>
+            <div class="game-tags">${g.tags.map(t => `<span class="game-tag">${t}</span>`).join('')}</div>
+          </div>
+          <div class="card-arrow">›</div>
+        </div>
+      `).join('');
+    }
+
+    function filterGames() {
+      const kw = document.getElementById('search-input').value.trim().toLowerCase();
+      let filtered = GAMES;
+      if (currentTag !== 'all') filtered = filtered.filter(g => g.category === currentTag);
+      if (kw) filtered = filtered.filter(g => g.name.toLowerCase().includes(kw) || g.nameEn.toLowerCase().includes(kw) || g.tags.some(t => t.includes(kw)));
+      renderGames(filtered);
+    }
+
+    function selectTag(el) {
+      document.querySelectorAll('.tag-pill').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      currentTag = el.dataset.tag;
+      filterGames();
+    }
+
+    // ===== 详情页 =====
+    function openGame(id) {
+      currentGame = GAMES.find(g => g.id === id);
+      if (!currentGame) return;
+      document.getElementById('detail-nav-title').textContent = currentGame.name;
+      document.getElementById('detail-cover').textContent = currentGame.emoji;
+      document.getElementById('detail-name').textContent = currentGame.name;
+      document.getElementById('detail-name-en').textContent = currentGame.nameEn;
+      document.getElementById('detail-players').innerHTML = `<strong>${currentGame.minPlayers}-${currentGame.maxPlayers}人</strong>`;
+      document.getElementById('detail-duration').innerHTML = `<strong>${currentGame.duration}</strong>`;
+      document.getElementById('detail-stars').innerHTML = [1,2,3,4,5].map(s => `<span class="star ${s <= currentGame.difficulty ? 'filled' : 'empty'}">★</span>`).join('');
+      document.getElementById('detail-tags').innerHTML = currentGame.tags.map(t => `<span class="game-tag">${t}</span>`).join('');
+      document.getElementById('detail-desc').textContent = currentGame.description;
+      showPage('page-detail');
+    }
+
+    // ===== 对话页 =====
+    function startChat(mode) {
+      if (!getApiKey()) {
+        alert('请先在首页设置 DeepSeek API Key');
+        goHome();
+        return;
+      }
+      currentMode = mode;
+      chatHistory = [];
+      const modeNames = { setup: '摆盘引导', teach: '规则教学', faq: '规则速查' };
+      document.getElementById('chat-nav-title').textContent = `${currentGame.name} · ${modeNames[mode]}`;
+      document.getElementById('chat-messages').innerHTML = '';
+      showPage('page-chat');
+      addTypingIndicator();
+      callAI('请开始教学');
+    }
+
+    function getSystemPrompt() {
+      if (!currentGame) return '';
+      const name = currentGame.name;
+      const rules = currentGame.rules;
+      if (currentMode === 'setup') {
+        return `你是一个耐心的桌游摆盘教练。你正在教玩家摆放"${name}"的游戏配件。
+你的知识库：${rules}
+你的任务：
+- 一步步引导玩家摆放游戏配件，每一步只说一个动作
+- 用最通俗的语言，避免术语
+- 如果玩家说"准备好了"或类似意思，推进到下一步
+- 如果玩家提问，先回答问题，再继续引导
+- 所有配件摆好后，总结一下并询问是否要开始学习规则
+- 语气友好、鼓励，像一个耐心的朋友
+- 回答控制在150字以内，除非确实需要更长`;
+      } else if (currentMode === 'teach') {
+        return `你是一个友好的桌游规则老师。你正在教玩家玩"${name}"。
+你的知识库：${rules}
+你的任务：
+- 用最通俗的语言讲解规则，像给完全不懂桌游的朋友解释
+- 每次只讲一个知识点，等玩家确认理解后再继续
+- 用具体的例子来解释抽象规则
+- 如果玩家问了规则范围内的问题，准确回答
+- 如果不确定某个规则细节，诚实说"这个我不太确定，建议查阅实体规则书"
+- 不要编造不存在的规则
+- 适时用提问来确认玩家是否理解
+- 语气轻松愉快，适当使用比喻
+- 回答控制在200字以内`;
+      } else {
+        return `你是一个桌游规则速查助手。玩家正在玩"${name}"，遇到了规则问题。
+你的知识库：${rules}
+你的任务：
+- 快速准确地回答玩家的规则问题
+- 先给出简洁的直接答案，再补充必要的解释
+- 如果问题涉及多种可能情况，列出所有情况
+- 如果不确定答案，诚实告知
+- 回答控制在100字以内，除非问题确实需要更长的解释`;
+      }
+    }
+
+    function addMessage(role, content) {
+      const container = document.getElementById('chat-messages');
+      const labels = { ai: '🤖 AI教练', user: '你' };
+      container.innerHTML += `
+        <div class="msg ${role} fade-in">
+          <div>
+            <div class="msg-label">${labels[role]}</div>
+            <div class="msg-bubble">${escapeHtml(content)}</div>
+          </div>
+        </div>`;
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function addTypingIndicator() {
+      const container = document.getElementById('chat-messages');
+      container.innerHTML += `
+        <div class="msg ai fade-in" id="typing-msg">
+          <div>
+            <div class="msg-label">🤖 AI教练</div>
+            <div class="msg-bubble">
+              <div class="typing-indicator">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function removeTypingIndicator() {
+      const el = document.getElementById('typing-msg');
+      if (el) el.remove();
+    }
+
+    function escapeHtml(text) {
+      const d = document.createElement('div');
+      d.textContent = text;
+      return d.innerHTML.replace(/\n/g, '<br>');
+    }
+
+    async function callAI(userMessage) {
+      const messages = [
+        { role: 'system', content: getSystemPrompt() },
+        ...chatHistory.slice(-10),
+        { role: 'user', content: userMessage }
+      ];
+
+      try {
+        const res = await fetch('https://api.deepseek.com/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getApiKey()}`
+          },
+          body: JSON.stringify({
+            model: 'deepseek-chat',
+            messages: messages,
+            temperature: 0.7,
+            max_tokens: 800
+          })
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error?.message || `HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        const reply = data.choices[0].message.content;
+
+        chatHistory.push({ role: 'user', content: userMessage });
+        chatHistory.push({ role: 'assistant', content: reply });
+
+        removeTypingIndicator();
+        addMessage('ai', reply);
+      } catch (err) {
+        removeTypingIndicator();
+        addMessage('ai', `抱歉，出了点问题：${err.message}\n请检查API Key是否正确，或稍后再试。`);
+      }
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+      addMessage('user', text);
+      addTypingIndicator();
+      callAI(text);
+    }
+
+    function sendQuick(el) {
+      const text = el.textContent;
+      addMessage('user', text);
+      addTypingIndicator();
+      callAI(text);
+    }
+
+    function handleKey(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    }
+
+    // 初始化
+    renderGames(GAMES);
+  </script>
+</body>
+</html>
