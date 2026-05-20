@@ -78,8 +78,10 @@ async function getGames(filters) {
  * @returns {Promise<object>} 游戏详情
  */
 async function getGameDetail(id) {
+    console.log('[getGameDetail] 开始, ID:', id);
     try {
         var url = SUPABASE_URL + '/rest/v1/games?id=eq.' + encodeURIComponent(id) + '&limit=1';
+        console.log('[getGameDetail] 请求URL:', url);
 
         var response = await fetch(url, {
             method: 'GET',
@@ -90,11 +92,18 @@ async function getGameDetail(id) {
             }
         });
 
+        console.log('[getGameDetail] 响应状态:', response.status);
+
         if (!response.ok) {
-            throw new Error('获取游戏详情失败 (HTTP ' + response.status + ')');
+            var errorText = await response.text();
+            throw new Error('获取游戏详情失败 (HTTP ' + response.status + '): ' + errorText);
         }
 
         var games = await response.json();
+        console.log('[getGameDetail] 查询结果:', games ? games.length + ' 条' : 'null');
+        if (games && games.length > 0) {
+            console.log('[getGameDetail] 找到游戏:', games[0].name);
+        }
         return (games && games.length > 0) ? games[0] : null;
     } catch (error) {
         console.error('[getGameDetail] 请求失败:', error);

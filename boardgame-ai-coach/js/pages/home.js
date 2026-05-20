@@ -235,7 +235,8 @@ App.registerPage('home', (function() {
     }
 
     function goDetail(id) {
-        window.location.hash = '/detail?id=' + id;
+        console.log('[home.js] goDetail 被调用, 游戏ID:', id, '类型:', typeof id);
+        window.location.hash = '/detail?id=' + encodeURIComponent(id);
     }
 
     function toggleFavorite(id) {

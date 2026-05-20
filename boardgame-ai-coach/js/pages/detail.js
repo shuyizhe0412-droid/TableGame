@@ -219,18 +219,23 @@ App.registerPage('detail', (function() {
         gameId: '',
         game: null,
         isFavorite: false,
-        descExpanded: false
+        descExpanded: false,
+        isLoading: true,
+        loadError: null
     };
 
     // ==================== 工具函数 ====================
     // 从 URL hash 解析游戏 ID
     function getGameIdFromHash() {
+        console.log('[detail.js] 当前URL:', window.location.hash);
         var hash = window.location.hash || '';
         var match = hash.match(/[?&]id=([^&]+)/);
-        return match ? match[1] : '1';
+        var id = match ? decodeURIComponent(match[1]) : null;
+        console.log('[detail.js] 解析到的游戏ID:', id, '类型:', typeof id);
+        return id;
     }
 
-    function getGameById(id) {
+    function getMockGameById(id) {
         return mockGames[id] || mockGames['1'];
     }
 
@@ -270,8 +275,25 @@ App.registerPage('detail', (function() {
             '</div>';
     }
 
+    function renderLoading() {
+        return '<div class="detail-page">' +
+            renderHeader() +
+            '<div class="detail-loading" style="text-align:center;padding:50px;color:#888;">加载中...</div>' +
+            '</div>';
+    }
+
+    function renderError() {
+        return '<div class="detail-page">' +
+            renderHeader() +
+            '<div class="detail-error" style="text-align:center;padding:50px;color:#e74c3c;">' +
+            '<p>加载失败</p>' +
+            '<p style="font-size:12px;color:#888;">' + state.loadError + '</p>' +
+            '<button onclick="detailPage.goBack()" style="margin-top:20px;padding:10px 20px;background:#3498db;color:#fff;border:none;border-radius:5px;">返回首页</button>' +
+            '</div>' +
+            '</div>';
+    }
+
     function renderCover() {
-        var game = state.game;
         return '<div class="detail-cover" style="background: linear-gradient(135deg, #D4893F, #7B9E87);">' +
             '<span class="detail-cover-text">🎲</span>' +
             '</div>';
@@ -279,25 +301,35 @@ App.registerPage('detail', (function() {
 
     function renderInfo() {
         var game = state.game;
-        var desc = state.descExpanded ? game.description :
-            game.description.substring(0, 60) + (game.description.length > 60 ? '...' : '');
-        var expandText = state.descExpanded ? '收起' : '展开';
+        if (!game) return '<div class="detail-info card"><p>游戏数据不存在</p></div>';
+        
+        var desc = game.description || '';
+        var shortDesc = desc.length > 60 ? desc.substring(0, 60) + '...' : desc;
+        var displayDesc = state.descExpanded ? desc : shortDesc;
+        var expandText = state.descExpanded ? '收起' : (desc.length > 60 ? '展开' : '');
+
+        // 处理字段名兼容性
+        var minPlayers = game.min_players || game.minPlayers || 0;
+        var maxPlayers = game.max_players || game.maxPlayers || 0;
+        var duration = game.duration || 30;
+        var difficulty = game.difficulty || 2;
+        var tags = game.tags || [];
 
         return '<div class="detail-info card">' +
-            '<h1 class="detail-title">' + game.name + '</h1>' +
-            '<p class="detail-subtitle">' + game.nameEn + '</p>' +
+            '<h1 class="detail-title">' + (game.name || '未知游戏') + '</h1>' +
+            '<p class="detail-subtitle">' + (game.name_en || game.nameEn || '') + '</p>' +
             '<div class="detail-stats">' +
-            '<div class="detail-stat"><span>👥</span><span>' + game.minPlayers + '-' + game.maxPlayers + '人</span></div>' +
-            '<div class="detail-stat"><span>⏱️</span><span>' + formatDuration(game.duration) + '</span></div>' +
-            '<div class="detail-stat"><span>📊</span><span>' + getDifficultyText(game.difficulty) + '</span></div>' +
+            '<div class="detail-stat"><span>👥</span><span>' + minPlayers + '-' + maxPlayers + '人</span></div>' +
+            '<div class="detail-stat"><span>⏱️</span><span>' + formatDuration(duration) + '</span></div>' +
+            '<div class="detail-stat"><span>📊</span><span>' + getDifficultyText(difficulty) + '</span></div>' +
             '</div>' +
             '<div class="detail-tags">' +
-            game.tags.map(function(tag) {
+            tags.map(function(tag) {
                 return '<span class="detail-tag">' + tag + '</span>';
             }).join('') +
             '</div>' +
-            '<p class="detail-desc">' + desc + '</p>' +
-            '<span class="detail-expand" onclick="detailPage.toggleDesc()">' + expandText + '</span>' +
+            '<p class="detail-desc">' + displayDesc + '</p>' +
+            (expandText ? '<span class="detail-expand" onclick="detailPage.toggleDesc()">' + expandText + '</span>' : '') +
             '</div>';
     }
 
@@ -314,24 +346,29 @@ App.registerPage('detail', (function() {
 
     function renderRatings() {
         var game = state.game;
+        if (!game || !game.ratings) return '';
+        
         var ratings = game.ratings;
-        var avgRating = ((ratings.difficulty + ratings.fun + ratings.replay + ratings.上手) / 4).toFixed(1);
+        var avgRating = ((ratings.difficulty || 0) + (ratings.fun || 0) + (ratings.replay || 0) + (ratings.上手 || 0)) / 4;
+        avgRating = isNaN(avgRating) ? 0 : avgRating.toFixed(1);
 
         return '<div class="detail-ratings card">' +
             '<h3>玩家评分</h3>' +
-            '<div class="detail-rating-item"><span>难度</span>' + renderRatingBar(ratings.difficulty) + '<span>' + ratings.difficulty + '</span></div>' +
-            '<div class="detail-rating-item"><span>趣味</span>' + renderRatingBar(ratings.fun) + '<span>' + ratings.fun + '</span></div>' +
-            '<div class="detail-rating-item"><span>重玩</span>' + renderRatingBar(ratings.replay) + '<span>' + ratings.replay + '</span></div>' +
-            '<div class="detail-rating-item"><span>上手</span>' + renderRatingBar(ratings.上手) + '<span>' + ratings.上手 + '</span></div>' +
+            '<div class="detail-rating-item"><span>难度</span>' + renderRatingBar(ratings.difficulty || 0) + '<span>' + (ratings.difficulty || 0) + '</span></div>' +
+            '<div class="detail-rating-item"><span>趣味</span>' + renderRatingBar(ratings.fun || 0) + '<span>' + (ratings.fun || 0) + '</span></div>' +
+            '<div class="detail-rating-item"><span>重玩</span>' + renderRatingBar(ratings.replay || 0) + '<span>' + (ratings.replay || 0) + '</span></div>' +
+            '<div class="detail-rating-item"><span>上手</span>' + renderRatingBar(ratings.上手 || 0) + '<span>' + (ratings.上手 || 0) + '</span></div>' +
             '<div class="detail-avg-rating"><span>综合</span><span class="detail-avg-num">' + avgRating + '</span></div>' +
             '</div>';
     }
 
     function renderComments() {
         var game = state.game;
-        var comments = game.comments;
-
+        if (!game) return '';
+        
+        var comments = game.comments || [];
         var commentsHtml = '';
+
         if (comments.length === 0) {
             commentsHtml = '<p class="detail-no-comment">暂无评论，成为第一个评论者吧！</p>';
         } else {
@@ -340,14 +377,14 @@ App.registerPage('detail', (function() {
                     '<div class="detail-comment-header">' +
                     '<div class="detail-comment-avatar">👤</div>' +
                     '<div class="detail-comment-meta">' +
-                    '<span class="detail-comment-name">' + c.user + '</span>' +
-                    '<span class="detail-comment-stars">' + renderStars(c.rating) + '</span>' +
+                    '<span class="detail-comment-name">' + (c.user || '匿名') + '</span>' +
+                    '<span class="detail-comment-stars">' + renderStars(c.rating || 0) + '</span>' +
                     '</div>' +
                     '</div>' +
                     '<div class="detail-comment-tags">' +
-                    c.tags.map(function(t) { return '<span class="detail-tag">' + t + '</span>'; }).join('') +
+                    (c.tags || []).map(function(t) { return '<span class="detail-tag">' + t + '</span>'; }).join('') +
                     '</div>' +
-                    '<p class="detail-comment-content">' + c.content + '</p>' +
+                    '<p class="detail-comment-content">' + (c.content || '') + '</p>' +
                     '</div>';
             }).join('');
         }
@@ -365,10 +402,17 @@ App.registerPage('detail', (function() {
     }
 
     function render(params) {
+        // 加载中状态
+        if (state.isLoading) {
+            return renderLoading();
+        }
+        // 错误状态
+        if (state.loadError) {
+            return renderError();
+        }
         // 如果外部传入了 gameId，优先使用
-        if (params && params.id) {
+        if (params && params.id && !state.gameId) {
             state.gameId = params.id;
-            state.game = getGameById(params.id);
         }
         return '<div class="detail-page">' +
             renderHeader() +
@@ -385,15 +429,81 @@ App.registerPage('detail', (function() {
 
     // ==================== 事件处理 ====================
     function init(params) {
+        console.log('[detail.js] init 被调用');
         // 优先使用 params 中的 id，其次从 URL hash 解析
         if (params && params.id) {
             state.gameId = params.id;
         } else {
             state.gameId = getGameIdFromHash();
         }
-        state.game = getGameById(state.gameId);
-        state.isFavorite = false;
-        state.descExpanded = false;
+        
+        if (!state.gameId) {
+            console.error('[detail.js] 无法获取游戏ID!');
+            state.loadError = '无法获取游戏ID';
+            state.isLoading = false;
+            window.detailPageRender();
+            return;
+        }
+        
+        // 显示加载状态
+        state.isLoading = true;
+        state.loadError = null;
+        window.detailPageRender();
+        
+        // 从 Supabase 加载游戏数据
+        loadGameFromDB(state.gameId);
+    }
+
+    // 从数据库加载游戏详情
+    async function loadGameFromDB(id) {
+        console.log('[detail.js] 准备从数据库加载游戏, ID:', id);
+        
+        try {
+            if (typeof window.getGameDetail !== 'function') {
+                throw new Error('API 未加载');
+            }
+            
+            console.log('[detail.js] 调用 window.getGameDetail()');
+            var game = await window.getGameDetail(id);
+            console.log('[detail.js] getGameDetail 返回:', game ? game.name : 'null');
+            
+            if (!game) {
+                // 尝试从 mockGames 回退
+                console.warn('[detail.js] 数据库未找到，尝试使用兜底数据');
+                game = getMockGameById(id);
+                if (game) {
+                    console.log('[detail.js] 使用兜底数据:', game.name);
+                }
+            }
+            
+            if (game) {
+                state.game = game;
+                state.isLoading = false;
+                state.loadError = null;
+                console.log('[detail.js] 加载成功:', game.name);
+            } else {
+                state.game = null;
+                state.isLoading = false;
+                state.loadError = '游戏不存在 (ID: ' + id + ')';
+                console.error('[detail.js] 游戏不存在');
+            }
+        } catch (error) {
+            console.error('[detail.js] 加载失败:', error);
+            // 回退到兜底数据
+            var mockGame = getMockGameById(id);
+            if (mockGame) {
+                console.log('[detail.js] 使用兜底数据:', mockGame.name);
+                state.game = mockGame;
+                state.isLoading = false;
+                state.loadError = null;
+            } else {
+                state.game = null;
+                state.isLoading = false;
+                state.loadError = error.message || '加载失败';
+            }
+        }
+        
+        window.detailPageRender();
     }
 
     function goBack() {
