@@ -3,6 +3,8 @@
  * 包含 Supabase 和 DeepSeek API 的接口调用
  */
 
+console.log('[api.js] 开始加载...');
+
 /**
  * 获取游戏列表
  * @param {object} filters - 筛选条件（可选）
@@ -10,10 +12,13 @@
  */
 async function getGames(filters) {
     filters = filters || {};
+    
+    console.log('========== [getGames] 开始 ==========');
+    console.log('Supabase URL:', SUPABASE_URL);
+    console.log('Supabase Key 存在:', !!SUPABASE_ANON_KEY);
+    console.log('Supabase Key 前20位:', SUPABASE_ANON_KEY ? SUPABASE_ANON_KEY.substring(0, 20) + '...' : 'undefined');
+    
     try {
-        console.log('正在连接Supabase...');
-        console.log('URL:', SUPABASE_URL);
-        
         var url = SUPABASE_URL + '/rest/v1/games?select=*';
 
         // 筛选条件
@@ -33,8 +38,9 @@ async function getGames(filters) {
         // 排序
         url += '&order=name.asc';
 
-        console.log('[getGames] 请求:', url);
+        console.log('[getGames] 完整请求URL:', url);
 
+        console.log('[getGames] 发送请求...');
         var response = await fetch(url, {
             method: 'GET',
             headers: {
@@ -44,20 +50,24 @@ async function getGames(filters) {
             }
         });
 
+        console.log('[getGames] 响应状态:', response.status, response.statusText);
+
         if (!response.ok) {
-            console.error('[getGames] 状态码:', response.status);
             var errorText = await response.text();
-            console.error('[getGames] 错误:', errorText);
+            console.error('[getGames] HTTP错误:', response.status, errorText);
             throw new Error('获取游戏列表失败 (HTTP ' + response.status + '): ' + errorText);
         }
 
         var games = await response.json();
-        console.log('获取到游戏数量:', games?.length, '错误:', null);
-        console.log('[getGames] 返回 ' + (games ? games.length : 0) + ' 条');
+        console.log('[getGames] 成功! 获取到', games ? games.length : 0, '条数据');
+        console.log('[getGames] 前3条数据:', JSON.stringify(games ? games.slice(0, 3) : []));
+        console.log('========== [getGames] 结束 ==========');
+        
         return games || [];
     } catch (error) {
         console.error('[getGames] 请求失败:', error);
-        console.log('获取到游戏数量:', undefined, '错误:', error.message);
+        console.error('[getGames] 错误消息:', error.message);
+        console.log('========== [getGames] 异常结束 ==========');
         throw error;
     }
 }
@@ -94,11 +104,6 @@ async function getGameDetail(id) {
 
 /**
  * AI 对话接口（通过 Supabase Edge Function 代理）
- * @param {Array} messages - 消息历史 [{role, content}]
- * @param {string} gameName - 游戏名称
- * @param {string} mode - 当前模式 (setup/teach/faq)
- * @param {string} style - 语言风格 (teacher/friend/dict)
- * @returns {Promise<string>} AI 回复
  */
 async function aiChat(messages, gameName, mode, style) {
     var SUPABASE_FUNCTION_URL = SUPABASE_URL + '/functions/v1/deepseek-proxy';
@@ -156,8 +161,6 @@ async function aiChat(messages, gameName, mode, style) {
 
 /**
  * 保存对话记录
- * @param {object} conversation - 对话数据
- * @returns {Promise<boolean>} 是否保存成功
  */
 async function saveConversation(conversation) {
     return true;
@@ -168,3 +171,5 @@ window.getGames = getGames;
 window.getGameDetail = getGameDetail;
 window.aiChat = aiChat;
 window.saveConversation = saveConversation;
+
+console.log('[api.js] 加载完成，已挂载到 window');

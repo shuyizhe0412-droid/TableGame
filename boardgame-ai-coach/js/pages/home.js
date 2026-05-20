@@ -1,7 +1,11 @@
 /**
  * 桌游AI教练 - 首页
  */
+console.log('[home.js] 文件开始加载');
+console.log('[home.js] App:', typeof App);
+
 App.registerPage('home', (function() {
+    console.log('[home.js] IIFE 开始执行');
     // ==================== 模拟数据（兜底用）====================
     var mockGames = [
         { id: '1', name: '卡坦岛', minPlayers: 3, maxPlayers: 4, duration: 90, difficulty: 2, tags: ['策略', '资源管理'], category: '德式' },
@@ -83,23 +87,40 @@ App.registerPage('home', (function() {
 
     // ==================== 从Supabase加载数据 ====================
     async function loadGamesFromDB() {
+        console.log('========== [home.js] loadGamesFromDB 开始 ==========');
+        console.log('[home] window.getGames 类型:', typeof window.getGames);
+        
         try {
-            console.log('[home] 开始从Supabase加载游戏...');
-            var games = await window.getGames({});
-            console.log('[home] 从Supabase获取到 ' + games.length + ' 个游戏');
+            if (typeof window.getGames !== 'function') {
+                console.error('[home] window.getGames 不是函数!');
+                throw new Error('API 未加载');
+            }
             
+            console.log('[home] 开始调用 window.getGames({})');
+            var games = await window.getGames({});
+            console.log('[home] 调用完成，返回类型:', typeof games, '长度:', games ? games.length : 'null');
+            
+            if (!games || games.length === 0) {
+                console.warn('[home] 数据库返回空数组，使用兜底数据');
+                throw new Error('数据库返回空');
+            }
+            
+            console.log('[home] 从Supabase获取到 ' + games.length + ' 个游戏');
             state.allGames = games;
             state.isLoading = false;
             state.fromDatabase = true;
             filterGames();
             window.homePageRender();
+            console.log('========== [home.js] loadGamesFromDB 成功 ==========');
         } catch (error) {
-            console.error('[home] Supabase加载失败，使用兜底数据:', error);
+            console.error('[home] Supabase加载失败:', error);
+            console.log('[home] 使用兜底数据（10个游戏）');
             state.allGames = mockGames;
             state.isLoading = false;
             state.fromDatabase = false;
             filterGames();
             window.homePageRender();
+            console.log('========== [home.js] loadGamesFromDB 失败(使用兜底) ==========');
         }
     }
 
