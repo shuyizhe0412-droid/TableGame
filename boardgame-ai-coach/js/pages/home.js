@@ -2,6 +2,120 @@
  * 桌游AI教练 - 首页
  */
 App.registerPage('home', (function() {
+    // ==================== 模拟数据 ====================
+    var mockGames = [
+        {
+            id: '1',
+            name: '卡坦岛',
+            cover: '',
+            minPlayers: 3,
+            maxPlayers: 4,
+            duration: 90,
+            difficulty: 2,
+            tags: ['策略', '资源管理'],
+            category: '德式'
+        },
+        {
+            id: '2',
+            name: '狼人杀',
+            cover: '',
+            minPlayers: 6,
+            maxPlayers: 12,
+            duration: 30,
+            difficulty: 1,
+            tags: ['推理', '社交'],
+            category: '聚会'
+        },
+        {
+            id: '3',
+            name: '三国杀',
+            cover: '',
+            minPlayers: 4,
+            maxPlayers: 10,
+            duration: 40,
+            difficulty: 2,
+            tags: ['角色', '对抗'],
+            category: '聚会'
+        },
+        {
+            id: '4',
+            name: '情书',
+            cover: '',
+            minPlayers: 2,
+            maxPlayers: 6,
+            duration: 15,
+            difficulty: 1,
+            tags: ['卡牌', '推理'],
+            category: '入门'
+        },
+        {
+            id: '5',
+            name: '宝石商人',
+            cover: '',
+            minPlayers: 2,
+            maxPlayers: 4,
+            duration: 30,
+            difficulty: 1,
+            tags: ['收集', '成套'],
+            category: '入门'
+        },
+        {
+            id: '6',
+            name: '德国心脏病',
+            cover: '',
+            minPlayers: 3,
+            maxPlayers: 6,
+            duration: 20,
+            difficulty: 1,
+            tags: ['反应', '欢乐'],
+            category: '聚会'
+        },
+        {
+            id: '7',
+            name: '行动代号',
+            cover: '',
+            minPlayers: 4,
+            maxPlayers: 8,
+            duration: 15,
+            difficulty: 1,
+            tags: ['配合', '词汇'],
+            category: '聚会'
+        },
+        {
+            id: '8',
+            name: '阿瓦隆',
+            cover: '',
+            minPlayers: 5,
+            maxPlayers: 10,
+            duration: 30,
+            difficulty: 2,
+            tags: ['推理', '隐藏身份'],
+            category: '推理'
+        },
+        {
+            id: '9',
+            name: '璀璨宝石',
+            cover: '',
+            minPlayers: 2,
+            maxPlayers: 4,
+            duration: 30,
+            difficulty: 1,
+            tags: ['收集', '策略'],
+            category: '入门'
+        },
+        {
+            id: '10',
+            name: '七大奇迹',
+            cover: '',
+            minPlayers: 3,
+            maxPlayers: 7,
+            duration: 30,
+            difficulty: 2,
+            tags: ['文明', '卡牌'],
+            category: '策略'
+        }
+    ];
+
     // 难度配置
     var difficultyMap = {
         1: '入门',
@@ -18,72 +132,41 @@ App.registerPage('home', (function() {
     var state = {
         currentCategory: '全部',
         searchQuery: '',
-        games: [],         // 当前显示的游戏
-        allGames: [],      // 全部游戏（缓存）
+        games: [],
         searchVisible: false,
-        favorites: {},
-        isLoading: true,
-        error: null
+        favorites: {}
     };
 
     // 搜索防抖定时器
     var searchTimer = null;
 
-    // ==================== 数据加载 ====================
-    async function loadGames() {
-        state.isLoading = true;
-        state.error = null;
-        window.homePageRender();
-        try {
-            console.log('[home] 开始加载游戏列表...');
-            if (typeof window.getGames !== 'function') {
-                throw new Error('getGames 未加载，请确认 api.js 已引入');
-            }
-            var games = await window.getGames();
-            console.log('[home] 加载完成，共 ' + games.length + ' 款游戏');
-            state.allGames = games;
-            state.isLoading = false;
-            // 初始化收藏
-            games.forEach(function(game) {
-                if (state.favorites[game.id] === undefined) {
-                    state.favorites[game.id] = false;
-                }
-            });
-            window.homePageRender();
-        } catch (err) {
-            console.error('[home] 加载失败:', err);
-            state.error = err.message || '加载失败';
-            state.isLoading = false;
-            window.homePageRender();
-        }
-    }
-
     // ==================== 工具函数 ====================
+    // 获取难度文字
     function getDifficultyText(level) {
         return difficultyMap[level] || '入门';
     }
 
+    // 格式化人数时长
     function formatInfo(game) {
-        var minP = game.min_players || game.minPlayers || 0;
-        var maxP = game.max_players || game.maxPlayers || 0;
-        var players = minP === maxP
-            ? minP + '人'
-            : minP + '-' + maxP + '人';
+        var players = game.minPlayers === game.maxPlayers
+            ? game.minPlayers + '人'
+            : game.minPlayers + '-' + game.maxPlayers + '人';
         var duration = game.duration >= 60
             ? Math.floor(game.duration / 60) + '小时' + (game.duration % 60 > 0 ? game.duration % 60 + '分钟' : '')
             : game.duration + '分钟';
         return players + ' · ' + duration;
     }
 
+    // 过滤游戏列表
     function filterGames() {
-        var filtered = state.allGames;
+        var filtered = mockGames;
 
         // 分类筛选
         if (state.currentCategory !== '全部') {
             filtered = filtered.filter(function(game) {
                 return game.category === state.currentCategory ||
                        (state.currentCategory === '入门' && game.difficulty === 1) ||
-                       (state.currentCategory === '双人' && (game.min_players || game.minPlayers) <= 2);
+                       (state.currentCategory === '双人' && game.minPlayers <= 2);
             });
         }
 
@@ -91,9 +174,9 @@ App.registerPage('home', (function() {
         if (state.searchQuery) {
             var query = state.searchQuery.toLowerCase();
             filtered = filtered.filter(function(game) {
-                var matchName = (game.name || '').toLowerCase().indexOf(query) !== -1;
-                var matchTag = (game.tags || []).some(function(tag) {
-                    return (tag || '').toLowerCase().indexOf(query) !== -1;
+                var matchName = game.name.toLowerCase().indexOf(query) !== -1;
+                var matchTag = game.tags.some(function(tag) {
+                    return tag.toLowerCase().indexOf(query) !== -1;
                 });
                 return matchName || matchTag;
             });
@@ -102,11 +185,13 @@ App.registerPage('home', (function() {
         state.games = filtered;
     }
 
+    // 切换收藏状态（内部）
     function _toggleFavorite(id) {
         state.favorites[id] = !state.favorites[id];
     }
 
     // ==================== 渲染函数 ====================
+    // 渲染头部
     function renderHeader() {
         if (state.searchVisible) {
             return '<div class="home-header home-header-search">' +
@@ -121,6 +206,7 @@ App.registerPage('home', (function() {
             '</div>';
     }
 
+    // 渲染分类标签
     function renderCategories() {
         var html = '<div class="home-categories">';
         html += '<div class="home-categories-scroll">';
@@ -133,6 +219,7 @@ App.registerPage('home', (function() {
         return html;
     }
 
+    // 渲染游戏卡片
     function renderGameCard(game) {
         var isFavorite = state.favorites[game.id] ? '★' : '☆';
         var coverBg = 'background: linear-gradient(135deg, #D4893F, #7B9E87)';
@@ -154,24 +241,8 @@ App.registerPage('home', (function() {
             '</div>';
     }
 
-    function renderLoading() {
-        return '<div class="home-empty">⏳ 加载中...</div>';
-    }
-
-    function renderError() {
-        return '<div class="home-empty" style="color:#d32f2f;">' +
-            '⚠️ ' + state.error + '<br><br>' +
-            '<button onclick="homePage.reload()" style="padding:8px 16px;border:none;background:#D4893F;color:#fff;border-radius:6px;cursor:pointer;">重试</button>' +
-            '</div>';
-    }
-
+    // 渲染游戏列表
     function renderGameList() {
-        if (state.isLoading) {
-            return renderLoading();
-        }
-        if (state.error) {
-            return renderError();
-        }
         if (state.games.length === 0) {
             return '<div class="home-empty">没有找到相关游戏</div>';
         }
@@ -183,6 +254,7 @@ App.registerPage('home', (function() {
         return html;
     }
 
+    // 主渲染函数
     function render() {
         filterGames();
         return '<div class="home-page">' +
@@ -195,29 +267,35 @@ App.registerPage('home', (function() {
     }
 
     // ==================== 事件处理 ====================
+    // 打开搜索
     function openSearch() {
         state.searchVisible = true;
         window.homePageRender();
+        // 自动聚焦搜索框
         setTimeout(function() {
             var input = document.getElementById('home-search-input');
             if (input) input.focus();
         }, 50);
     }
 
+    // 关闭搜索
     function closeSearch() {
         state.searchVisible = false;
         state.searchQuery = '';
         window.homePageRender();
     }
 
+    // 设置分类
     function setCategory(category) {
         state.currentCategory = category;
         window.homePageRender();
     }
 
+    // 设置搜索关键词
     function setSearchQuery(query) {
         state.searchQuery = query;
         filterGames();
+        // 只更新列表，不重新渲染整个页面
         var container = document.querySelector('.home-games-grid');
         if (container) {
             container.outerHTML = renderGameList();
@@ -229,21 +307,26 @@ App.registerPage('home', (function() {
         }
     }
 
+    // 跳转详情页
     function goDetail(id) {
         window.location.hash = '/detail?id=' + id;
     }
 
+    // 切换收藏
     function toggleFavorite(id) {
         _toggleFavorite(id);
         window.homePageRender();
     }
 
-    function reload() {
-        loadGames();
-    }
-
     // ==================== 初始化 ====================
     function init() {
+        // 初始化收藏状态
+        mockGames.forEach(function(game) {
+            if (!state.favorites[game.id]) {
+                state.favorites[game.id] = false;
+            }
+        });
+
         // 绑定搜索框事件
         setTimeout(function() {
             var input = document.getElementById('home-search-input');
@@ -257,17 +340,12 @@ App.registerPage('home', (function() {
                 });
             }
         }, 100);
-
-        // 首次加载数据
-        loadGames();
     }
 
     // 导出页面对象
     var page = {
         render: render,
         init: init,
-        loadGames: loadGames,
-        reload: reload,
         openSearch: openSearch,
         closeSearch: closeSearch,
         setCategory: setCategory,
@@ -276,7 +354,9 @@ App.registerPage('home', (function() {
         toggleFavorite: toggleFavorite
     };
 
+    // 全局暴露，用于 onclick 调用
     window.homePage = page;
+    // 提供重新渲染方法
     window.homePageRender = function() {
         var app = document.getElementById('app');
         if (app) {

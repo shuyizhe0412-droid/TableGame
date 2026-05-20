@@ -1,7 +1,6 @@
 /**
  * 桌游AI教练 - API 封装模块
  * 包含 Supabase 和 DeepSeek API 的接口调用
- * 依赖 config.js 中的 SUPABASE_URL 和 SUPABASE_ANON_KEY
  */
 
 /**
@@ -9,6 +8,7 @@
  * @param {object} filters - 筛选条件（可选）
  * @returns {Promise<Array>} 游戏列表
  */
+<<<<<<< HEAD
 async function getGames(filters) {
     filters = filters || {};
     try {
@@ -61,6 +61,11 @@ async function getGames(filters) {
         console.log('获取到游戏数量:', undefined, '错误:', error.message);
         throw error;
     }
+=======
+async function getGames(filters = {}) {
+    // TODO: 实现获取游戏列表逻辑
+    return [];
+>>>>>>> parent of 5761cea (修复桌游数量：从10个改为72个)
 }
 
 /**
@@ -69,32 +74,8 @@ async function getGames(filters) {
  * @returns {Promise<object>} 游戏详情
  */
 async function getGameDetail(id) {
-    try {
-        var url = SUPABASE_URL + '/rest/v1/games?id=eq.' + encodeURIComponent(id) + '&limit=1';
-
-        console.log('[getGameDetail] 请求:', url);
-
-        var response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'apikey': SUPABASE_ANON_KEY,
-                'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (!response.ok) {
-            console.error('[getGameDetail] 状态码:', response.status);
-            throw new Error('获取游戏详情失败 (HTTP ' + response.status + ')');
-        }
-
-        var games = await response.json();
-        console.log('[getGameDetail] 返回:', games && games.length ? games[0].name : 'null');
-        return (games && games.length > 0) ? games[0] : null;
-    } catch (error) {
-        console.error('[getGameDetail] 请求失败:', error);
-        throw error;
-    }
+    // TODO: 实现获取游戏详情逻辑
+    return null;
 }
 
 /**
@@ -106,8 +87,14 @@ async function getGameDetail(id) {
  * @returns {Promise<string>} AI 回复
  */
 async function aiChat(messages, gameName, mode, style) {
+<<<<<<< HEAD
     var SUPABASE_FUNCTION_URL = 'https://theaenpzcmydorhsjqf.supabase.co/functions/v1/deepseek-proxy';
+=======
+    // Supabase Edge Function 地址
+    var SUPABASE_FUNCTION_URL = 'https://theaenpzcmydorhsjquf.supabase.co/functions/v1/deepseek-proxy';
+>>>>>>> parent of 5761cea (修复桌游数量：从10个改为72个)
 
+    // 构建系统提示词
     var systemPrompts = {
         teacher: '你是一位专业的桌游教练"正经老师"。你正在教用户玩《' + gameName + '》。\n' +
             '当前模式：' + (mode === 'setup' ? '摆盘引导' : mode === 'teach' ? '规则教学' : '规则速查') + '。\n' +
@@ -131,7 +118,7 @@ async function aiChat(messages, gameName, mode, style) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+                'Authorization': 'Bearer sb_publishable_hZ3n61OfYkOXuqpt9gqKBw_UMA8--10c'
             },
             body: JSON.stringify({
                 messages: [
@@ -170,8 +157,3 @@ async function saveConversation(conversation) {
     // TODO: 实现保存对话记录逻辑
     return true;
 }
-
-// 挂载到全局
-window.getGames = getGames;
-window.getGameDetail = getGameDetail;
-window.aiChat = aiChat;
