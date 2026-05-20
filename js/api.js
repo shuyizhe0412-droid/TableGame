@@ -20,7 +20,7 @@ async function getGames(options = {}) {
     console.log('[DEBUG] getGames 被调用, options:', options);
     var category = options.category || '';
     var search = options.search || '';
-    var limit = options.limit || 20;
+    var limit = options.limit || 100;
     var offset = options.offset || 0;
 
     var queryParams = [
