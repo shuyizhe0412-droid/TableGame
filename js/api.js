@@ -40,6 +40,7 @@ async function getGames(options = {}) {
     var query = SUPABASE_URL + '/rest/v1/games?' + queryParams.join('&');
 
     try {
+        console.log('[DEBUG] 发送请求到:', query);
         var response = await fetch(query, {
             headers: {
                 'apikey': SUPABASE_ANON_KEY,
@@ -48,12 +49,18 @@ async function getGames(options = {}) {
             }
         });
 
+        console.log('[DEBUG] response.ok:', response.ok, 'status:', response.status);
+        
         if (!response.ok) {
             console.error('获取游戏列表失败:', response.status, response.statusText);
+            var errorText = await response.text();
+            console.error('错误详情:', errorText);
             return [];
         }
 
-        return await response.json();
+        var data = await response.json();
+        console.log('[DEBUG] 返回数据长度:', data.length);
+        return data;
     } catch (error) {
         console.error('获取游戏列表异常:', error);
         return [];
