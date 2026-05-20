@@ -101,7 +101,7 @@ async function getGameDetail(id) {
  * @returns {Promise<string>} AI 回复
  */
 async function aiChat(messages, gameName, mode, style) {
-    var SUPABASE_FUNCTION_URL = 'https://theaenpzcmydorhsjquf.supabase.co/functions/v1/deepseek-proxy';
+    var SUPABASE_FUNCTION_URL = 'https://theaenpzcmydorhsjqf.supabase.co/functions/v1/deepseek-proxy';
 
     var systemPrompts = {
         teacher: '你是一位专业的桌游教练"正经老师"。你正在教用户玩《' + gameName + '》。\n' +
