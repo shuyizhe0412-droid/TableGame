@@ -2,20 +2,6 @@
  * 桌游AI教练 - AI对话页
  */
 App.registerPage('chat', (function() {
-    // ==================== 游戏数据（与 detail.js 共享） ====================
-    var mockGames = {
-        '1': { id: '1', name: '卡坦岛', nameEn: 'Catan', description: '', rules: '', tags: [] },
-        '2': { id: '2', name: '狼人杀', nameEn: 'Werewolf', description: '', rules: '', tags: [] },
-        '3': { id: '3', name: '三国杀', nameEn: 'Sanguosha', description: '', rules: '', tags: [] },
-        '4': { id: '4', name: '情书', nameEn: 'Love Letter', description: '', rules: '', tags: [] },
-        '5': { id: '5', name: '宝石商人', nameEn: 'Gem Merchant', description: '', rules: '', tags: [] },
-        '6': { id: '6', name: '德国心脏病', nameEn: 'Halli Galli', description: '', rules: '', tags: [] },
-        '7': { id: '7', name: '行动代号', nameEn: 'Codenames', description: '', rules: '', tags: [] },
-        '8': { id: '8', name: '阿瓦隆', nameEn: 'The Resistance: Avalon', description: '', rules: '', tags: [] },
-        '9': { id: '9', name: '璀璨宝石', nameEn: 'Splendor', description: '', rules: '', tags: [] },
-        '10': { id: '10', name: '七大奇迹', nameEn: '7 Wonders', description: '', rules: '', tags: [] }
-    };
-
     // ==================== 模式配置 ====================
     var modeConfig = {
         'setup': {
@@ -63,9 +49,11 @@ App.registerPage('chat', (function() {
                 gameId: gameId,
                 mode: mode,
                 gameName: gameName,     // 每个会话独立保存游戏名
+                gameData: null,         // 保存完整游戏数据
                 messages: [],           // 消息列表
                 style: 'teacher',       // 语言风格也按会话独立
-                welcomeSent: false      // 是否已发送欢迎语
+                welcomeSent: false,     // 是否已发送欢迎语
+                loaded: false           // 是否已加载游戏数据
             };
         }
         return chatSessions[key];
@@ -74,22 +62,18 @@ App.registerPage('chat', (function() {
     // ==================== 当前页面状态（指向当前会话） ====================
     var state = {
         mode: 'setup',
-        gameId: '1',
-        gameName: '卡坦岛',
+        gameId: '',
+        gameName: '加载中...',
         session: null,   // 当前会话引用
         inputText: '',
         isTyping: false  // AI 正在输入中
     };
 
     // ==================== 工具函数 ====================
-    function getGameById(id) {
-        return mockGames[id] || mockGames['1'];
-    }
-
     function getParamFromHash(key) {
         var hash = window.location.hash || '';
         var match = hash.match(new RegExp('[?&]' + key + '=([^&]+)'));
-        return match ? match[1] : null;
+        return match ? decodeURIComponent(match[1]) : null;
     }
 
     function escapeHtml(str) {
@@ -100,6 +84,42 @@ App.registerPage('chat', (function() {
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;')
             .replace(/\n/g, '<br>');
+    }
+
+    // ==================== 从Supabase加载游戏数据 ====================
+    async function loadGameData(gameId) {
+        console.log('[chat.js] 准备加载游戏数据, gameId:', gameId);
+        
+        try {
+            if (typeof window.getGameDetail !== 'function') {
+                throw new Error('API 未加载');
+            }
+            
+            var gameData = await window.getGameDetail(gameId);
+            console.log('[chat.js] 游戏数据:', gameData);
+            
+            if (gameData) {
+                // 更新会话中的游戏数据
+                if (state.session) {
+                    state.session.gameData = gameData;
+                    state.session.gameName = gameData.name || '未知游戏';
+                    state.session.loaded = true;
+                    state.gameName = gameData.name || '未知游戏';
+                }
+                return gameData;
+            } else {
+                throw new Error('游戏不存在');
+            }
+        } catch (error) {
+            console.error('[chat.js] 加载游戏数据失败:', error);
+            // 使用默认名称
+            if (state.session) {
+                state.session.gameName = '游戏';
+                state.session.loaded = true;
+            }
+            state.gameName = '游戏';
+            return null;
+        }
     }
 
     // 发送消息到 AI 并获取回复
@@ -233,17 +253,15 @@ App.registerPage('chat', (function() {
     function render(params) {
         // 解析 mode 和 gameId
         var mode = (params && params.mode) ? params.mode : (getParamFromHash('mode') || 'setup');
-        var gameId = (params && params.gameId) ? params.gameId : (getParamFromHash('gameId') || '1');
+        var gameId = (params && params.gameId) ? params.gameId : (getParamFromHash('gameId') || '');
+
+        console.log('[chat.js] render - mode:', mode, 'gameId:', gameId);
 
         state.mode = mode;
         state.gameId = gameId;
 
-        // 获取游戏名称
-        var game = getGameById(gameId);
-        state.gameName = game.name;
-
         // 获取或创建对应会话（传入游戏名，每个会话独立）
-        state.session = getSession(gameId, mode, state.gameName);
+        state.session = getSession(gameId, mode, state.session ? state.session.gameName : '加载中...');
 
         return '<div class="chat-page">' +
             renderHeader() +
@@ -256,32 +274,42 @@ App.registerPage('chat', (function() {
 
     // ==================== 事件处理 ====================
     function init(params) {
+        console.log('[chat.js] init 被调用');
+        
         var session = state.session;
-
-        // 首次进入该会话，发送欢迎语（作为一条 AI 消息）
-        if (!session.welcomeSent && session.messages.length === 0) {
-            session.welcomeSent = true;
-            var modeInfo = modeConfig[session.mode];
-            session.messages.push({
-                role: 'assistant',
-                content: modeInfo.welcome(state.gameName)
-            });
-            // 重新渲染以显示欢迎语
-            setTimeout(function() {
-                refreshMessages();
-            }, 50);
+        if (!session) {
+            console.error('[chat.js] session 不存在');
+            return;
         }
 
-        // 初始化输入框
-        setTimeout(function() {
-            var input = document.getElementById('chat-input');
-            if (input) {
-                input.focus();
-                var len = input.value.length;
-                input.setSelectionRange(len, len);
+        // 异步加载游戏数据
+        loadGameData(state.gameId).then(function(gameData) {
+            console.log('[chat.js] 游戏数据加载完成:', gameData ? gameData.name : 'null');
+            
+            // 首次进入该会话，发送欢迎语（作为一条 AI 消息）
+            if (!session.welcomeSent && session.messages.length === 0) {
+                session.welcomeSent = true;
+                var modeInfo = modeConfig[session.mode];
+                session.messages.push({
+                    role: 'assistant',
+                    content: modeInfo.welcome(session.gameName)
+                });
             }
-            scrollToBottom();
-        }, 100);
+            
+            // 刷新消息显示
+            refreshMessages();
+            
+            // 初始化输入框
+            setTimeout(function() {
+                var input = document.getElementById('chat-input');
+                if (input) {
+                    input.focus();
+                    var len = input.value.length;
+                    input.setSelectionRange(len, len);
+                }
+                scrollToBottom();
+            }, 100);
+        });
     }
 
     function goBack() {
@@ -355,7 +383,7 @@ App.registerPage('chat', (function() {
             var modeInfo = modeConfig[session.mode];
             messagesEl.innerHTML = '<div class="chat-message chat-message-ai">' +
                 '<div class="chat-avatar">🤖</div>' +
-                '<div class="chat-bubble chat-bubble-ai">' + modeInfo.welcome(state.gameName) + '</div>' +
+                '<div class="chat-bubble chat-bubble-ai">' + modeInfo.welcome(session.gameName) + '</div>' +
                 '</div>';
         } else {
             session.messages.forEach(function(msg) {
