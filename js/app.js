@@ -46,11 +46,14 @@ window.bindTabBarEvents = bindTabBarEvents;
  * @param {object} params - URL 参数对象
  */
 function renderPageContent(pageName, params) {
+    console.log('[DEBUG] renderPageContent 被调用, page:', pageName);
     var app = document.getElementById('app');
     if (!app) return;
 
     // 从 pages.js 注册的映射表中获取页面组件
     var page = window._pages[pageName];
+    console.log('[DEBUG] page 对象:', page);
+    console.log('[DEBUG] page.init 类型:', typeof (page && page.init));
     if (!page || typeof page.render !== 'function') {
         app.innerHTML = '<div class="container"><h1>页面未找到: ' + pageName + '</h1></div>' + getTabBar('home');
         return;
