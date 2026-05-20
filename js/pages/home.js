@@ -293,4 +293,5 @@ App.registerPage('home', (function() {
     };
 
     return page;
-})());
+})();
+
