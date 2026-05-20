@@ -12,6 +12,9 @@
 async function getGames(filters) {
     filters = filters || {};
     try {
+        console.log('正在连接Supabase...');
+        console.log('URL:', SUPABASE_URL);
+        
         var url = SUPABASE_URL + '/rest/v1/games?select=*';
 
         // 筛选条件
@@ -50,10 +53,12 @@ async function getGames(filters) {
         }
 
         var games = await response.json();
+        console.log('获取到游戏数量:', games?.length, '错误:', null);
         console.log('[getGames] 返回 ' + (games ? games.length : 0) + ' 条');
         return games || [];
     } catch (error) {
         console.error('[getGames] 请求失败:', error);
+        console.log('获取到游戏数量:', undefined, '错误:', error.message);
         throw error;
     }
 }
