@@ -1438,3 +1438,332 @@ input:focus, textarea:focus {
     padding: 60px 0;
     color: var(--text-secondary);
 }
+
+/* ===================================
+   二维码相关样式
+   =================================== */
+
+/* 分享二维码区块 */
+.share-qr-section {
+    margin: 16px;
+    background: #FFFFFF;
+    border-radius: 16px;
+    padding: 20px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+}
+
+.share-qr-section .section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+    text-align: center;
+}
+
+.share-qr-section .section-subtitle {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+.share-qr-canvas-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 12px;
+}
+
+.share-qr-canvas-wrap canvas {
+    border-radius: 12px;
+}
+
+.share-qr-tip {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-subtle);
+    margin-top: 8px;
+}
+
+.share-qr-btn {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 12px;
+    transition: all 0.2s;
+}
+
+.share-qr-btn:hover {
+    background: #B0783D;
+    transform: scale(1.02);
+}
+
+.share-qr-btn:active {
+    transform: scale(0.98);
+}
+
+.share-qr-download-text {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background: transparent;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+    border-radius: 12px;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 8px;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.share-qr-download-text:hover {
+    background: #FDF5EC;
+}
+
+/* 批量二维码入口卡片 */
+.batch-qr-entry {
+    margin: 16px;
+    padding: 16px;
+    background: #FFFFFF;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.batch-qr-entry:active {
+    transform: scale(0.98);
+}
+
+.batch-qr-entry-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.batch-qr-entry-icon {
+    font-size: 28px;
+}
+
+.batch-qr-entry-text {
+    font-size: 15px;
+    color: var(--text);
+    font-weight: 500;
+}
+
+.batch-qr-entry-arrow {
+    font-size: 16px;
+    color: var(--text-subtle);
+}
+
+/* 批量二维码页面 */
+.batch-qr-page {
+    background: var(--bg);
+    min-height: 100vh;
+    padding-bottom: 56px;
+}
+
+.batch-qr-header {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    background: #FFFFFF;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+}
+
+.batch-qr-back {
+    font-size: 16px;
+    color: var(--primary);
+    cursor: pointer;
+}
+
+.batch-qr-header-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    flex: 1;
+}
+
+.batch-qr-header-btn {
+    padding: 8px 16px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.batch-qr-header-btn:hover {
+    background: #B0783D;
+}
+
+.batch-qr-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+#batch-qr-progress {
+    text-align: center;
+    padding: 16px;
+    color: var(--primary);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* 详情页二维码弹窗 */
+.qr-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.qr-modal {
+    background: #FFFFFF;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 360px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.qr-modal-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.qr-modal-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+}
+
+.qr-modal-tab {
+    flex: 1;
+    padding: 12px 0;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    border-bottom: 2px solid transparent;
+}
+
+.qr-modal-tab:hover {
+    color: var(--primary);
+}
+
+.qr-modal-tab.active {
+    color: var(--primary);
+    font-weight: 600;
+    border-bottom-color: var(--primary);
+}
+
+.qr-modal-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.qr-modal-canvas-wrap {
+    margin-bottom: 12px;
+}
+
+.qr-modal-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.qr-modal-btn {
+    width: 100%;
+    padding: 12px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.qr-modal-btn:hover {
+    background: #B0783D;
+}
+
+.qr-modal-close {
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    color: var(--text-secondary);
+    border: none;
+    border-top: 1px solid var(--border);
+    font-size: 14px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.qr-modal-close:hover {
+    color: var(--text);
+}
+
+/* 详情页分享按钮入口 */
+.detail-qr-entry {
+    width: 100%;
+    padding: 12px;
+    background: #FFFFFF;
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-bottom: 16px;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.detail-qr-entry:hover {
+    background: #FDF5EC;
+}
+
+.detail-qr-entry:active {
+    transform: scale(0.98);
+}

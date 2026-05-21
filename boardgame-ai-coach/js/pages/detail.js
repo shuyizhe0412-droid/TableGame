@@ -221,7 +221,9 @@ App.registerPage('detail', (function() {
         isFavorite: false,
         descExpanded: false,
         isLoading: true,
-        loadError: null
+        loadError: null,
+        showQRModal: false,
+        qrMode: 'rules'  // 'setup' | 'rules' | 'quick'
     };
 
     // ==================== 工具函数 ====================
@@ -401,6 +403,97 @@ App.registerPage('detail', (function() {
         return '<div class="detail-favorite-btn" onclick="detailPage.toggleFavorite()">' + icon + '</div>';
     }
 
+    // ==================== 二维码相关 ====================
+    function renderQREntry() {
+        return '<button class="detail-qr-entry" onclick="detailPage.showQRModal()">📱 生成分享二维码</button>';
+    }
+
+    function renderQRModal() {
+        if (!state.showQRModal) return '';
+
+        var game = state.game;
+        var gameName = game ? (game.name || '未知游戏') : '未知游戏';
+        var modes = [
+            { id: 'setup', label: '摆盘引导' },
+            { id: 'rules', label: '规则教学' },
+            { id: 'quick', label: '规则速查' }
+        ];
+
+        var tabsHtml = modes.map(function(m) {
+            return '<div class="qr-modal-tab' + (state.qrMode === m.id ? ' active' : '') +
+                '" onclick="detailPage.switchQRMode(\'' + m.id + '\')">' + m.label + '</div>';
+        }).join('');
+
+        var modeNames = { setup: '摆盘引导', rules: '规则教学', quick: '规则速查' };
+        var modeName = modeNames[state.qrMode] || '规则教学';
+
+        return '<div class="qr-modal-overlay" onclick="detailPage.closeQRModal(event)">' +
+            '<div class="qr-modal" onclick="event.stopPropagation()">' +
+            '<div class="qr-modal-title">生成分享二维码</div>' +
+            '<div class="qr-modal-tabs">' + tabsHtml + '</div>' +
+            '<div class="qr-modal-body">' +
+            '<div class="qr-modal-canvas-wrap" id="detail-qr-canvas-wrap">' +
+            '<div style="width:220px;height:293px;background:#F0EDE6;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#B5AFA6;font-size:14px;">加载中...</div>' +
+            '</div>' +
+            '<div class="qr-modal-desc">扫码学习 · ' + gameName + ' · ' + modeName + '</div>' +
+            '<button class="qr-modal-btn" onclick="detailPage.downloadDetailQR()">💾 保存二维码图片</button>' +
+            '</div>' +
+            '<button class="qr-modal-close" onclick="detailPage.closeQRModal()">关闭</button>' +
+            '</div>' +
+            '</div>';
+    }
+
+    function loadDetailQR() {
+        var wrap = document.getElementById('detail-qr-canvas-wrap');
+        if (!wrap || !state.game) return;
+
+        var game = state.game;
+        // 调整canvas显示大小适应220宽
+        var scale = 220 / QRUtils.CARD_W;
+        var displayH = Math.round(QRUtils.CARD_H * scale);
+
+        QRUtils.generateGameQRCard(state.gameId, game.name || '未知游戏', state.qrMode).then(function(canvas) {
+            canvas.style.width = '220px';
+            canvas.style.height = displayH + 'px';
+            wrap.innerHTML = '';
+            wrap.appendChild(canvas);
+        }).catch(function(e) {
+            console.error('生成详情二维码失败:', e);
+            wrap.innerHTML = '<div style="width:220px;height:293px;background:#F0EDE6;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#B5AFA6;font-size:14px;">生成失败</div>';
+        });
+    }
+
+    function showQRModal() {
+        state.showQRModal = true;
+        state.qrMode = 'rules';
+        window.detailPageRender();
+        setTimeout(function() { loadDetailQR(); }, 200);
+    }
+
+    function closeQRModal(event) {
+        if (event && event.target !== event.currentTarget) return;
+        state.showQRModal = false;
+        window.detailPageRender();
+    }
+
+    function switchQRMode(mode) {
+        state.qrMode = mode;
+        window.detailPageRender();
+        setTimeout(function() { loadDetailQR(); }, 200);
+    }
+
+    async function downloadDetailQR() {
+        var game = state.game;
+        if (!game) return;
+        try {
+            var canvas = await QRUtils.generateGameQRCard(state.gameId, game.name || '未知游戏', state.qrMode);
+            QRUtils.downloadCanvas(canvas, (game.name || '游戏') + '-二维码.png');
+        } catch (e) {
+            console.error('下载失败:', e);
+            alert('下载失败: ' + e.message);
+        }
+    }
+
     function render(params) {
         // 加载中状态
         if (state.isLoading) {
@@ -419,11 +512,13 @@ App.registerPage('detail', (function() {
             renderCover() +
             '<div class="detail-content">' +
             renderInfo() +
+            renderQREntry() +
             renderAIButtons() +
             renderRatings() +
             renderComments() +
             '</div>' +
             renderFavoriteBtn() +
+            renderQRModal() +
             '</div>';
     }
 
@@ -511,7 +606,7 @@ App.registerPage('detail', (function() {
     }
 
     function share() {
-        alert('分享功能即将上线！');
+        showQRModal();
     }
 
     function toggleDesc() {
@@ -542,7 +637,11 @@ App.registerPage('detail', (function() {
         toggleDesc: toggleDesc,
         goChat: goChat,
         toggleFavorite: toggleFavorite,
-        writeComment: writeComment
+        writeComment: writeComment,
+        showQRModal: showQRModal,
+        closeQRModal: closeQRModal,
+        switchQRMode: switchQRMode,
+        downloadDetailQR: downloadDetailQR
     };
 
     // 全局暴露
