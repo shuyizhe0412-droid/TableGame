@@ -10,7 +10,8 @@ App.registerPage('chat', (function() {
             welcome: function(gameName) {
                 return '你好！我是你的摆盘助手。请告诉我你们有几个人玩，我来一步步教你摆放' + gameName + '的配件。';
             },
-            quickQuestions: ['几个人玩？', '地图怎么摆？', '配件清单', '初始放置']
+            // 预设问题会根据游戏类型动态生成
+            quickQuestions: []
         },
         'rules': {
             name: '规则教学',
@@ -18,7 +19,7 @@ App.registerPage('chat', (function() {
             welcome: function(gameName) {
                 return '你好！让我们一起来学习' + gameName + '的规则。你可以随时问我任何问题，我们一步一步来。';
             },
-            quickQuestions: ['怎么获得资源？', '怎么建造？', '怎么赢？', 'robber规则']
+            quickQuestions: []
         },
         'faq': {
             name: '规则速查',
@@ -26,9 +27,75 @@ App.registerPage('chat', (function() {
             welcome: function(gameName) {
                 return '你好！你想查' + gameName + '的什么规则？直接问我就行。';
             },
-            quickQuestions: ['交易规则', '发展卡效果', '港口规则', '计分规则']
+            quickQuestions: []
         }
     };
+
+    // ==================== 游戏类型预设问题配置 ====================
+    // 根据 category 和 tags 判断游戏类型，返回对应的预设问题
+    function getQuestionsByGameType(mode, category, tags) {
+        category = category || '';
+        tags = tags || [];
+        var tagsStr = tags.join(',').toLowerCase();
+
+        // 判断游戏类型
+        var isCardGame = tagsStr.includes('卡牌') || category === '卡牌' || 
+                         tagsStr.includes('纸牌') || tagsStr.includes('牌');
+        var isPartyGame = tagsStr.includes('派对') || tagsStr.includes('聚会') || 
+                          tagsStr.includes('社交') || category === '聚会';
+        var isDeductionGame = tagsStr.includes('推理') || tagsStr.includes('身份') || 
+                              tagsStr.includes('狼人') || tagsStr.includes('卧底');
+        var isBoardGame = tagsStr.includes('桌游') || tagsStr.includes('版图') || 
+                          tagsStr.includes('德式') || tagsStr.includes('美式');
+
+        // 通用预设问题
+        var universalQuestions = {
+            setup: ['几个人玩？', '游戏流程？', '配件清单？', '怎么开始？'],
+            rules: ['核心规则？', '怎么赢？', '基本操作？', '重要提示？'],
+            faq: ['获胜条件？', '常见问题？', '注意事项？', '技巧建议？']
+        };
+
+        // 桌游/版图类（需要摆盘）
+        var boardQuestions = {
+            setup: ['几个人玩？', '地图怎么摆？', '配件清单？', '初始放置？'],
+            rules: ['怎么获得资源？', '怎么建造？', '怎么赢？', '核心机制？'],
+            faq: ['交易规则', '特殊规则', '计分方式', '常见问题']
+        };
+
+        // 卡牌类
+        var cardQuestions = {
+            setup: ['几人能玩？', '怎么发牌？', '初始手牌？', '牌组构成？'],
+            rules: ['出牌规则？', '怎么赢？', '获胜条件？', '核心机制？'],
+            faq: ['特殊牌效果', '获胜条件', '常见问题', '技巧建议']
+        };
+
+        // 派对/聚会类
+        var partyQuestions = {
+            setup: ['几人能玩？', '角色怎么分配？', '怎么分组？', '初始设置？'],
+            rules: ['游戏流程？', '怎么赢？', '淘汰规则？', '胜利条件？'],
+            faq: ['常见问题', '角色说明', '注意事项', '技巧建议']
+        };
+
+        // 推理/身份类
+        var deductionQuestions = {
+            setup: ['几人能玩？', '角色怎么分配？', '怎么睁眼？', '初始设置？'],
+            rules: ['游戏流程？', '投票规则？', '胜负判定？', '特殊角色？'],
+            faq: ['角色能力', '投票规则', '胜负判定', '常见问题']
+        };
+
+        // 根据游戏类型选择预设
+        if (isDeductionGame) {
+            return deductionQuestions[mode] || universalQuestions[mode];
+        } else if (isPartyGame) {
+            return partyQuestions[mode] || universalQuestions[mode];
+        } else if (isCardGame && !isBoardGame) {
+            return cardQuestions[mode] || universalQuestions[mode];
+        } else if (isBoardGame) {
+            return boardQuestions[mode] || universalQuestions[mode];
+        }
+
+        return universalQuestions[mode];
+    }
 
     // 语言风格配置
     var styleConfig = {
@@ -99,12 +166,18 @@ App.registerPage('chat', (function() {
             console.log('[chat.js] 游戏数据:', gameData);
             
             if (gameData) {
+                // 确保使用正确的 name 字段
+                var gameName = gameData.name;
+                console.log('[chat.js] 游戏名称 (name字段):', gameName);
+                console.log('[chat.js] 游戏分类 (category字段):', gameData.category);
+                console.log('[chat.js] 游戏标签 (tags字段):', gameData.tags);
+                
                 // 更新会话中的游戏数据
                 if (state.session) {
                     state.session.gameData = gameData;
-                    state.session.gameName = gameData.name || '未知游戏';
+                    state.session.gameName = gameName || '未知游戏';
                     state.session.loaded = true;
-                    state.gameName = gameData.name || '未知游戏';
+                    state.gameName = gameName || '未知游戏';
                 }
                 return gameData;
             } else {
@@ -223,8 +296,13 @@ App.registerPage('chat', (function() {
     // 渲染快捷问题
     function renderQuickQuestions() {
         var session = state.session;
-        var modeInfo = modeConfig[session.mode];
-        var questions = modeInfo.quickQuestions;
+        var mode = session.mode;
+        
+        // 根据游戏类型动态获取预设问题
+        var category = session.gameData ? session.gameData.category : '';
+        var tags = session.gameData ? (session.gameData.tags || []) : [];
+        var questions = getQuestionsByGameType(mode, category, tags);
+        
         var html = '<div class="chat-quick-questions">' +
             '<div class="chat-quick-scroll">';
 
@@ -284,7 +362,9 @@ App.registerPage('chat', (function() {
 
         // 异步加载游戏数据
         loadGameData(state.gameId).then(function(gameData) {
-            console.log('[chat.js] 游戏数据加载完成:', gameData ? gameData.name : 'null');
+            console.log('[chat.js] 游戏数据加载完成, 游戏名称:', session.gameName);
+            console.log('[chat.js] 游戏分类:', session.gameData ? session.gameData.category : '未知');
+            console.log('[chat.js] 游戏标签:', session.gameData ? session.gameData.tags : '未知');
             
             // 首次进入该会话，发送欢迎语（作为一条 AI 消息）
             if (!session.welcomeSent && session.messages.length === 0) {
@@ -296,8 +376,9 @@ App.registerPage('chat', (function() {
                 });
             }
             
-            // 刷新消息显示
+            // 刷新消息显示和快捷问题
             refreshMessages();
+            refreshQuickQuestions();
             
             // 初始化输入框
             setTimeout(function() {
@@ -310,6 +391,14 @@ App.registerPage('chat', (function() {
                 scrollToBottom();
             }, 100);
         });
+    }
+
+    // 刷新快捷问题（加载完游戏数据后调用）
+    function refreshQuickQuestions() {
+        var container = document.querySelector('.chat-quick-questions');
+        if (container) {
+            container.outerHTML = renderQuickQuestions();
+        }
     }
 
     function goBack() {
