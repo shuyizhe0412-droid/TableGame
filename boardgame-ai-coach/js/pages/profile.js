@@ -108,6 +108,14 @@ App.registerPage('profile', (function() {
             '</div>';
     }
 
+    // ==================== 页面标题栏 ====================
+    function renderPageTitle() {
+        return '<div class="profile-page-title" style="background:#FFFFFF;text-align:center;padding:14px 16px;' +
+            'border-bottom:1px solid #E5E0D8;font-size:17px;font-weight:600;color:#2D2A26;line-height:1.4;">' +
+            '👤 个人中心' +
+            '</div>';
+    }
+
     // ==================== 主渲染 ====================
     function render() {
         // 批量二维码视图
@@ -116,6 +124,7 @@ App.registerPage('profile', (function() {
         }
 
         return '<div class="profile-page" style="background:#F8F6F1;min-height:100vh;padding-bottom:56px;">' +
+            renderPageTitle() +
             '<div class="profile-container">' +
             renderHeader() +
             renderMenu() +
