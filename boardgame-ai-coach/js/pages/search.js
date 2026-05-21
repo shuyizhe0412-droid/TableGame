@@ -451,21 +451,31 @@ App.registerPage('library', (function() {
 
     // ==================== 初始化 ====================
     function init() {
-        // 每次进入页面都重新解析 URL 参数，确保从首页跳转过来能正确预选
-        var needReapply = parseUrlParams();
+        // 【关键】每次进入页面先重置所有筛选为默认值
+        state.searchQuery = '';
+        state.category = '全部';
+        state.difficulty = '全部';
+        state.playerCount = '全部';
+        state.duration = '全部';
+        state.sortBy = 'default';
+
+        // 再解析 URL 参数，有的话覆盖对应筛选
+        var hasUrlParams = parseUrlParams();
+
         if (state.allGames.length === 0) {
             loadGamesFromDB();
-        } else if (needReapply) {
-            // 数据已加载，但 URL 参数变了，重新筛选并更新UI
+        } else {
+            // 数据已缓存，直接重新筛选
             applyFilters();
-            setTimeout(function() {
-                // 更新筛选标签UI高亮
-                updateFiltersUI('category', state.category);
-                updateFiltersUI('difficulty', state.difficulty);
-                updateFiltersUI('player', state.playerCount);
-                updateFiltersUI('duration', state.duration);
-                updateGameList();
-            }, 50);
+            // 更新 UI（搜索框清空 + 筛选标签 + 排序按钮 + 游戏列表）
+            var input = document.getElementById('library-search-input');
+            if (input) input.value = '';
+            updateFiltersUI('category', state.category);
+            updateFiltersUI('difficulty', state.difficulty);
+            updateFiltersUI('player', state.playerCount);
+            updateFiltersUI('duration', state.duration);
+            updateSortUI();
+            updateGameList();
         }
         setTimeout(bindSearchEvents, 100);
     }

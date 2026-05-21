@@ -153,19 +153,20 @@ App.registerPage('home', (function() {
         var bannerLinks = ['/library', '/library?category=入门', '/library?duration=30'];
 
         var dots = banners.map(function(b, i) {
-            return '<span class="banner-dot ' + (i === state.currentBanner ? 'active' : '') + '" data-index="' + i + '"></span>';
+            var isActive = i === state.currentBanner;
+            return '<span class="dot" style="width:8px;height:8px;border-radius:50%;background:' + (isActive ? '#D4893F' : '#666') + ';cursor:pointer;" data-index="' + i + '"></span>';
         }).join('');
 
         var slides = banners.map(function(b, i) {
-            return '<div class="banner-slide ' + (i === state.currentBanner ? 'active' : '') + '" style="background:' + b.gradient + '" onclick="window.location.hash=\'' + bannerLinks[i] + '\'">' +
-                '<div class="banner-title">' + b.title + '</div>' +
-                '<div class="banner-subtitle">' + b.subtitle + '</div>' +
+            return '<div class="banner-slide" onclick="window.location.hash=\'' + bannerLinks[i] + '\'" style="width:100%;height:100%;padding:0;background:' + b.gradient + ';display:flex;flex-direction:column;justify-content:center;align-items:center;flex-shrink:0;">' +
+                '<div style="font-size:24px;color:white;font-weight:bold;">' + b.title + '</div>' +
+                '<div style="font-size:14px;color:rgba(255,255,255,0.8);margin-top:8px;">' + b.subtitle + '</div>' +
                 '</div>';
         }).join('');
 
-        return '<div class="home-banner" id="banner-container">' +
-            '<div class="banner-track" id="banner-track">' + slides + '</div>' +
-            '<div class="banner-dots">' + dots + '</div>' +
+        return '<div id="banner-wrapper" style="position:relative;width:100%;height:180px;overflow:hidden;border-radius:12px;margin:10px 0;">' +
+            '<div id="banner-track" style="display:flex;width:300%;height:100%;transition:transform 0.3s ease;">' + slides + '</div>' +
+            '<div id="banner-dots" style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:6px;">' + dots + '</div>' +
             '</div>';
     }
 
@@ -328,19 +329,24 @@ App.registerPage('home', (function() {
         }
     }
 
-    function updateBannerPosition() {
+    function slideTo(index) {
+        state.currentBanner = index;
         var track = document.getElementById('banner-track');
-        var dots = document.querySelectorAll('.banner-dot');
         if (track) {
-            track.style.transform = 'translateX(-' + (state.currentBanner * 100 / banners.length) + '%)';
+            track.style.transform = 'translateX(-' + (index * 33.333) + '%)';
         }
-        dots.forEach(function(dot, i) {
-            dot.classList.toggle('active', i === state.currentBanner);
+        // 更新圆点
+        document.querySelectorAll('#banner-dots .dot').forEach(function(d, i) {
+            d.style.background = i === index ? '#D4893F' : '#666';
         });
     }
 
+    function updateBannerPosition() {
+        slideTo(state.currentBanner);
+    }
+
     function bindBannerEvents() {
-        var container = document.getElementById('banner-container');
+        var container = document.getElementById('banner-wrapper');
         if (!container) return;
 
         var startX = 0;
@@ -366,7 +372,7 @@ App.registerPage('home', (function() {
                 } else {
                     state.currentBanner = (state.currentBanner - 1 + banners.length) % banners.length;
                 }
-                updateBannerPosition();
+                slideTo(state.currentBanner);
             }
             startBannerAutoPlay();
             isDragging = false;
@@ -374,11 +380,10 @@ App.registerPage('home', (function() {
 
         // 点击圆点切换
         container.addEventListener('click', function(e) {
-            if (e.target.classList.contains('banner-dot')) {
+            if (e.target.classList.contains('dot')) {
                 var index = parseInt(e.target.dataset.index);
                 if (!isNaN(index)) {
-                    state.currentBanner = index;
-                    updateBannerPosition();
+                    slideTo(index);
                     stopBannerAutoPlay();
                     startBannerAutoPlay();
                 }
