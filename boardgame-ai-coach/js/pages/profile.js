@@ -219,7 +219,7 @@ App.registerPage('profile', (function() {
                 var games = await window.getGames();
                 window.allGames = games || [];
                 state.allGamesLoaded = true;
-                render();
+                window.profilePageRender();
                 // 重新渲染后需要重新渲染批量视图中的二维码
                 setTimeout(function() { loadBatchQRImages(); }, 500);
             }
@@ -235,7 +235,7 @@ App.registerPage('profile', (function() {
     async function showBatchQR() {
         state.showBatchQR = true;
         state.batchQRPage = 0;
-        render();
+        window.profilePageRender();
 
         // 确保有数据
         await loadAllGames();
@@ -245,7 +245,7 @@ App.registerPage('profile', (function() {
     /** 隐藏批量二维码页面 */
     function hideBatchQR() {
         state.showBatchQR = false;
-        render();
+        window.profilePageRender();
         // 恢复总入口二维码
         setTimeout(function() { loadSiteQR(); }, 100);
     }
@@ -329,7 +329,7 @@ App.registerPage('profile', (function() {
     function batchQRPrevPage() {
         if (state.batchQRPage > 0) {
             state.batchQRPage--;
-            render();
+            window.profilePageRender();
             setTimeout(function() { loadBatchQRImages(); }, 500);
         }
     }
@@ -340,7 +340,7 @@ App.registerPage('profile', (function() {
         var totalPages = Math.ceil(games.length / state.batchQRPerPage);
         if (state.batchQRPage < totalPages - 1) {
             state.batchQRPage++;
-            render();
+            window.profilePageRender();
             setTimeout(function() { loadBatchQRImages(); }, 500);
         }
     }
