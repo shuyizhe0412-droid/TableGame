@@ -158,39 +158,34 @@ input:focus, textarea:focus {
 }
 
 /* ===================================
-   首页样式
+   首页样式（推荐和发现）
    =================================== */
 .home-page {
     padding-bottom: 56px;
 }
 
-/* 头部 */
-.home-header {
+/* 搜索栏 */
+.home-search-bar {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 16px;
-    background-color: var(--bg);
-}
-
-.home-header-search {
     padding: 12px 16px;
-    background-color: var(--card);
-    border-radius: 12px;
-    margin: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    background: #1a1a2e;
+    gap: 12px;
 }
 
-.home-logo {
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--primary);
+.home-search-input-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    background: #2a2a3e;
+    border-radius: 20px;
+    padding: 8px 14px;
+    gap: 8px;
 }
 
-.home-search-btn {
-    font-size: 20px;
-    cursor: pointer;
-    padding: 8px;
+.home-search-icon {
+    font-size: 16px;
+    opacity: 0.6;
 }
 
 .home-search-input {
@@ -198,151 +193,240 @@ input:focus, textarea:focus {
     border: none;
     background: transparent;
     font-size: 14px;
-    padding: 4px;
-}
-
-.home-search-input:focus {
+    color: #fff;
     outline: none;
 }
 
-.home-search-close {
-    font-size: 16px;
-    color: var(--text-secondary);
-    cursor: pointer;
-    padding: 4px 8px;
+.home-search-input::placeholder {
+    color: #666;
 }
 
-/* 分类标签栏 */
-.home-categories {
-    padding: 0 16px 16px;
-}
-
-.home-categories-scroll {
-    display: flex;
-    overflow-x: auto;
-    gap: 8px;
-    padding: 4px 0;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-
-.home-categories-scroll::-webkit-scrollbar {
-    display: none;
-}
-
-.home-category-btn {
-    flex-shrink: 0;
-    padding: 8px 16px;
-    border-radius: 20px;
-    background-color: var(--card);
-    color: var(--text-secondary);
-    font-size: 13px;
-    font-weight: 500;
-    transition: all 0.2s;
-    white-space: nowrap;
-}
-
-.home-category-btn:hover {
-    background-color: var(--tag-bg);
-}
-
-.home-category-btn.active {
-    background-color: var(--primary);
-    color: #fff;
-}
-
-/* 游戏内容区域 */
-.home-content {
-    padding: 0 16px;
-}
-
-/* 游戏网格 */
-.home-games-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-}
-
-/* 游戏卡片 */
-.home-game-card {
-    background-color: var(--card);
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    transition: transform 0.2s;
-    cursor: pointer;
-}
-
-.home-game-card:hover {
-    transform: scale(1.02);
-}
-
-.home-game-cover {
-    position: relative;
-    aspect-ratio: 16 / 10;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.home-game-cover-text {
-    font-size: 36px;
-}
-
-.home-game-favorite {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    font-size: 18px;
-    color: var(--primary);
-    background-color: rgba(255, 255, 255, 0.9);
-    width: 28px;
-    height: 28px;
+.home-user-avatar {
+    width: 36px;
+    height: 36px;
+    background: #2a2a3e;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 18px;
+    cursor: pointer;
 }
 
-.home-game-content {
-    padding: 12px;
-}
-
-.home-game-name {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text);
-    margin-bottom: 4px;
+/* 轮播Banner */
+.home-banner {
+    position: relative;
+    width: 100%;
+    height: 160px;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    border-radius: 0;
+    background: #1a1a2e;
 }
 
-.home-game-info {
-    font-size: 12px;
-    color: var(--text-secondary);
+.banner-track {
+    display: flex;
+    transition: transform 0.3s ease;
+    height: 100%;
+}
+
+.banner-slide {
+    min-width: 100%;
+    height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 24px;
+}
+
+.banner-title {
+    font-size: 22px;
+    font-weight: bold;
+    color: #fff;
     margin-bottom: 8px;
 }
 
-.home-game-footer {
+.banner-subtitle {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.banner-dots {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+}
+
+.banner-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #666;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.banner-dot.active {
+    background: #D4893F;
+    width: 20px;
+    border-radius: 4px;
+}
+
+/* 快速分类入口 */
+.home-categories-section {
+    padding: 20px 0;
+}
+
+.categories-scroll {
+    display: flex;
+    overflow-x: auto;
+    gap: 16px;
+    padding: 0 16px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.categories-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.category-item {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.category-icon {
+    width: 56px;
+    height: 56px;
+    background: #2a2a3e;
+    border-radius: 50%;
     display: flex;
     align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    transition: all 0.2s;
+    border: 2px solid transparent;
 }
 
-.home-game-difficulty {
-    display: inline-block;
-    background-color: var(--tag-bg);
-    color: var(--tag-text);
-    padding: 2px 10px;
-    border-radius: 12px;
+.category-item:active .category-icon {
+    border-color: #D4893F;
+}
+
+.category-name {
     font-size: 11px;
+    color: #ccc;
+    text-align: center;
 }
 
-/* 空状态 */
-.home-empty {
+/* 通用模块样式 */
+.home-sections {
+    padding: 0;
+}
+
+.home-section {
+    margin-bottom: 20px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 16px;
+    margin-bottom: 12px;
+}
+
+.section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.section-more {
+    font-size: 13px;
+    color: #D4893F;
+    cursor: pointer;
+}
+
+/* 横向滚动游戏卡片 */
+.games-scroll {
+    display: flex;
+    overflow-x: auto;
+    gap: 12px;
+    padding: 0 16px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.games-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+/* 小游戏卡片 */
+.game-card-small {
+    flex-shrink: 0;
+    width: 120px;
+    background: #2a2a3e;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.game-card-small:active {
+    transform: scale(0.95);
+}
+
+.game-card-cover {
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.game-card-emoji {
+    font-size: 32px;
+}
+
+.game-card-info {
+    padding: 10px;
+}
+
+.game-card-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+}
+
+.game-card-meta {
+    font-size: 11px;
+    color: #888;
+    margin-bottom: 4px;
+}
+
+.game-card-stars {
+    font-size: 10px;
+    color: #D4893F;
+}
+
+/* 加载状态 */
+.home-loading {
     text-align: center;
-    padding: 40px 20px;
-    color: var(--text-secondary);
+    padding: 100px 20px;
+}
+
+.home-loading div:first-child {
+    font-size: 48px;
+    margin-bottom: 16px;
 }
 
 /* ===================================
@@ -908,4 +992,429 @@ input:focus, textarea:focus {
 
 .chat-send-btn:active {
     transform: scale(0.95);
+}
+
+/* ===================================
+   游戏库页样式（搜索和筛选）
+   =================================== */
+.library-page {
+    padding-bottom: 56px;
+}
+
+/* 搜索栏 */
+.library-search-bar {
+    padding: 12px 16px;
+    background: #1a1a2e;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.library-search-wrap {
+    display: flex;
+    align-items: center;
+    background: #2a2a3e;
+    border-radius: 20px;
+    padding: 10px 14px;
+    gap: 8px;
+}
+
+.library-search-icon {
+    font-size: 16px;
+    opacity: 0.6;
+}
+
+.library-search-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    color: #fff;
+    outline: none;
+}
+
+.library-search-input::placeholder {
+    color: #666;
+}
+
+.library-search-clear {
+    font-size: 14px;
+    color: #666;
+    cursor: pointer;
+    padding: 4px;
+}
+
+.library-search-clear:hover {
+    color: #fff;
+}
+
+/* 筛选栏 */
+.library-filters {
+    padding: 12px 0;
+    background: #12122a;
+}
+
+.filter-row {
+    display: flex;
+    overflow-x: auto;
+    gap: 8px;
+    padding: 0 16px 10px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.filter-row::-webkit-scrollbar {
+    display: none;
+}
+
+.filter-tag {
+    flex-shrink: 0;
+    padding: 6px 14px;
+    background: #2a2a3e;
+    color: #ccc;
+    border-radius: 16px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.filter-tag:hover {
+    background: #3a3a4e;
+}
+
+.filter-tag.active {
+    background: #D4893F;
+    color: #fff;
+}
+
+/* 排序栏 */
+.library-sort-bar {
+    display: flex;
+    gap: 16px;
+    padding: 8px 16px 12px;
+    border-bottom: 1px solid #2a2a3e;
+}
+
+.sort-btn {
+    font-size: 13px;
+    color: #888;
+    cursor: pointer;
+    padding-bottom: 2px;
+    transition: color 0.2s;
+}
+
+.sort-btn:hover {
+    color: #ccc;
+}
+
+.sort-btn.active {
+    color: #D4893F;
+    border-bottom: 2px solid #D4893F;
+}
+
+/* 游戏列表 */
+.library-games-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 16px;
+}
+
+/* 游戏卡片 */
+.library-game-card {
+    background: #2a2a3e;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.library-game-card:active {
+    transform: scale(0.98);
+}
+
+.library-game-cover {
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.library-game-emoji {
+    font-size: 36px;
+}
+
+.library-game-info {
+    padding: 10px;
+}
+
+.library-game-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #fff;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.library-game-meta {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 6px;
+}
+
+.library-game-diff {
+    display: inline-block;
+    font-size: 11px;
+    color: #D4893F;
+    padding: 2px 8px;
+    background: rgba(212, 137, 63, 0.15);
+    border-radius: 10px;
+}
+
+/* 底部统计 */
+.library-footer {
+    text-align: center;
+    padding: 16px;
+    font-size: 13px;
+    color: #666;
+}
+
+/* 加载状态 */
+.library-loading,
+.library-error {
+    text-align: center;
+    padding: 100px 20px;
+}
+
+.library-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+}
+
+/* ===================================
+   个人中心页样式
+   =================================== */
+.profile-page {
+    background: #12122a;
+}
+
+.profile-container {
+    max-width: 480px;
+    margin: 0 auto;
+}
+
+.profile-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+}
+
+.profile-avatar {
+    width: 80px;
+    height: 80px;
+    background: #2a2a3e;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    margin-bottom: 16px;
+}
+
+.profile-login-tip {
+    font-size: 14px;
+    color: #888;
+}
+
+.profile-menu {
+    background: #1a1a2e;
+    margin: 0 16px;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.profile-menu-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid #2a2a3e;
+}
+
+.profile-menu-item:last-child {
+    border-bottom: none;
+}
+
+.menu-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.menu-icon {
+    font-size: 20px;
+}
+
+.menu-title {
+    font-size: 15px;
+    color: #fff;
+}
+
+.menu-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.menu-badge {
+    background: #D4893F;
+    color: #fff;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+}
+
+.menu-arrow {
+    font-size: 12px;
+    color: #666;
+}
+
+/* ===================================
+   通用样式（复用组件）
+   =================================== */
+
+/* 横向滚动容器 */
+.overflow-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.overflow-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+/* 轮播Banner */
+.banner-container {
+    width: 100%;
+    height: 180px;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+}
+
+.banner-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 8px;
+}
+
+.banner-subtitle {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.banner-indicator {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+}
+
+.banner-indicator-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #666;
+}
+
+/* 分类入口 */
+.category-icon-circle {
+    width: 60px;
+    height: 60px;
+    background: #2a2a3e;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+}
+
+/* 模块标题栏 */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 0;
+}
+
+.section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.section-more {
+    font-size: 13px;
+    color: #D4893F;
+    cursor: pointer;
+}
+
+/* 游戏卡片-横向滚动版 */
+.game-card-horizontal {
+    width: 120px;
+    flex-shrink: 0;
+    margin-right: 12px;
+    background: #2a2a3e;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+/* 游戏卡片-网格版 */
+.game-card-grid {
+    width: calc(50% - 8px);
+    background: #2a2a3e;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+/* 搜索框 */
+.search-input {
+    height: 40px;
+    padding: 0 16px;
+    border-radius: 20px;
+    background: #2a2a3e;
+    border: none;
+    font-size: 14px;
+    color: #fff;
+    outline: none;
+}
+
+/* 筛选标签 */
+.filter-chip {
+    padding: 6px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    background: #2a2a3e;
+    color: #ccc;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+/* 空状态 */
+.empty-state {
+    text-align: center;
+    padding: 60px 0;
+    color: #666;
 }

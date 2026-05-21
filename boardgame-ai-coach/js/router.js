@@ -6,11 +6,10 @@
 // 路由表配置
 const routes = {
     'home': '/home',
+    'library': '/library',
     'detail': '/detail',
     'chat': '/chat',
-    'search': '/search',
-    'recommend': '/recommend',
-    'guide': '/guide'
+    'profile': '/profile'
 };
 
 // 存储当前路由名称
