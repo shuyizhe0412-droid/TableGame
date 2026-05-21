@@ -5,19 +5,19 @@
 
 /**
  * 获取 TabBar HTML
- * @param {string} currentPage - 当前页面名称
+ * @param {string} activeTab - 当前激活的 Tab
  * @returns {string} TabBar HTML 字符串
  */
-function getTabBar(currentPage) {
+function getTabBarHtml(activeTab) {
     const tabs = [
         { name: 'home', icon: '🏠', text: '首页' },
-        { name: 'search', icon: '🎲', text: '游戏库' },
+        { name: 'library', icon: '🎮', text: '游戏库' },
         { name: 'chat', icon: '🤖', text: 'AI' },
-        { name: 'guide', icon: '👤', text: '我的' }
+        { name: 'profile', icon: '👤', text: '我的' }
     ];
 
     const items = tabs.map(tab => {
-        const isActive = currentPage === tab.name ? 'active' : '';
+        const isActive = activeTab === tab.name ? 'active' : '';
         return `<div class="tabbar-item ${isActive}" data-page="${tab.name}">
             <span class="tabbar-icon">${tab.icon}</span>
             <span class="tabbar-text">${tab.text}</span>
@@ -37,7 +37,7 @@ function bindTabBarEvents() {
 }
 
 // 全局暴露，供页面重新渲染时使用
-window.getTabBarHtml = getTabBar;
+window.getTabBarHtml = getTabBarHtml;
 window.bindTabBarEvents = bindTabBarEvents;
 
 /**
@@ -52,14 +52,14 @@ function renderPageContent(pageName, params) {
     // 从 pages.js 注册的映射表中获取页面组件
     var page = window._pages[pageName];
     if (!page || typeof page.render !== 'function') {
-        app.innerHTML = '<div class="container"><h1>页面未找到: ' + pageName + '</h1></div>' + getTabBar('home');
+        app.innerHTML = '<div class="container"><h1>页面未找到: ' + pageName + '</h1></div>' + getTabBarHtml('home');
         return;
     }
 
     // 组合页面内容和 TabBar（部分页面不需要 TabBar）
     var content = page.render(params);
     var noTabBarPages = ['detail', 'chat'];
-    var html = content + (noTabBarPages.indexOf(pageName) === -1 ? getTabBar(pageName) : '');
+    var html = content + (noTabBarPages.indexOf(pageName) === -1 ? getTabBarHtml(pageName) : '');
     app.innerHTML = html;
 
     // 绑定 TabBar 点击事件

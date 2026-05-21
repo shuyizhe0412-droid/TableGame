@@ -119,9 +119,9 @@ input:focus, textarea:focus {
     transform: translateX(-50%);
     width: 100%;
     max-width: 480px;
-    height: 50px;
-    background-color: var(--card);
-    border-top: 1px solid var(--border);
+    height: 56px;
+    background-color: #1a1a2e;
+    border-top: 1px solid #333;
     display: flex;
     justify-content: space-around;
     align-items: center;
@@ -134,18 +134,18 @@ input:focus, textarea:focus {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: var(--text-secondary);
+    color: #888;
     text-decoration: none;
     cursor: pointer;
     transition: color 0.2s;
 }
 
 .tabbar-item:hover {
-    color: var(--primary);
+    color: #D4893F;
 }
 
 .tabbar-item.active {
-    color: var(--primary);
+    color: #D4893F;
 }
 
 .tabbar-icon {
@@ -154,14 +154,14 @@ input:focus, textarea:focus {
 }
 
 .tabbar-text {
-    font-size: 10px;
+    font-size: 12px;
 }
 
 /* ===================================
    首页样式
    =================================== */
 .home-page {
-    padding-bottom: 60px;
+    padding-bottom: 56px;
 }
 
 /* 头部 */
@@ -349,7 +349,7 @@ input:focus, textarea:focus {
    游戏详情页样式
    =================================== */
 .detail-page {
-    padding-bottom: 60px;
+    padding-bottom: 56px;
 }
 
 /* 顶部返回栏 */
