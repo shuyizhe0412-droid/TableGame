@@ -14,13 +14,6 @@ App.registerPage('home', (function() {
         guessGames: []
     };
 
-    // Banner数据
-    var banners = [
-        { gradient: 'linear-gradient(135deg, #D4893F, #b8732f)', title: '🔥 热门推荐', subtitle: '最受欢迎的桌游都在这里' },
-        { gradient: 'linear-gradient(135deg, #4a6fa5, #2d4a7a)', title: '🌱 新手入门', subtitle: '从这几款开始你的桌游之旅' },
-        { gradient: 'linear-gradient(135deg, #6b5b95, #4a3f6b)', title: '⚡ 30分钟速开', subtitle: '时间有限也能玩得开心' }
-    ];
-
     // 分类配置
     var categories = [
         { emoji: '🌱', name: '入门推荐', param: '入门' },
@@ -150,23 +143,26 @@ App.registerPage('home', (function() {
     }
 
     function renderBanner() {
-        var bannerLinks = ['/library', '/library?category=入门', '/library?duration=30'];
-
-        var dots = banners.map(function(b, i) {
-            var isActive = i === state.currentBanner;
-            return '<span class="dot" style="width:8px;height:8px;border-radius:50%;background:' + (isActive ? '#D4893F' : '#666') + ';cursor:pointer;" data-index="' + i + '"></span>';
-        }).join('');
-
-        var slides = banners.map(function(b, i) {
-            return '<div class="banner-slide" onclick="window.location.hash=\'' + bannerLinks[i] + '\'" style="width:100%;height:100%;padding:0;background:' + b.gradient + ';display:flex;flex-direction:column;justify-content:center;align-items:center;flex-shrink:0;">' +
-                '<div style="font-size:24px;color:white;font-weight:bold;">' + b.title + '</div>' +
-                '<div style="font-size:14px;color:rgba(255,255,255,0.8);margin-top:8px;">' + b.subtitle + '</div>' +
-                '</div>';
-        }).join('');
-
-        return '<div id="banner-wrapper" style="position:relative;width:100%;height:180px;overflow:hidden;border-radius:12px;margin:10px 0;">' +
-            '<div id="banner-track" style="display:flex;width:300%;height:100%;transition:transform 0.3s ease;">' + slides + '</div>' +
-            '<div id="banner-dots" style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:6px;">' + dots + '</div>' +
+        return '<div id="banner-container" style="position:relative;width:calc(100% - 32px);height:180px;overflow:hidden;border-radius:12px;margin:0 16px 20px 16px;cursor:pointer;">' +
+            '<div id="banner-track" style="display:flex;width:300%;height:100%;transition:transform 0.3s ease;">' +
+            '<div style="width:33.333%;height:100%;background:linear-gradient(135deg,#D4893F,#b8732f);display:flex;flex-direction:column;justify-content:center;align-items:center;flex-shrink:0;" onclick="window.location.hash=\'/library\'">' +
+            '<div style="font-size:24px;color:white;font-weight:bold;">🔥 热门推荐</div>' +
+            '<div style="font-size:14px;color:rgba(255,255,255,0.8);margin-top:8px;">最受欢迎的桌游都在这里</div>' +
+            '</div>' +
+            '<div style="width:33.333%;height:100%;background:linear-gradient(135deg,#4a6fa5,#2d4a7a);display:flex;flex-direction:column;justify-content:center;align-items:center;flex-shrink:0;" onclick="window.location.hash=\'/library?category=入门\'">' +
+            '<div style="font-size:24px;color:white;font-weight:bold;">🌱 新手入门</div>' +
+            '<div style="font-size:14px;color:rgba(255,255,255,0.8);margin-top:8px;">从这几款开始你的桌游之旅</div>' +
+            '</div>' +
+            '<div style="width:33.333%;height:100%;background:linear-gradient(135deg,#6b5b95,#4a3f6b);display:flex;flex-direction:column;justify-content:center;align-items:center;flex-shrink:0;" onclick="window.location.hash=\'/library?duration=30\'">' +
+            '<div style="font-size:24px;color:white;font-weight:bold;">⚡ 30分钟速开</div>' +
+            '<div style="font-size:14px;color:rgba(255,255,255,0.8);margin-top:8px;">时间有限也能玩得开心</div>' +
+            '</div>' +
+            '</div>' +
+            '<div style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:6px;">' +
+            '<span id="dot0" style="width:8px;height:8px;border-radius:50%;background:#D4893F;"></span>' +
+            '<span id="dot1" style="width:8px;height:8px;border-radius:50%;background:#666;"></span>' +
+            '<span id="dot2" style="width:8px;height:8px;border-radius:50%;background:#666;"></span>' +
+            '</div>' +
             '</div>';
     }
 
@@ -209,11 +205,23 @@ App.registerPage('home', (function() {
     }
 
     function renderNewbieSection() {
-        var games = state.allGames.filter(function(g) {
-            var diff = parseInt(g.difficulty) || 2;
-            return diff === 1;
-        }).slice(0, 6);
+        var newbieGames = state.allGames.filter(function(g) {
+            var diff = g.difficulty;
+            var diffNum = parseInt(diff);
+            var diffStr = String(diff || '');
+            // 兼容数字1、字符串"1"、中文"入门"等多种可能值
+            return diffNum === 1 || diffStr === '1' || diffStr === '入门';
+        });
+        console.log('[home.js] 入门游戏数量:', newbieGames.length);
+        console.log('[home.js] 入门游戏:', newbieGames.map(function(g) { return g.name + '(diff=' + g.difficulty + ')'; }));
 
+        // 兜底：如果筛选结果为空，使用 allGames 前6个
+        if (newbieGames.length === 0) {
+            console.log('[home.js] 无入门游戏，使用前6个兜底');
+            newbieGames = state.allGames.slice(0, 6);
+        }
+
+        var games = newbieGames.slice(0, 6);
         var cards = games.map(renderGameCard).join('');
         return renderSection('第一次玩桌游？', '🌱', '查看更多', '?category=入门') +
             '<div class="games-scroll">' + cards + '</div></div>';
@@ -251,11 +259,19 @@ App.registerPage('home', (function() {
     }
 
     function renderQuickPlaySection() {
-        var games = state.allGames.filter(function(g) {
+        var quickGames = state.allGames.filter(function(g) {
             var time = g.play_time || g.duration || 60;
-            return time <= 30;
-        }).slice(0, 6);
+            return parseInt(time) <= 30;
+        });
+        console.log('[home.js] 30分钟速开游戏数量:', quickGames.length);
 
+        // 兜底：如果筛选结果为空，使用 allGames 前6个
+        if (quickGames.length === 0) {
+            console.log('[home.js] 无速开游戏，使用前6个兜底');
+            quickGames = state.allGames.slice(0, 6);
+        }
+
+        var games = quickGames.slice(0, 6);
         var cards = games.map(renderGameCard).join('');
         return renderSection('30分钟内能玩完', '⚡', '查看更多', '?duration=30') +
             '<div class="games-scroll">' + cards + '</div></div>';
@@ -317,8 +333,7 @@ App.registerPage('home', (function() {
     function startBannerAutoPlay() {
         stopBannerAutoPlay();
         state.bannerTimer = setInterval(function() {
-            state.currentBanner = (state.currentBanner + 1) % banners.length;
-            updateBannerPosition();
+            slideTo((state.currentBanner + 1) % 3);
         }, 4000);
     }
 
@@ -335,54 +350,43 @@ App.registerPage('home', (function() {
         if (track) {
             track.style.transform = 'translateX(-' + (index * 33.333) + '%)';
         }
-        // 更新圆点
-        document.querySelectorAll('#banner-dots .dot').forEach(function(d, i) {
-            d.style.background = i === index ? '#D4893F' : '#666';
-        });
-    }
-
-    function updateBannerPosition() {
-        slideTo(state.currentBanner);
+        // 更新圆点（用 ID dot0/dot1/dot2）
+        for (var j = 0; j < 3; j++) {
+            var dot = document.getElementById('dot' + j);
+            if (dot) dot.style.background = j === index ? '#D4893F' : '#666';
+        }
     }
 
     function bindBannerEvents() {
-        var container = document.getElementById('banner-wrapper');
+        var container = document.getElementById('banner-container');
         if (!container) return;
 
         var startX = 0;
-        var isDragging = false;
 
         container.addEventListener('touchstart', function(e) {
             startX = e.touches[0].clientX;
-            isDragging = true;
             stopBannerAutoPlay();
         });
 
-        container.addEventListener('touchmove', function(e) {
-            if (!isDragging) return;
-        });
-
         container.addEventListener('touchend', function(e) {
-            if (!isDragging) return;
             var endX = e.changedTouches[0].clientX;
             var diff = endX - startX;
             if (Math.abs(diff) > 50) {
                 if (diff < 0) {
-                    state.currentBanner = (state.currentBanner + 1) % banners.length;
+                    slideTo((state.currentBanner + 1) % 3);
                 } else {
-                    state.currentBanner = (state.currentBanner - 1 + banners.length) % banners.length;
+                    slideTo((state.currentBanner - 1 + 3) % 3);
                 }
-                slideTo(state.currentBanner);
             }
             startBannerAutoPlay();
-            isDragging = false;
         });
 
         // 点击圆点切换
         container.addEventListener('click', function(e) {
-            if (e.target.classList.contains('dot')) {
-                var index = parseInt(e.target.dataset.index);
-                if (!isNaN(index)) {
+            var targetId = e.target.id;
+            if (targetId && targetId.indexOf('dot') === 0) {
+                var index = parseInt(targetId.replace('dot', ''));
+                if (!isNaN(index) && index >= 0 && index < 3) {
                     slideTo(index);
                     stopBannerAutoPlay();
                     startBannerAutoPlay();
