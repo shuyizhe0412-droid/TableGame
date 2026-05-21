@@ -119,16 +119,16 @@ App.registerPage('home', (function() {
 
     // ==================== 渲染函数 ====================
     function renderLoading() {
-        return '<div class="home-loading" style="text-align:center;padding:100px 20px;color:#888;">' +
+        return '<div class="home-loading" style="text-align:center;padding:100px 20px;color:#8C8578;">' +
             '<div style="font-size:24px;margin-bottom:10px;">🎲</div>' +
             '<div>加载中...</div></div>';
     }
 
     function renderError() {
-        return '<div class="home-error" style="text-align:center;padding:100px 20px;color:#888;">' +
+        return '<div class="home-error" style="text-align:center;padding:100px 20px;color:#8C8578;">' +
             '<div style="font-size:48px;margin-bottom:16px;">😢</div>' +
             '<div style="margin-bottom:16px;">加载失败: ' + (state.loadError || '未知错误') + '</div>' +
-            '<button onclick="homePage.reload()" style="padding:12px 24px;background:#D4893F;color:#fff;border:none;border-radius:8px;cursor:pointer;">重新加载</button>' +
+            '<button onclick="homePage.reload()" style="padding:12px 24px;background:#C4864B;color:#fff;border:none;border-radius:8px;cursor:pointer;">重新加载</button>' +
             '</div>';
     }
 
@@ -145,23 +145,23 @@ App.registerPage('home', (function() {
     function renderBanner() {
         return '<div id="banner-container" style="position:relative;width:calc(100% - 32px);height:180px;overflow:hidden;border-radius:12px;margin:0 16px 20px 16px;cursor:pointer;">' +
             '<div id="banner-track" style="display:flex;width:300%;height:100%;transition:transform 0.3s ease;">' +
-            '<div style="width:33.333%;height:100%;background:linear-gradient(135deg,#D4893F,#b8732f);display:flex;flex-direction:column;justify-content:center;align-items:center;flex-shrink:0;" onclick="window.location.hash=\'/library\'">' +
-            '<div style="font-size:24px;color:white;font-weight:bold;">🔥 热门推荐</div>' +
-            '<div style="font-size:14px;color:rgba(255,255,255,0.8);margin-top:8px;">最受欢迎的桌游都在这里</div>' +
+            '<div style="width:33.333%;height:100%;background:linear-gradient(135deg,#F5D5B0,#E8C08A);display:flex;flex-direction:column;justify-content:center;align-items:center;flex-shrink:0;" onclick="window.location.hash=\'/library\'">' +
+            '<div style="font-size:24px;color:#2D2A26;font-weight:bold;">🔥 热门推荐</div>' +
+            '<div style="font-size:14px;color:rgba(45,42,38,0.7);margin-top:8px;">最受欢迎的桌游都在这里</div>' +
             '</div>' +
-            '<div style="width:33.333%;height:100%;background:linear-gradient(135deg,#4a6fa5,#2d4a7a);display:flex;flex-direction:column;justify-content:center;align-items:center;flex-shrink:0;" onclick="window.location.hash=\'/library?category=入门\'">' +
-            '<div style="font-size:24px;color:white;font-weight:bold;">🌱 新手入门</div>' +
-            '<div style="font-size:14px;color:rgba(255,255,255,0.8);margin-top:8px;">从这几款开始你的桌游之旅</div>' +
+            '<div style="width:33.333%;height:100%;background:linear-gradient(135deg,#C5D5E8,#A8BED8);display:flex;flex-direction:column;justify-content:center;align-items:center;flex-shrink:0;" onclick="window.location.hash=\'/library?category=入门\'">' +
+            '<div style="font-size:24px;color:#2D2A26;font-weight:bold;">🌱 新手入门</div>' +
+            '<div style="font-size:14px;color:rgba(45,42,38,0.7);margin-top:8px;">从这几款开始你的桌游之旅</div>' +
             '</div>' +
-            '<div style="width:33.333%;height:100%;background:linear-gradient(135deg,#6b5b95,#4a3f6b);display:flex;flex-direction:column;justify-content:center;align-items:center;flex-shrink:0;" onclick="window.location.hash=\'/library?duration=30\'">' +
-            '<div style="font-size:24px;color:white;font-weight:bold;">⚡ 30分钟速开</div>' +
-            '<div style="font-size:14px;color:rgba(255,255,255,0.8);margin-top:8px;">时间有限也能玩得开心</div>' +
+            '<div style="width:33.333%;height:100%;background:linear-gradient(135deg,#D5C8E8,#BFB0D8);display:flex;flex-direction:column;justify-content:center;align-items:center;flex-shrink:0;" onclick="window.location.hash=\'/library?duration=30\'">' +
+            '<div style="font-size:24px;color:#2D2A26;font-weight:bold;">⚡ 30分钟速开</div>' +
+            '<div style="font-size:14px;color:rgba(45,42,38,0.7);margin-top:8px;">时间有限也能玩得开心</div>' +
             '</div>' +
             '</div>' +
             '<div style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:6px;">' +
-            '<span id="dot0" style="width:8px;height:8px;border-radius:50%;background:#D4893F;"></span>' +
-            '<span id="dot1" style="width:8px;height:8px;border-radius:50%;background:#666;"></span>' +
-            '<span id="dot2" style="width:8px;height:8px;border-radius:50%;background:#666;"></span>' +
+            '<span id="dot0" style="width:8px;height:8px;border-radius:50%;background:#C4864B;"></span>' +
+            '<span id="dot1" style="width:8px;height:8px;border-radius:50%;background:#D5D0C8;"></span>' +
+            '<span id="dot2" style="width:8px;height:8px;border-radius:50%;background:#D5D0C8;"></span>' +
             '</div>' +
             '</div>';
     }
@@ -180,8 +180,8 @@ App.registerPage('home', (function() {
     }
 
     function renderGameCard(game) {
-        var gradients = ['linear-gradient(135deg, #D4893F, #b8732f)', 'linear-gradient(135deg, #4a6fa5, #2d4a7a)',
-            'linear-gradient(135deg, #6b5b95, #4a3f6b)', 'linear-gradient(135deg, #7B9E87, #5a7e67)'];
+        var gradients = ['linear-gradient(135deg, #F5D5B0, #E8C08A)', 'linear-gradient(135deg, #C5D5E8, #A8BED8)',
+            'linear-gradient(135deg, #D5C8E8, #BFB0D8)', 'linear-gradient(135deg, #7B9E87, #5a7e67)'];
         var bg = gradients[Math.abs(game.id ? game.id.charCodeAt(0) : 0) % gradients.length];
 
         return '<div class="game-card-small" onclick="homePage.goDetail(\'' + game.id + '\', \'' + (game.category || '') + '\')">' +
@@ -279,13 +279,13 @@ App.registerPage('home', (function() {
 
     function render() {
         if (state.isLoading) {
-            return '<div class="home-page" style="background:#12122a;min-height:100vh;">' + renderLoading() + '</div>';
+            return '<div class="home-page" style="background:#F8F6F1;min-height:100vh;">' + renderLoading() + '</div>';
         }
         if (state.loadError) {
-            return '<div class="home-page" style="background:#12122a;min-height:100vh;">' + renderError() + '</div>';
+            return '<div class="home-page" style="background:#F8F6F1;min-height:100vh;">' + renderError() + '</div>';
         }
 
-        return '<div class="home-page" style="background:#12122a;min-height:100vh;">' +
+        return '<div class="home-page" style="background:#F8F6F1;min-height:100vh;">' +
             renderSearchBar() +
             renderBanner() +
             renderCategories() +
@@ -354,7 +354,7 @@ App.registerPage('home', (function() {
         // 更新圆点（用 ID dot0/dot1/dot2）
         for (var j = 0; j < 3; j++) {
             var dot = document.getElementById('dot' + j);
-            if (dot) dot.style.background = j === index ? '#D4893F' : '#666';
+            if (dot) dot.style.background = j === index ? '#C4864B' : '#D5D0C8';
         }
     }
 

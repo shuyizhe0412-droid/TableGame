@@ -43,7 +43,7 @@ App.registerPage('profile', (function() {
     }
 
     function render() {
-        return '<div class="profile-page" style="background:#12122a;min-height:100vh;padding-bottom:56px;">' +
+        return '<div class="profile-page" style="background:#F8F6F1;min-height:100vh;padding-bottom:56px;">' +
             '<div class="profile-container">' +
             renderHeader() +
             renderMenu() +

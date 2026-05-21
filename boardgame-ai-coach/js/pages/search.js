@@ -209,16 +209,16 @@ App.registerPage('library', (function() {
 
     // ==================== 渲染函数 ====================
     function renderLoading() {
-        return '<div class="library-loading" style="text-align:center;padding:100px 20px;color:#888;">' +
+        return '<div class="library-loading" style="text-align:center;padding:100px 20px;color:#8C8578;">' +
             '<div style="font-size:48px;margin-bottom:16px;">🎲</div>' +
             '<div>加载中...</div></div>';
     }
 
     function renderError() {
-        return '<div class="library-error" style="text-align:center;padding:100px 20px;color:#888;">' +
+        return '<div class="library-error" style="text-align:center;padding:100px 20px;color:#8C8578;">' +
             '<div style="font-size:48px;margin-bottom:16px;">😢</div>' +
             '<div style="margin-bottom:16px;">加载失败: ' + (state.loadError || '未知错误') + '</div>' +
-            '<button onclick="libraryPage.reload()" style="padding:12px 24px;background:#D4893F;color:#fff;border:none;border-radius:8px;cursor:pointer;">重新加载</button>' +
+            '<button onclick="libraryPage.reload()" style="padding:12px 24px;background:#C4864B;color:#fff;border:none;border-radius:8px;cursor:pointer;">重新加载</button>' +
             '</div>';
     }
 
@@ -264,9 +264,9 @@ App.registerPage('library', (function() {
 
     function renderGameCard(game) {
         var gradients = [
-            'linear-gradient(135deg, #D4893F, #b8732f)',
-            'linear-gradient(135deg, #4a6fa5, #2d4a7a)',
-            'linear-gradient(135deg, #6b5b95, #4a3f6b)',
+            'linear-gradient(135deg, #F5D5B0, #E8C08A)',
+            'linear-gradient(135deg, #C5D5E8, #A8BED8)',
+            'linear-gradient(135deg, #D5C8E8, #BFB0D8)',
             'linear-gradient(135deg, #7B9E87, #5a7e67)'
         ];
         var bg = gradients[Math.abs((game.id ? game.id.charCodeAt(0) : 0)) % gradients.length];
@@ -286,7 +286,7 @@ App.registerPage('library', (function() {
     function renderGameList() {
         if (state.filteredGames.length === 0) {
             return '<div class="library-games-grid" id="game-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px;text-align:center;">' +
-                '<div style="grid-column:1/3;padding:60px 20px;color:#666;">' +
+                '<div style="grid-column:1/3;padding:60px 20px;color:#B5AFA6;">' +
                 '<div style="font-size:48px;margin-bottom:16px;">🔍</div>' +
                 '<div>没有符合条件的游戏</div></div></div>';
         }
@@ -325,7 +325,7 @@ App.registerPage('library', (function() {
             content = renderSearchBar() + renderFilters() + renderSortBar() + renderGameList() + renderFooter();
         }
 
-        return '<div class="library-page" style="background:#12122a;min-height:100vh;padding-bottom:80px;">' + content + '</div>';
+        return '<div class="library-page" style="background:#F8F6F1;min-height:100vh;padding-bottom:80px;">' + content + '</div>';
     }
 
     // ==================== 事件处理 ====================
@@ -408,7 +408,7 @@ App.registerPage('library', (function() {
         var grid = document.getElementById('game-grid');
         if (grid) {
             if (state.filteredGames.length === 0) {
-                grid.innerHTML = '<div style="grid-column:1/3;padding:60px 20px;color:#666;">' +
+                grid.innerHTML = '<div style="grid-column:1/3;padding:60px 20px;color:#B5AFA6;">' +
                     '<div style="font-size:48px;margin-bottom:16px;">🔍</div>' +
                     '<div>没有符合条件的游戏</div></div>';
             } else {

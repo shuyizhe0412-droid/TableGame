@@ -65,8 +65,8 @@ App.registerPage('chat-list', (function() {
     // 1. 标题区域
     function renderTitle() {
         return '<div class="chat-list-header" style="text-align:center;padding:24px 16px 16px;">' +
-            '<div style="font-size:20px;color:#fff;font-weight:700;">🤖 AI桌游助手</div>' +
-            '<div style="font-size:14px;color:#888;margin-top:6px;">选一款游戏，我来教你玩</div>' +
+            '<div style="font-size:20px;color:#2D2A26;font-weight:700;">🤖 AI桌游助手</div>' +
+            '<div style="font-size:14px;color:#8C8578;margin-top:6px;">选一款游戏，我来教你玩</div>' +
             '</div>';
     }
 
@@ -79,7 +79,7 @@ App.registerPage('chat-list', (function() {
             'placeholder="搜索想学的桌游..." ' +
             'value="' + escapeHtml(state.searchKeyword) + '" ' +
             'style="width:100%;padding:12px 14px 12px 42px;border:none;border-radius:12px;' +
-            'background:#2a2a3e;color:#fff;font-size:14px;outline:none;box-sizing:border-box;">' +
+            'background:#F0EDE6;color:#2D2A26;font-size:14px;outline:none;box-sizing:border-box;">' +
             '</div>' +
             '</div>';
     }
@@ -107,19 +107,19 @@ App.registerPage('chat-list', (function() {
         var cards = recentGames.map(function(game) {
             return '<div class="chat-list-game-card" ' +
                 'onclick="window.goToChatFromList(\'' + game.id + '\')" ' +
-                'style="flex-shrink:0;width:120px;background:#2a2a3e;border-radius:12px;' +
+                'style="flex-shrink:0;width:120px;background:#FFFFFF;border-radius:12px;' +
                 'padding:12px;cursor:pointer;text-align:center;' +
-                'transition:background 0.2s;" ' +
-                'onmouseenter="this.style.background=\'#353555\'" ' +
-                'onmouseleave="this.style.background=\'#2a2a3e\'">' +
+                'transition:background 0.2s;border:1px solid #E5E0D8;box-shadow:0 1px 4px rgba(0,0,0,0.06);" ' +
+                'onmouseenter="this.style.background=\'#F0EDE6\'" ' +
+                'onmouseleave="this.style.background=\'#FFFFFF\'">' +
                 '<div style="font-size:28px;margin-bottom:6px;">🎲</div>' +
-                '<div style="font-size:14px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(game.name) + '</div>' +
-                '<div style="margin-top:8px;padding:6px 0;background:#D4893F;color:#fff;font-size:12px;border-radius:8px;">继续学习</div>' +
+                '<div style="font-size:14px;color:#2D2A26;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(game.name) + '</div>' +
+                '<div style="margin-top:8px;padding:6px 0;background:#C4864B;color:#fff;font-size:12px;border-radius:8px;">继续学习</div>' +
                 '</div>';
         }).join('');
 
         return '<div id="chat-list-recent" style="padding:0 16px 16px;">' +
-            '<div style="font-size:15px;color:#fff;font-weight:600;margin-bottom:10px;">最近使用</div>' +
+            '<div style="font-size:15px;color:#2D2A26;font-weight:600;margin-bottom:10px;">最近使用</div>' +
             '<div class="chat-list-scroll" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;">' +
             cards +
             '</div>' +
@@ -140,13 +140,13 @@ App.registerPage('chat-list', (function() {
                 'onclick="window.location.hash=\'' + item.hash + '\'"';
             return '<div class="chat-list-quick-item" ' +
                 onclick + ' ' +
-                'style="display:flex;align-items:center;background:#2a2a3e;border-radius:12px;' +
+                'style="display:flex;align-items:center;background:#F0EDE6;border-radius:12px;' +
                 'padding:0 14px;height:56px;cursor:pointer;transition:background 0.2s;" ' +
-                'onmouseenter="this.style.background=\'#353555\'" ' +
-                'onmouseleave="this.style.background=\'#2a2a3e\'">' +
+                'onmouseenter="this.style.background=\'#E8E3D9\'" ' +
+                'onmouseleave="this.style.background=\'#F0EDE6\'">' +
                 '<span style="font-size:24px;margin-right:12px;flex-shrink:0;">' + item.emoji + '</span>' +
-                '<span style="font-size:15px;color:#fff;flex:1;">' + item.text + '</span>' +
-                '<span style="font-size:14px;color:#666;">›</span>' +
+                '<span style="font-size:15px;color:#2D2A26;flex:1;">' + item.text + '</span>' +
+                '<span style="font-size:14px;color:#B5AFA6;">›</span>' +
                 '</div>';
         }).join('');
 
@@ -180,19 +180,19 @@ App.registerPage('chat-list', (function() {
             console.log('[chat-list.js] 热门游戏:', game.name, 'id:', game.id);
             return '<div class="chat-list-game-card" ' +
                 'onclick="window.goToChatFromList(\'' + game.id + '\')" ' +
-                'style="flex-shrink:0;width:120px;background:#2a2a3e;border-radius:12px;' +
+                'style="flex-shrink:0;width:120px;background:#FFFFFF;border-radius:12px;' +
                 'padding:12px;cursor:pointer;text-align:center;' +
-                'transition:background 0.2s;" ' +
-                'onmouseenter="this.style.background=\'#353555\'" ' +
-                'onmouseleave="this.style.background=\'#2a2a3e\'">' +
+                'transition:background 0.2s;border:1px solid #E5E0D8;box-shadow:0 1px 4px rgba(0,0,0,0.06);" ' +
+                'onmouseenter="this.style.background=\'#F0EDE6\'" ' +
+                'onmouseleave="this.style.background=\'#FFFFFF\'">' +
                 '<div style="font-size:28px;margin-bottom:6px;">🎮</div>' +
-                '<div style="font-size:14px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(game.name) + '</div>' +
-                '<div style="font-size:12px;color:#888;margin-top:4px;">' + count + '人正在学</div>' +
+                '<div style="font-size:14px;color:#2D2A26;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(game.name) + '</div>' +
+                '<div style="font-size:12px;color:#8C8578;margin-top:4px;">' + count + '人正在学</div>' +
                 '</div>';
         }).join('');
 
         return '<div id="chat-list-hot" style="padding:0 16px;">' +
-            '<div style="font-size:15px;color:#fff;font-weight:600;margin-bottom:10px;">大家都在学</div>' +
+            '<div style="font-size:15px;color:#2D2A26;font-weight:600;margin-bottom:10px;">大家都在学</div>' +
             '<div class="chat-list-scroll" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;">' +
             cards +
             '</div>' +
@@ -204,7 +204,7 @@ App.registerPage('chat-list', (function() {
         loadRecentGames();
 
         // 先渲染骨架（搜索框 + 快速开始是静态的，不受数据影响）
-        var html = '<div class="chat-list-page" style="min-height:100vh;background:#12122a;padding-bottom:80px;">' +
+        var html = '<div class="chat-list-page" style="min-height:100vh;background:#F8F6F1;padding-bottom:80px;">' +
             renderTitle() +
             renderSearchBox();
 
@@ -257,19 +257,19 @@ App.registerPage('chat-list', (function() {
                 var cards = filtered.slice(0, 20).map(function(game) {
                     return '<div ' +
                         'onclick="window.goToChatFromList(\'' + game.id + '\')" ' +
-                        'style="display:flex;align-items:center;background:#2a2a3e;border-radius:12px;' +
+                        'style="display:flex;align-items:center;background:#F0EDE6;border-radius:12px;' +
                         'padding:12px 14px;cursor:pointer;transition:background 0.2s;" ' +
-                        'onmouseenter="this.style.background=\'#353555\'" ' +
-                        'onmouseleave="this.style.background=\'#2a2a3e\'">' +
+                        'onmouseenter="this.style.background=\'#E8E3D9\'" ' +
+                        'onmouseleave="this.style.background=\'#F0EDE6\'">' +
                         '<span style="font-size:24px;margin-right:12px;">🎲</span>' +
-                        '<span style="font-size:14px;color:#fff;flex:1;">' + escapeHtml(game.name) + '</span>' +
-                        '<span style="font-size:12px;color:#888;">' + (game.category || '') + '</span>' +
-                        '<span style="font-size:14px;color:#666;margin-left:8px;">›</span>' +
+                        '<span style="font-size:14px;color:#2D2A26;flex:1;">' + escapeHtml(game.name) + '</span>' +
+                        '<span style="font-size:12px;color:#8C8578;">' + (game.category || '') + '</span>' +
+                        '<span style="font-size:14px;color:#B5AFA6;margin-left:8px;">›</span>' +
                         '</div>';
                 }).join('');
 
                 var resultsHtml = '<div id="chat-list-search-results" style="padding:0 16px 16px;">' +
-                    '<div style="font-size:15px;color:#fff;font-weight:600;margin-bottom:10px;">搜索结果 (' + filtered.length + ')</div>' +
+                    '<div style="font-size:15px;color:#2D2A26;font-weight:600;margin-bottom:10px;">搜索结果 (' + filtered.length + ')</div>' +
                     '<div style="display:flex;flex-direction:column;gap:8px;">' +
                     cards +
                     '</div>' +
@@ -286,12 +286,12 @@ App.registerPage('chat-list', (function() {
                 }
             } else {
                 if (resultsEl) {
-                    resultsEl.innerHTML = '<div style="padding:20px;text-align:center;color:#888;font-size:14px;">未找到相关游戏</div>';
+                    resultsEl.innerHTML = '<div style="padding:20px;text-align:center;color:#8C8578;font-size:14px;">未找到相关游戏</div>';
                 } else {
                     var quickEl = document.getElementById('chat-list-quick');
                     if (quickEl) {
                         quickEl.insertAdjacentHTML('afterend',
-                            '<div id="chat-list-search-results" style="padding:20px;text-align:center;color:#888;font-size:14px;">未找到相关游戏</div>');
+                            '<div id="chat-list-search-results" style="padding:20px;text-align:center;color:#8C8578;font-size:14px;">未找到相关游戏</div>');
                     }
                 }
             }

@@ -278,7 +278,7 @@ App.registerPage('detail', (function() {
     function renderLoading() {
         return '<div class="detail-page">' +
             renderHeader() +
-            '<div class="detail-loading" style="text-align:center;padding:50px;color:#888;">加载中...</div>' +
+            '<div class="detail-loading" style="text-align:center;padding:50px;color:#8C8578;">加载中...</div>' +
             '</div>';
     }
 
@@ -287,14 +287,14 @@ App.registerPage('detail', (function() {
             renderHeader() +
             '<div class="detail-error" style="text-align:center;padding:50px;color:#e74c3c;">' +
             '<p>加载失败</p>' +
-            '<p style="font-size:12px;color:#888;">' + state.loadError + '</p>' +
-            '<button onclick="detailPage.goBack()" style="margin-top:20px;padding:10px 20px;background:#3498db;color:#fff;border:none;border-radius:5px;">返回首页</button>' +
+            '<p style="font-size:12px;color:#8C8578;">' + state.loadError + '</p>' +
+            '<button onclick="detailPage.goBack()" style="margin-top:20px;padding:10px 20px;background:#C4864B;color:#fff;border:none;border-radius:5px;">返回首页</button>' +
             '</div>' +
             '</div>';
     }
 
     function renderCover() {
-        return '<div class="detail-cover" style="background: linear-gradient(135deg, #D4893F, #7B9E87);">' +
+        return '<div class="detail-cover" style="background: linear-gradient(135deg, #C4864B, #7B9E87);">' +
             '<span class="detail-cover-text">🎲</span>' +
             '</div>';
     }
