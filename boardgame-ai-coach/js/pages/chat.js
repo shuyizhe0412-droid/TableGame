@@ -329,11 +329,13 @@ App.registerPage('chat', (function() {
 
     // 主渲染函数
     function render(params) {
-        // 解析 mode 和 gameId
+        // 解析 mode 和 gameId（兼容 id / gameId 两种参数名）
         var mode = (params && params.mode) ? params.mode : (getParamFromHash('mode') || 'setup');
-        var gameId = (params && params.gameId) ? params.gameId : (getParamFromHash('gameId') || '');
+        var gameId = (params && params.gameId) ? params.gameId :
+                     (params && params.id) ? params.id :
+                     (getParamFromHash('gameId') || getParamFromHash('id') || '');
 
-        console.log('[chat.js] render - mode:', mode, 'gameId:', gameId);
+        console.log('[chat.js] render - mode:', mode, 'gameId:', gameId, 'params:', params);
 
         state.mode = mode;
         state.gameId = gameId;

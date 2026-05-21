@@ -121,7 +121,7 @@ App.registerPage('chat-list', (function() {
         var quickItems = [
             { emoji: '🎲', text: '我想学一款新游戏', hash: '/library' },
             { emoji: '🤔', text: '不知道玩什么？AI帮你选', hash: '/library' },
-            { emoji: '⚡', text: '快速查规则', hash: '/library' }
+            { emoji: '⚡', text: '快速查规则', hash: '/library?mode=quick' }
         ];
 
         var cards = quickItems.map(function(item) {
@@ -164,6 +164,7 @@ App.registerPage('chat-list', (function() {
 
         var cards = hotGames.map(function(game) {
             var count = getRandomCount(game.name);
+            console.log('[chat-list.js] 热门游戏:', game.name, 'id:', game.id);
             return '<div class="chat-list-game-card" ' +
                 'onclick="window.location.hash=\'/chat?id=' + game.id + '\'" ' +
                 'style="flex-shrink:0;width:120px;background:#2a2a3e;border-radius:12px;' +
