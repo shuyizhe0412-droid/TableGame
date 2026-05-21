@@ -137,17 +137,19 @@ App.registerPage('profile', (function() {
         var wrap = document.getElementById('share-qr-canvas-wrap');
         if (!wrap) return;
 
+        var displayW = 200;
+        var displayH = Math.round(displayW * QRUtils.CARD_H / QRUtils.CARD_W);
+
         try {
             var canvas = await QRUtils.generateSiteQRCard();
-            var displayW = 200;
-            var displayH = Math.round(displayW * QRUtils.CARD_H / QRUtils.CARD_W);
             canvas.style.width = displayW + 'px';
             canvas.style.height = displayH + 'px';
-            wrap.innerHTML = '';
-            wrap.appendChild(canvas);
 
-            // 微信/QQ中额外展示img供长按保存
             if (QRUtils.isRestrictedBrowser()) {
+                // 微信/QQ：隐藏canvas，只展示img（支持长按保存）
+                canvas.style.display = 'none';
+                wrap.innerHTML = '';
+                wrap.appendChild(canvas);
                 try {
                     var dataUrl = canvas.toDataURL('image/png');
                     var imgWrap = document.getElementById('share-qr-img-wrap');
@@ -155,26 +157,35 @@ App.registerPage('profile', (function() {
                         imgWrap.style.display = 'block';
                         imgWrap.innerHTML = '<img src="' + dataUrl +
                             '" style="width:' + displayW + 'px;border-radius:12px;" />' +
-                            '<div style="font-size:11px;color:#8C8578;margin-top:4px;">👆 点击上方二维码查看大图后长按保存</div>';
+                            '<div style="font-size:11px;color:#8C8578;margin-top:4px;">👆 长按二维码保存</div>';
                     }
                 } catch (e) {
                     console.error('生成img回退失败:', e);
                 }
+            } else {
+                // 普通浏览器：展示canvas
+                wrap.innerHTML = '';
+                wrap.appendChild(canvas);
             }
         } catch (e) {
             console.error('生成总入口二维码失败:', e);
             // 在线API兜底
             var onlineUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=2D2A26&bgcolor=FFFFFF&data=' +
                 encodeURIComponent(QRUtils.SITE_URL);
-            wrap.innerHTML = '<img src="' + onlineUrl + '" style="width:200px;height:200px;border-radius:12px;" ' +
+            var imgHtml = '<img src="' + onlineUrl + '" style="width:200px;height:200px;border-radius:12px;" ' +
                 'onerror="this.parentElement.innerHTML=\'<div style=\\\'width:200px;height:200px;background:#F0EDE6;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#B5AFA6;font-size:14px;\\\'>生成失败</div>\'" />';
 
-            var imgWrap = document.getElementById('share-qr-img-wrap');
-            if (imgWrap) {
-                imgWrap.style.display = 'block';
-                imgWrap.innerHTML = '<img src="' + onlineUrl +
-                    '" style="width:200px;border-radius:12px;" />' +
-                    '<div style="font-size:11px;color:#8C8578;margin-top:4px;">👆 长按保存二维码</div>';
+            if (QRUtils.isRestrictedBrowser()) {
+                // 微信/QQ：清空wrap，只在img-wrap展示
+                wrap.innerHTML = '';
+                var imgWrap = document.getElementById('share-qr-img-wrap');
+                if (imgWrap) {
+                    imgWrap.style.display = 'block';
+                    imgWrap.innerHTML = imgHtml +
+                        '<div style="font-size:11px;color:#8C8578;margin-top:4px;">👆 长按保存二维码</div>';
+                }
+            } else {
+                wrap.innerHTML = imgHtml;
             }
         }
     }

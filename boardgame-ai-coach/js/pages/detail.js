@@ -469,14 +469,19 @@ App.registerPage('detail', (function() {
         }
 
         QRUtils.generateGameQRCard(state.gameId, game.name || '未知游戏', state.qrMode).then(function(canvas) {
-            canvas.style.width = '220px';
-            canvas.style.height = displayH + 'px';
-            wrap.innerHTML = '';
-            wrap.appendChild(canvas);
-
-            // 在微信/QQ中，同时生成一个img标签供长按保存
-            if (QRUtils.isRestrictedBrowser()) {
+            var isRestricted = QRUtils.isRestrictedBrowser();
+            if (isRestricted) {
+                // 微信/QQ：隐藏canvas，只展示img（支持长按保存）
+                canvas.style.display = 'none';
+                wrap.innerHTML = '';
+                wrap.appendChild(canvas);
                 showQRFallbackImg(canvas);
+            } else {
+                // 普通浏览器：展示canvas
+                canvas.style.width = '220px';
+                canvas.style.height = displayH + 'px';
+                wrap.innerHTML = '';
+                wrap.appendChild(canvas);
             }
         }).catch(function(e) {
             console.error('生成详情二维码失败:', e);
@@ -494,16 +499,21 @@ App.registerPage('detail', (function() {
         var onlineUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&color=2D2A26&bgcolor=FFFFFF&data=' +
             encodeURIComponent(url);
 
-        wrap.innerHTML = '<img src="' + onlineUrl + '" style="width:220px;height:220px;border-radius:12px;display:block;" ' +
-            'onerror="this.parentElement.innerHTML=\'<div style=\\\'width:220px;height:293px;background:#F0EDE6;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#B5AFA6;font-size:14px;\\\'>生成失败，请检查网络</div>\'" />';
+        var imgHtml = '<img src="' + onlineUrl + '" style="width:220px;height:220px;border-radius:12px;display:block;" ' +
+            'onerror="this.parentElement.innerHTML=\\'<div style=\\\\\\'width:220px;height:293px;background:#F0EDE6;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#B5AFA6;font-size:14px;\\\\\\'>生成失败，请检查网络</div>\\'" />';
 
-        // 也设置到img-wrap
-        var imgWrap = document.getElementById('detail-qr-img-wrap');
-        if (imgWrap) {
-            imgWrap.style.display = 'block';
-            imgWrap.innerHTML = '<img src="' + onlineUrl +
-                '" style="width:220px;height:220px;border-radius:12px;" />' +
-                '<div style="font-size:11px;color:#B5AFA6;margin-top:6px;">👆 长按二维码保存</div>';
+        if (QRUtils.isRestrictedBrowser()) {
+            // 微信/QQ：隐藏wrap内容，只在img-wrap展示（可长按保存）
+            wrap.innerHTML = '';
+            var imgWrap = document.getElementById('detail-qr-img-wrap');
+            if (imgWrap) {
+                imgWrap.style.display = 'block';
+                imgWrap.innerHTML = imgHtml +
+                    '<div style="font-size:11px;color:#B5AFA6;margin-top:6px;">👆 长按二维码保存</div>';
+            }
+        } else {
+            // 普通浏览器：直接在wrap中展示
+            wrap.innerHTML = imgHtml;
         }
     }
 
