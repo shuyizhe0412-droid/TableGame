@@ -84,6 +84,7 @@ App.registerPage('library', (function() {
 
     // ==================== 筛选逻辑 ====================
     function applyFilters() {
+        // 【关键】永远从原始数据重新筛选，不累积
         var games = state.allGames.slice();
 
         // 搜索过滤
@@ -117,8 +118,9 @@ App.registerPage('library', (function() {
 
         // 难度筛选
         if (state.difficulty !== '全部') {
+            var diffVal = parseInt(state.difficulty) || state.difficulty;
             games = games.filter(function(game) {
-                return game.difficulty == state.difficulty;
+                return game.difficulty == diffVal;
             });
         }
 
@@ -127,7 +129,7 @@ App.registerPage('library', (function() {
             games = games.filter(function(game) {
                 var min = game.min_players || game.minPlayers || 0;
                 var max = game.max_players || game.maxPlayers || 99;
-                switch (state.playerCount) {
+                switch (String(state.playerCount)) {
                     case '2':
                         return min <= 2 && max >= 2;
                     case '3-4':
@@ -146,7 +148,7 @@ App.registerPage('library', (function() {
         if (state.duration !== '全部') {
             games = games.filter(function(game) {
                 var dur = game.play_time || game.duration || 0;
-                switch (state.duration) {
+                switch (String(state.duration)) {
                     case '<30':
                         return dur < 30;
                     case '30-60':
@@ -161,17 +163,17 @@ App.registerPage('library', (function() {
             });
         }
 
-        // 排序
+        // 排序 —— 匹配中文键名
         if (state.sortBy !== 'default') {
             games.sort(function(a, b) {
                 switch (state.sortBy) {
-                    case 'name':
+                    case '名称':
                         var nameA = a.name || '';
                         var nameB = b.name || '';
                         return nameA.localeCompare(nameB, 'zh-CN');
-                    case 'difficulty':
+                    case '难度':
                         return (parseInt(a.difficulty) || 0) - (parseInt(b.difficulty) || 0);
-                    case 'duration':
+                    case '时长':
                         return (a.play_time || a.duration || 0) - (b.play_time || b.duration || 0);
                     default:
                         return 0;
@@ -227,7 +229,8 @@ App.registerPage('library', (function() {
         var html = items.map(function(item) {
             var label = typeof item === 'object' ? item.label : item;
             var value = typeof item === 'object' ? item.value : item;
-            var isActive = selected === value ? 'active' : '';
+            // 统一转字符串比较，避免 '1' === 1 为 false
+            var isActive = String(selected) === String(value) ? 'active' : '';
             var dataValue = value === '全部' ? '全部' : value;
             return '<div class="filter-tag ' + isActive + '" data-value="' + dataValue + '" onclick="' + onClick + '(\'' + dataValue + '\')">' + label + '</div>';
         }).join('');
@@ -274,22 +277,36 @@ App.registerPage('library', (function() {
 
     function renderGameList() {
         if (state.filteredGames.length === 0) {
-            return '<div class="library-empty" style="text-align:center;padding:60px 20px;color:#666;">' +
+            return '<div class="library-empty" id="game-grid" style="text-align:center;padding:60px 20px;color:#666;">' +
                 '<div style="font-size:48px;margin-bottom:16px;">🔍</div>' +
                 '<div>没有符合条件的游戏</div></div>';
         }
 
         var cards = state.filteredGames.map(renderGameCard).join('');
-        return '<div class="library-games-grid">' + cards + '</div>';
+        return '<div class="library-games-grid" id="game-grid">' + cards + '</div>';
     }
 
     function renderFooter() {
         return '<div class="library-footer">' +
-            '<span>共 ' + state.filteredGames.length + ' 款游戏</span>' +
+            '<span id="game-count">共 ' + state.filteredGames.length + ' 款游戏</span>' +
             '</div>';
     }
 
     function render() {
+        // ===== 调试日志 =====
+        console.log('=== 游戏库渲染 ===');
+        console.log('allGames数量:', state.allGames ? state.allGames.length : 'null');
+        console.log('当前筛选:', JSON.stringify({
+            searchQuery: state.searchQuery,
+            category: state.category,
+            difficulty: state.difficulty,
+            playerCount: state.playerCount,
+            duration: state.duration
+        }));
+        console.log('当前排序:', state.sortBy);
+        console.log('筛选后数量:', state.filteredGames ? state.filteredGames.length : 'null');
+        // ===== 调试日志结束 =====
+
         var content = '';
         if (state.isLoading) {
             content = renderLoading();
@@ -299,7 +316,7 @@ App.registerPage('library', (function() {
             content = renderSearchBar() + renderFilters() + renderSortBar() + renderGameList() + renderFooter();
         }
 
-        return '<div class="library-page" style="background:#12122a;min-height:100vh;padding-bottom:56px;">' + content + '</div>';
+        return '<div class="library-page" style="background:#12122a;min-height:100vh;padding-bottom:80px;">' + content + '</div>';
     }
 
     // ==================== 事件处理 ====================
@@ -357,27 +374,42 @@ App.registerPage('library', (function() {
         if (row) {
             row.querySelectorAll('.filter-tag').forEach(function(tag) {
                 var tagValue = tag.getAttribute('data-value');
-                tag.classList.toggle('active', tagValue === selected);
+                // 统一转字符串比较，解决数字与字符串类型不一致问题
+                tag.classList.toggle('active', String(tagValue) === String(selected));
             });
         }
     }
 
     function updateSortUI() {
         document.querySelectorAll('.sort-btn').forEach(function(btn) {
-            var isActive = (state.sortBy === 'default' && btn.textContent === '默认') ||
-                (state.sortBy === btn.textContent);
+            var curSort = state.sortBy;
+            var btnText = btn.textContent;
+            var isActive = false;
+            if (curSort === 'default' && btnText === '默认') {
+                isActive = true;
+            } else if (curSort === btnText) {
+                isActive = true;
+            }
             btn.classList.toggle('active', isActive);
         });
     }
 
     function updateGameList() {
-        var container = document.querySelector('.library-games-grid');
-        if (container) {
-            container.outerHTML = renderGameList();
+        // 更新游戏网格（用 innerHTML，不会销毁父容器）
+        var grid = document.getElementById('game-grid');
+        if (grid) {
+            if (state.filteredGames.length === 0) {
+                grid.outerHTML = '<div class="library-empty" id="game-grid" style="text-align:center;padding:60px 20px;color:#666;">' +
+                    '<div style="font-size:48px;margin-bottom:16px;">🔍</div>' +
+                    '<div>没有符合条件的游戏</div></div>';
+            } else {
+                grid.innerHTML = state.filteredGames.map(renderGameCard).join('');
+            }
         }
-        var footer = document.querySelector('.library-footer');
-        if (footer) {
-            footer.innerHTML = '<span>共 ' + state.filteredGames.length + ' 款游戏</span>';
+        // 更新底部统计
+        var countEl = document.getElementById('game-count');
+        if (countEl) {
+            countEl.textContent = '共 ' + state.filteredGames.length + ' 款游戏';
         }
     }
 
