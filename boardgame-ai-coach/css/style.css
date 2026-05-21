@@ -161,7 +161,7 @@ input:focus, textarea:focus {
    首页样式（推荐和发现）
    =================================== */
 .home-page {
-    padding-bottom: 56px;
+    padding-bottom: 80px;
 }
 
 /* 搜索栏 */
@@ -370,7 +370,7 @@ input:focus, textarea:focus {
 /* 小游戏卡片 */
 .game-card-small {
     flex-shrink: 0;
-    width: 120px;
+    width: 130px;
     background: #2a2a3e;
     border-radius: 12px;
     overflow: hidden;
@@ -998,7 +998,7 @@ input:focus, textarea:focus {
    游戏库页样式（搜索和筛选）
    =================================== */
 .library-page {
-    padding-bottom: 56px;
+    padding-bottom: 80px;
 }
 
 /* 搜索栏 */

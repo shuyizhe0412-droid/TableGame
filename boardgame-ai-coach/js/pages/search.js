@@ -228,7 +228,8 @@ App.registerPage('library', (function() {
             var label = typeof item === 'object' ? item.label : item;
             var value = typeof item === 'object' ? item.value : item;
             var isActive = selected === value ? 'active' : '';
-            return '<div class="filter-tag ' + isActive + '" onclick="' + onClick + '(\'' + value + '\')">' + label + '</div>';
+            var dataValue = value === '全部' ? '全部' : value;
+            return '<div class="filter-tag ' + isActive + '" data-value="' + dataValue + '" onclick="' + onClick + '(\'' + dataValue + '\')">' + label + '</div>';
         }).join('');
         return '<div class="filter-row" id="filter-' + type + '">' + html + '</div>';
     }
@@ -355,7 +356,8 @@ App.registerPage('library', (function() {
         var row = document.getElementById('filter-' + type);
         if (row) {
             row.querySelectorAll('.filter-tag').forEach(function(tag) {
-                tag.classList.toggle('active', tag.textContent.includes(selected) || tag.getAttribute('onclick').indexOf("'" + selected + "'") !== -1);
+                var tagValue = tag.getAttribute('data-value');
+                tag.classList.toggle('active', tagValue === selected);
             });
         }
     }
