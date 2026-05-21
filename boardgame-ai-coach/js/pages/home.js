@@ -315,6 +315,7 @@ App.registerPage('home', (function() {
         if (category) {
             recordCategory(category);
         }
+        sessionStorage.setItem('chatFrom', '/detail?id=' + id);
         window.location.hash = '/detail?id=' + encodeURIComponent(id);
     }
 

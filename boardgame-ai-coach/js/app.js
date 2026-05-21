@@ -80,13 +80,27 @@ function initApp() {
     // 初始化路由
     initRouter();
 
-    // 路由到页面名的映射（/chat 无 id 参数时映射到入口页）
+    // 路由到页面名的映射（/chat 无任何参数时映射到入口页）
     function resolvePage(route, params) {
-        if (route === 'chat' && !params.id && !params.gameId) {
+        if (route === 'chat' && !params.id && !params.gameId && !params.mode) {
             return 'chat-list';
         }
         return route;
     }
+
+    // 全局跳转辅助：从首页跳转到详情页时记录来源（供chat页返回使用）
+    window.navigateToDetail = function(id, category) {
+        if (id) {
+            sessionStorage.setItem('chatFrom', '/detail?id=' + id);
+        }
+        if (category) {
+            var recent = localStorage.getItem('recentCategories') || '';
+            var cats = recent ? recent.split(',').filter(function(c) { return c !== category; }) : [];
+            cats.unshift(category);
+            localStorage.setItem('recentCategories', cats.slice(0, 5).join(','));
+        }
+        window.location.hash = '/detail?id=' + encodeURIComponent(id);
+    };
 
     // 监听路由变化，渲染页面
     window.addEventListener('routechange', function(e) {

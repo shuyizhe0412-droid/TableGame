@@ -520,6 +520,7 @@ App.registerPage('detail', (function() {
     }
 
     function goChat(mode) {
+        sessionStorage.setItem('chatFrom', '/detail?id=' + state.gameId);
         window.location.hash = '/chat?gameId=' + state.gameId + '&mode=' + mode;
     }
 

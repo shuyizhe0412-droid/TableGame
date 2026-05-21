@@ -28,6 +28,24 @@ App.registerPage('chat', (function() {
                 return '你好！你想查' + gameName + '的什么规则？直接问我就行。';
             },
             quickQuestions: []
+        },
+        'recommend': {
+            name: 'AI推荐',
+            icon: '🤔',
+            welcome: function() {
+                return '你好！我是桌游推荐助手。告诉我你们几个人玩？喜欢什么类型的游戏？我来帮你挑选最合适的桌游！';
+            },
+            quickQuestions: ['几人玩？', '玩多久？', '喜欢什么类型？'],
+            placeholder: '告诉我你想玩什么类型的...'
+        },
+        'quick': {
+            name: '规则速查',
+            icon: '⚡',
+            welcome: function() {
+                return '你好！我是桌游规则速查助手。直接告诉我你想查哪款桌游的什么规则，我快速给你答案。';
+            },
+            quickQuestions: ['卡坦岛怎么交易？', '狼人杀各角色能力？', 'UNO能连出吗？'],
+            placeholder: '输入游戏名称或规则问题...'
         }
     };
 
@@ -297,12 +315,24 @@ App.registerPage('chat', (function() {
     function renderQuickQuestions() {
         var session = state.session;
         var mode = session.mode;
-        
+
+        // recommend / quick 模式使用modeConfig中的固定预设
+        var modeInfo = modeConfig[mode];
+        if (modeInfo && modeInfo.quickQuestions && modeInfo.quickQuestions.length > 0) {
+            var html = '<div class="chat-quick-questions">' +
+                '<div class="chat-quick-scroll">';
+            modeInfo.quickQuestions.forEach(function(q) {
+                html += '<button class="chat-quick-btn" onclick="chatPage.sendQuick(\'' + escapeHtml(q) + '\')">' + q + '</button>';
+            });
+            html += '</div></div>';
+            return html;
+        }
+
         // 根据游戏类型动态获取预设问题
         var category = session.gameData ? session.gameData.category : '';
         var tags = session.gameData ? (session.gameData.tags || []) : [];
         var questions = getQuestionsByGameType(mode, category, tags);
-        
+
         var html = '<div class="chat-quick-questions">' +
             '<div class="chat-quick-scroll">';
 
@@ -316,11 +346,15 @@ App.registerPage('chat', (function() {
 
     // 渲染底部输入区域
     function renderInputArea() {
+        var session = state.session;
+        var modeInfo = modeConfig[session.mode];
+        var placeholder = (modeInfo && modeInfo.placeholder) ? modeInfo.placeholder : '输入你的问题...';
+
         return '<div class="chat-input-area">' +
             renderQuickQuestions() +
             '<div class="chat-input-row">' +
             '<input type="text" class="chat-input" id="chat-input" ' +
-            'placeholder="输入你的问题..." value="' + escapeHtml(state.inputText) + '" ' +
+            'placeholder="' + placeholder + '" value="' + escapeHtml(state.inputText) + '" ' +
             'onkeydown="chatPage.handleKeyDown(event)">' +
             '<button class="chat-send-btn" onclick="chatPage.sendMessage()">➤</button>' +
             '</div>' +
@@ -330,18 +364,37 @@ App.registerPage('chat', (function() {
     // 主渲染函数
     function render(params) {
         // 解析 mode 和 gameId（兼容 id / gameId 两种参数名）
-        var mode = (params && params.mode) ? params.mode : (getParamFromHash('mode') || 'setup');
+        var rawMode = (params && params.mode) ? params.mode : (getParamFromHash('mode') || '');
+        // 如果 mode 是 setup/rules/faq 则直接使用，否则默认 setup（有gameId时）；如果无gameId则用 rawMode
         var gameId = (params && params.gameId) ? params.gameId :
                      (params && params.id) ? params.id :
                      (getParamFromHash('gameId') || getParamFromHash('id') || '');
+
+        var mode;
+        if (gameId) {
+            // 有 gameId：有效教学模式
+            mode = (rawMode === 'setup' || rawMode === 'rules' || rawMode === 'faq') ? rawMode : 'setup';
+        } else {
+            // 无 gameId：推荐/速查模式（来自入口页卡片2/3）
+            mode = (rawMode === 'recommend' || rawMode === 'quick') ? rawMode : 'setup';
+        }
 
         console.log('[chat.js] render - mode:', mode, 'gameId:', gameId, 'params:', params);
 
         state.mode = mode;
         state.gameId = gameId;
 
-        // 获取或创建对应会话（传入游戏名，每个会话独立）
-        state.session = getSession(gameId, mode, state.session ? state.session.gameName : '加载中...');
+        // 无 gameId 的模式使用固定名称
+        var sessionGameName = '';
+        if (!gameId) {
+            var modeInfo = modeConfig[mode];
+            sessionGameName = modeInfo ? modeInfo.name : 'AI助手';
+        } else {
+            sessionGameName = (state.session ? state.session.gameName : '加载中...');
+        }
+
+        // 获取或创建对应会话
+        state.session = getSession(gameId, mode, sessionGameName);
 
         return '<div class="chat-page">' +
             renderHeader() +
@@ -355,10 +408,38 @@ App.registerPage('chat', (function() {
     // ==================== 事件处理 ====================
     function init(params) {
         console.log('[chat.js] init 被调用');
-        
+
         var session = state.session;
         if (!session) {
             console.error('[chat.js] session 不存在');
+            return;
+        }
+
+        // 无 gameId 的模式（推荐/速查）：跳过加载游戏数据
+        if (!state.gameId) {
+            console.log('[chat.js] 无 gameId，跳过数据加载，使用模式:', state.mode);
+            session.loaded = true;
+
+            // 首次进入该会话，发送欢迎语
+            if (!session.welcomeSent && session.messages.length === 0) {
+                session.welcomeSent = true;
+                var modeInfo = modeConfig[session.mode];
+                session.messages.push({
+                    role: 'assistant',
+                    content: modeInfo.welcome(session.gameName)
+                });
+            }
+
+            refreshMessages();
+            refreshQuickQuestions();
+
+            setTimeout(function() {
+                var input = document.getElementById('chat-input');
+                if (input) {
+                    input.focus();
+                }
+                scrollToBottom();
+            }, 100);
             return;
         }
 
@@ -367,7 +448,7 @@ App.registerPage('chat', (function() {
             console.log('[chat.js] 游戏数据加载完成, 游戏名称:', session.gameName);
             console.log('[chat.js] 游戏分类:', session.gameData ? session.gameData.category : '未知');
             console.log('[chat.js] 游戏标签:', session.gameData ? session.gameData.tags : '未知');
-            
+
             // 首次进入该会话，发送欢迎语（作为一条 AI 消息）
             if (!session.welcomeSent && session.messages.length === 0) {
                 session.welcomeSent = true;
@@ -377,11 +458,11 @@ App.registerPage('chat', (function() {
                     content: modeInfo.welcome(session.gameName)
                 });
             }
-            
+
             // 刷新消息显示和快捷问题
             refreshMessages();
             refreshQuickQuestions();
-            
+
             // 初始化输入框
             setTimeout(function() {
                 var input = document.getElementById('chat-input');
@@ -404,7 +485,20 @@ App.registerPage('chat', (function() {
     }
 
     function goBack() {
-        window.location.hash = '/detail?id=' + state.gameId;
+        var from = sessionStorage.getItem('chatFrom');
+        if (from === 'chat-list') {
+            // 从 AI 入口页进入 → 回到入口页
+            window.location.hash = '/chat';
+        } else if (from && from.indexOf('/detail') === 0) {
+            // 从游戏详情页进入 → 回到详情页
+            window.location.hash = from;
+        } else if (state.gameId && (state.mode === 'setup' || state.mode === 'rules' || state.mode === 'faq')) {
+            // 有 gameId 的教学模式 → 回详情页
+            window.location.hash = '/detail?id=' + state.gameId;
+        } else {
+            // 默认回 AI 入口
+            window.location.hash = '/chat';
+        }
     }
 
     function toggleStyle() {
@@ -472,9 +566,11 @@ App.registerPage('chat', (function() {
 
         if (session.messages.length === 0) {
             var modeInfo = modeConfig[session.mode];
+            // recommend/quick 模式的 welcome 不需要 gameName 参数
+            var welcomeText = state.gameId ? modeInfo.welcome(session.gameName) : modeInfo.welcome();
             messagesEl.innerHTML = '<div class="chat-message chat-message-ai">' +
                 '<div class="chat-avatar">🤖</div>' +
-                '<div class="chat-bubble chat-bubble-ai">' + modeInfo.welcome(session.gameName) + '</div>' +
+                '<div class="chat-bubble chat-bubble-ai">' + welcomeText + '</div>' +
                 '</div>';
         } else {
             session.messages.forEach(function(msg) {

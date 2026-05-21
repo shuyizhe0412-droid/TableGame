@@ -22,6 +22,16 @@ App.registerPage('chat-list', (function() {
             .replace(/"/g, '&quot;');
     }
 
+    // 全局跳转辅助：从AI入口页跳转到AI对话（记录来源）
+    window.goToChatFromList = function(gameId) {
+        sessionStorage.setItem('chatFrom', 'chat-list');
+        window.location.hash = '/chat?id=' + gameId;
+    };
+    window.goToChatModeFromList = function(mode) {
+        sessionStorage.setItem('chatFrom', 'chat-list');
+        window.location.hash = '/chat?mode=' + mode;
+    };
+
     // 生成随机学习人数
     function getRandomCount(gameName) {
         if (state.learningCounts[gameName]) {
@@ -96,7 +106,7 @@ App.registerPage('chat-list', (function() {
 
         var cards = recentGames.map(function(game) {
             return '<div class="chat-list-game-card" ' +
-                'onclick="window.location.hash=\'/chat?id=' + game.id + '\'" ' +
+                'onclick="window.goToChatFromList(\'' + game.id + '\')" ' +
                 'style="flex-shrink:0;width:120px;background:#2a2a3e;border-radius:12px;' +
                 'padding:12px;cursor:pointer;text-align:center;' +
                 'transition:background 0.2s;" ' +
@@ -119,14 +129,17 @@ App.registerPage('chat-list', (function() {
     // 4. 快速开始模块
     function renderQuickStartSection() {
         var quickItems = [
-            { emoji: '🎲', text: '我想学一款新游戏', hash: '/library' },
-            { emoji: '🤔', text: '不知道玩什么？AI帮你选', hash: '/library' },
-            { emoji: '⚡', text: '快速查规则', hash: '/library?mode=quick' }
+            { emoji: '🎲', text: '我想学一款新游戏', hash: '/library', isChatMode: false },
+            { emoji: '🤔', text: '不知道玩什么？AI帮你选', hash: 'recommend', isChatMode: true },
+            { emoji: '⚡', text: '快速查规则', hash: 'quick', isChatMode: true }
         ];
 
         var cards = quickItems.map(function(item) {
+            var onclick = item.isChatMode ?
+                'onclick="window.goToChatModeFromList(\'' + item.hash + '\')"' :
+                'onclick="window.location.hash=\'' + item.hash + '\'"';
             return '<div class="chat-list-quick-item" ' +
-                'onclick="window.location.hash=\'' + item.hash + '\'" ' +
+                onclick + ' ' +
                 'style="display:flex;align-items:center;background:#2a2a3e;border-radius:12px;' +
                 'padding:0 14px;height:56px;cursor:pointer;transition:background 0.2s;" ' +
                 'onmouseenter="this.style.background=\'#353555\'" ' +
@@ -166,7 +179,7 @@ App.registerPage('chat-list', (function() {
             var count = getRandomCount(game.name);
             console.log('[chat-list.js] 热门游戏:', game.name, 'id:', game.id);
             return '<div class="chat-list-game-card" ' +
-                'onclick="window.location.hash=\'/chat?id=' + game.id + '\'" ' +
+                'onclick="window.goToChatFromList(\'' + game.id + '\')" ' +
                 'style="flex-shrink:0;width:120px;background:#2a2a3e;border-radius:12px;' +
                 'padding:12px;cursor:pointer;text-align:center;' +
                 'transition:background 0.2s;" ' +
@@ -243,7 +256,7 @@ App.registerPage('chat-list', (function() {
             if (filtered.length > 0) {
                 var cards = filtered.slice(0, 20).map(function(game) {
                     return '<div ' +
-                        'onclick="window.location.hash=\'/chat?id=' + game.id + '\'" ' +
+                        'onclick="window.goToChatFromList(\'' + game.id + '\')" ' +
                         'style="display:flex;align-items:center;background:#2a2a3e;border-radius:12px;' +
                         'padding:12px 14px;cursor:pointer;transition:background 0.2s;" ' +
                         'onmouseenter="this.style.background=\'#353555\'" ' +
