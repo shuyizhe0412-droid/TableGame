@@ -499,8 +499,7 @@ App.registerPage('detail', (function() {
         var onlineUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&color=2D2A26&bgcolor=FFFFFF&data=' +
             encodeURIComponent(url);
 
-        var imgHtml = '<img src="' + onlineUrl + '" style="width:220px;height:220px;border-radius:12px;display:block;" ' +
-            'onerror="this.parentElement.innerHTML=\\'<div style=\\\\\\'width:220px;height:293px;background:#F0EDE6;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#B5AFA6;font-size:14px;\\\\\\'>生成失败，请检查网络</div>\\'" />';
+        var imgHtml = '<img src="' + onlineUrl + '" style="width:220px;height:220px;border-radius:12px;display:block;">';
 
         if (QRUtils.isRestrictedBrowser()) {
             // 微信/QQ：隐藏wrap内容，只在img-wrap展示（可长按保存）

@@ -172,8 +172,7 @@ App.registerPage('profile', (function() {
             // 在线API兜底
             var onlineUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=2D2A26&bgcolor=FFFFFF&data=' +
                 encodeURIComponent(QRUtils.SITE_URL);
-            var imgHtml = '<img src="' + onlineUrl + '" style="width:200px;height:200px;border-radius:12px;" ' +
-                'onerror="this.parentElement.innerHTML=\'<div style=\\\'width:200px;height:200px;background:#F0EDE6;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#B5AFA6;font-size:14px;\\\'>生成失败</div>\'" />';
+            var imgHtml = '<img src="' + onlineUrl + '" style="width:200px;height:200px;border-radius:12px;">';
 
             if (QRUtils.isRestrictedBrowser()) {
                 // 微信/QQ：清空wrap，只在img-wrap展示
@@ -314,8 +313,7 @@ App.registerPage('profile', (function() {
         var onlineUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=80x80&color=2D2A26&bgcolor=FFFFFF&data=' +
             encodeURIComponent(url);
         container.innerHTML = '<img src="' + onlineUrl +
-            '" style="width:80px;height:80px;border-radius:4px;" ' +
-            'onerror="this.parentElement.innerHTML=\\'<span style=\\\\'font-size:28px;\\\\'>🎲</span>\\'" />';
+            '" style="width:80px;height:80px;border-radius:4px;">';
     }
 
     /** 上一页 */
