@@ -427,6 +427,11 @@ App.registerPage('detail', (function() {
         var modeNames = { setup: '摆盘引导', rules: '规则教学', quick: '规则速查' };
         var modeName = modeNames[state.qrMode] || '规则教学';
 
+        // 微信/QQ中显示长按提示
+        var isRestricted = QRUtils.isRestrictedBrowser();
+        var saveTip = isRestricted ? '<div style="font-size:11px;color:#B5AFA6;margin:8px 0;text-align:center;">💡 微信中请<b>长按二维码</b>保存图片</div>' : '';
+        var saveBtnText = '\u{1F4BE} 保存二维码图片';
+
         return '<div class="qr-modal-overlay" onclick="detailPage.closeQRModal(event)">' +
             '<div class="qr-modal" onclick="event.stopPropagation()">' +
             '<div class="qr-modal-title">生成分享二维码</div>' +
@@ -435,8 +440,10 @@ App.registerPage('detail', (function() {
             '<div class="qr-modal-canvas-wrap" id="detail-qr-canvas-wrap">' +
             '<div style="width:220px;height:293px;background:#F0EDE6;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#B5AFA6;font-size:14px;">加载中...</div>' +
             '</div>' +
+            '<div id="detail-qr-img-wrap" style="display:none;margin-bottom:12px;text-align:center;"></div>' +
+            saveTip +
             '<div class="qr-modal-desc">扫码学习 · ' + gameName + ' · ' + modeName + '</div>' +
-            '<button class="qr-modal-btn" onclick="detailPage.downloadDetailQR()">💾 保存二维码图片</button>' +
+            '<button class="qr-modal-btn" onclick="detailPage.downloadDetailQR()">' + saveBtnText + '</button>' +
             '</div>' +
             '<button class="qr-modal-close" onclick="detailPage.closeQRModal()">关闭</button>' +
             '</div>' +
@@ -448,19 +455,71 @@ App.registerPage('detail', (function() {
         if (!wrap || !state.game) return;
 
         var game = state.game;
-        // 调整canvas显示大小适应220宽
         var scale = 220 / QRUtils.CARD_W;
         var displayH = Math.round(QRUtils.CARD_H * scale);
+
+        // 显示加载状态
+        wrap.innerHTML = '<div style="width:220px;height:' + displayH + 'px;background:#F0EDE6;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#B5AFA6;font-size:14px;">生成中...</div>';
+
+        // 检查QRCode库是否可用
+        if (!QRUtils.isQRCodeAvailable()) {
+            // 库不可用，直接用在线API兜底
+            loadDetailQRFallback(game);
+            return;
+        }
 
         QRUtils.generateGameQRCard(state.gameId, game.name || '未知游戏', state.qrMode).then(function(canvas) {
             canvas.style.width = '220px';
             canvas.style.height = displayH + 'px';
             wrap.innerHTML = '';
             wrap.appendChild(canvas);
+
+            // 在微信/QQ中，同时生成一个img标签供长按保存
+            if (QRUtils.isRestrictedBrowser()) {
+                showQRFallbackImg(canvas);
+            }
         }).catch(function(e) {
             console.error('生成详情二维码失败:', e);
-            wrap.innerHTML = '<div style="width:220px;height:293px;background:#F0EDE6;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#B5AFA6;font-size:14px;">生成失败</div>';
+            loadDetailQRFallback(game);
         });
+    }
+
+    /** 二维码库不可用或用在线API兜底 */
+    function loadDetailQRFallback(game) {
+        var wrap = document.getElementById('detail-qr-canvas-wrap');
+        if (!wrap) return;
+        var gameName = game ? (game.name || '未知游戏') : '未知游戏';
+
+        var url = QRUtils.getGameUrl(state.gameId, state.qrMode);
+        var onlineUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&color=2D2A26&bgcolor=FFFFFF&data=' +
+            encodeURIComponent(url);
+
+        wrap.innerHTML = '<img src="' + onlineUrl + '" style="width:220px;height:220px;border-radius:12px;display:block;" ' +
+            'onerror="this.parentElement.innerHTML=\'<div style=\\\'width:220px;height:293px;background:#F0EDE6;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#B5AFA6;font-size:14px;\\\'>生成失败，请检查网络</div>\'" />';
+
+        // 也设置到img-wrap
+        var imgWrap = document.getElementById('detail-qr-img-wrap');
+        if (imgWrap) {
+            imgWrap.style.display = 'block';
+            imgWrap.innerHTML = '<img src="' + onlineUrl +
+                '" style="width:220px;height:220px;border-radius:12px;" />' +
+                '<div style="font-size:11px;color:#B5AFA6;margin-top:6px;">👆 长按二维码保存</div>';
+        }
+    }
+
+    /** 在微信中额外展示img标签供长按保存 */
+    function showQRFallbackImg(canvas) {
+        var imgWrap = document.getElementById('detail-qr-img-wrap');
+        if (!imgWrap) return;
+        try {
+            var dataUrl = canvas.toDataURL('image/png');
+            imgWrap.style.display = 'block';
+            imgWrap.innerHTML = '<img src="' + dataUrl +
+                '" style="width:220px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);" />' +
+                '<div style="font-size:11px;color:#B5AFA6;margin-top:6px;">👆 长按上方二维码保存</div>';
+        } catch (e) {
+            console.error('生成img失败:', e);
+        }
     }
 
     function showQRModal() {
@@ -487,10 +546,10 @@ App.registerPage('detail', (function() {
         if (!game) return;
         try {
             var canvas = await QRUtils.generateGameQRCard(state.gameId, game.name || '未知游戏', state.qrMode);
-            QRUtils.downloadCanvas(canvas, (game.name || '游戏') + '-二维码.png');
+            QRUtils.saveQRImage(canvas, (game.name || '游戏') + '-二维码.png');
         } catch (e) {
             console.error('下载失败:', e);
-            alert('下载失败: ' + e.message);
+            alert('保存失败: ' + (e.message || '请尝试截图保存'));
         }
     }
 

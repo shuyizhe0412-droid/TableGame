@@ -51,13 +51,17 @@ App.registerPage('profile', (function() {
 
     // ==================== 分享二维码区块 ====================
     function renderShareQR() {
+        var isRestricted = QRUtils.isRestrictedBrowser();
+        var tipText = isRestricted ? '长按二维码可保存到手机' : '扫码进入桌游AI教练';
+
         return '<div class="share-qr-section">' +
             '<div class="section-title">📤 分享给朋友</div>' +
             '<div class="section-subtitle">让更多桌游爱好者加入我们</div>' +
             '<div class="share-qr-canvas-wrap" id="share-qr-canvas-wrap">' +
             '<div style="width:200px;height:200px;background:#F0EDE6;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#B5AFA6;font-size:14px;">二维码加载中...</div>' +
             '</div>' +
-            '<div class="share-qr-tip">扫码进入桌游AI教练</div>' +
+            '<div id="share-qr-img-wrap" style="display:none;text-align:center;margin-top:8px;"></div>' +
+            '<div class="share-qr-tip">' + tipText + '</div>' +
             '<button class="share-qr-btn" onclick="profilePage.downloadSiteQR()">💾 保存二维码图片</button>' +
             '</div>';
     }
@@ -135,13 +139,43 @@ App.registerPage('profile', (function() {
 
         try {
             var canvas = await QRUtils.generateSiteQRCard();
-            canvas.style.width = '200px';
-            canvas.style.height = (200 * QRUtils.CARD_H / QRUtils.CARD_W) + 'px';
+            var displayW = 200;
+            var displayH = Math.round(displayW * QRUtils.CARD_H / QRUtils.CARD_W);
+            canvas.style.width = displayW + 'px';
+            canvas.style.height = displayH + 'px';
             wrap.innerHTML = '';
             wrap.appendChild(canvas);
+
+            // 微信/QQ中额外展示img供长按保存
+            if (QRUtils.isRestrictedBrowser()) {
+                try {
+                    var dataUrl = canvas.toDataURL('image/png');
+                    var imgWrap = document.getElementById('share-qr-img-wrap');
+                    if (imgWrap) {
+                        imgWrap.style.display = 'block';
+                        imgWrap.innerHTML = '<img src="' + dataUrl +
+                            '" style="width:' + displayW + 'px;border-radius:12px;" />' +
+                            '<div style="font-size:11px;color:#8C8578;margin-top:4px;">👆 点击上方二维码查看大图后长按保存</div>';
+                    }
+                } catch (e) {
+                    console.error('生成img回退失败:', e);
+                }
+            }
         } catch (e) {
             console.error('生成总入口二维码失败:', e);
-            wrap.innerHTML = '<div style="width:200px;height:200px;background:#F0EDE6;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#B5AFA6;font-size:14px;">二维码生成失败</div>';
+            // 在线API兜底
+            var onlineUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=2D2A26&bgcolor=FFFFFF&data=' +
+                encodeURIComponent(QRUtils.SITE_URL);
+            wrap.innerHTML = '<img src="' + onlineUrl + '" style="width:200px;height:200px;border-radius:12px;" ' +
+                'onerror="this.parentElement.innerHTML=\'<div style=\\\'width:200px;height:200px;background:#F0EDE6;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#B5AFA6;font-size:14px;\\\'>生成失败</div>\'" />';
+
+            var imgWrap = document.getElementById('share-qr-img-wrap');
+            if (imgWrap) {
+                imgWrap.style.display = 'block';
+                imgWrap.innerHTML = '<img src="' + onlineUrl +
+                    '" style="width:200px;border-radius:12px;" />' +
+                    '<div style="font-size:11px;color:#8C8578;margin-top:4px;">👆 长按保存二维码</div>';
+            }
         }
     }
 
@@ -149,10 +183,10 @@ App.registerPage('profile', (function() {
     async function downloadSiteQR() {
         try {
             var canvas = await QRUtils.generateSiteQRCard();
-            QRUtils.downloadCanvas(canvas, '桌游AI教练-入口二维码.png');
+            QRUtils.saveQRImage(canvas, '桌游AI教练-入口二维码.png');
         } catch (e) {
             console.error('下载失败:', e);
-            alert('下载失败: ' + e.message);
+            alert('保存失败: ' + (e.message || '请尝试截图保存'));
         }
     }
 
@@ -208,40 +242,69 @@ App.registerPage('profile', (function() {
             var imgContainer = document.getElementById('batch-qr-img-' + i);
             if (!imgContainer) continue;
 
-            // 使用简化二维码（仅QR码，80x80）
             try {
-                var tempDiv = document.createElement('div');
-                tempDiv.style.position = 'absolute';
-                tempDiv.style.left = '-9999px';
-                document.body.appendChild(tempDiv);
+                // 优先使用本地库生成
+                if (QRUtils.isQRCodeAvailable()) {
+                    var tempDiv = document.createElement('div');
+                    tempDiv.style.position = 'absolute';
+                    tempDiv.style.left = '-9999px';
+                    tempDiv.style.top = '-9999px';
+                    document.body.appendChild(tempDiv);
 
-                var qrCode = new QRCode(tempDiv, {
-                    text: QRUtils.getGameUrl(game.id),
-                    width: 80,
-                    height: 80,
-                    colorDark: '#2D2A26',
-                    colorLight: '#FFFFFF',
-                    correctLevel: QRCode.CorrectLevel.L
-                });
+                    (function(container, div, url, idx) {
+                        try {
+                            new QRCode(div, {
+                                text: url,
+                                width: 80,
+                                height: 80,
+                                colorDark: '#2D2A26',
+                                colorLight: '#FFFFFF',
+                                correctLevel: QRCode.CorrectLevel.L
+                            });
 
-                setTimeout(function() {
-                    var qrImg = tempDiv.querySelector('img');
-                    var qrCanvas = tempDiv.querySelector('canvas');
-                    if (qrImg) {
-                        imgContainer.innerHTML = '<img src="' + qrImg.src + '" style="width:80px;height:80px;border-radius:4px;">';
-                    } else if (qrCanvas) {
-                        imgContainer.innerHTML = '';
-                        qrCanvas.style.width = '80px';
-                        qrCanvas.style.height = '80px';
-                        imgContainer.appendChild(qrCanvas.cloneNode(true));
-                    }
-                    document.body.removeChild(tempDiv);
-                }, 200);
+                            setTimeout(function() {
+                                try {
+                                    var qrImg = div.querySelector('img');
+                                    var qrCanvas = div.querySelector('canvas');
+                                    if (qrImg && qrImg.src) {
+                                        container.innerHTML = '<img src="' + qrImg.src + '" style="width:80px;height:80px;border-radius:4px;">';
+                                    } else if (qrCanvas) {
+                                        var cloned = qrCanvas.cloneNode(true);
+                                        cloned.style.width = '80px';
+                                        cloned.style.height = '80px';
+                                        container.innerHTML = '';
+                                        container.appendChild(cloned);
+                                    } else {
+                                        loadBatchQRFallback(container, url);
+                                    }
+                                } catch (e) {
+                                    loadBatchQRFallback(container, url);
+                                }
+                                if (div.parentNode) div.parentNode.removeChild(div);
+                            }, 300);
+                        } catch (e) {
+                            if (div.parentNode) div.parentNode.removeChild(div);
+                            loadBatchQRFallback(container, url);
+                        }
+                    })(imgContainer, tempDiv, QRUtils.getGameUrl(game.id), i);
+                } else {
+                    // 库不可用，在线API兜底
+                    loadBatchQRFallback(imgContainer, QRUtils.getGameUrl(game.id));
+                }
             } catch (e) {
                 console.error('生成小二维码失败:', game.name, e);
                 imgContainer.innerHTML = '<span style="font-size:32px;">🎲</span>';
             }
         }
+    }
+
+    /** 批量二维码在线API兜底 */
+    function loadBatchQRFallback(container, url) {
+        var onlineUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=80x80&color=2D2A26&bgcolor=FFFFFF&data=' +
+            encodeURIComponent(url);
+        container.innerHTML = '<img src="' + onlineUrl +
+            '" style="width:80px;height:80px;border-radius:4px;" ' +
+            'onerror="this.parentElement.innerHTML=\\'<span style=\\\\'font-size:28px;\\\\'>🎲</span>\\'" />';
     }
 
     /** 上一页 */
@@ -299,7 +362,9 @@ App.registerPage('profile', (function() {
         batchQRPrevPage: batchQRPrevPage,
         batchQRNextPage: batchQRNextPage,
         downloadAllQRZip: downloadAllQRZip,
-        loadAllGames: loadAllGames
+        loadAllGames: loadAllGames,
+        loadBatchQRImages: loadBatchQRImages,
+        loadBatchQRFallback: loadBatchQRFallback
     };
 
     // 全局暴露
