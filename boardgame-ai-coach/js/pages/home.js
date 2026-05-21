@@ -150,12 +150,14 @@ App.registerPage('home', (function() {
     }
 
     function renderBanner() {
+        var bannerLinks = ['/library', '/library?category=入门', '/library?duration=30'];
+
         var dots = banners.map(function(b, i) {
             return '<span class="banner-dot ' + (i === state.currentBanner ? 'active' : '') + '" data-index="' + i + '"></span>';
         }).join('');
 
         var slides = banners.map(function(b, i) {
-            return '<div class="banner-slide ' + (i === state.currentBanner ? 'active' : '') + '" style="background:' + b.gradient + '">' +
+            return '<div class="banner-slide ' + (i === state.currentBanner ? 'active' : '') + '" style="background:' + b.gradient + '" onclick="window.location.hash=\'' + bannerLinks[i] + '\'">' +
                 '<div class="banner-title">' + b.title + '</div>' +
                 '<div class="banner-subtitle">' + b.subtitle + '</div>' +
                 '</div>';

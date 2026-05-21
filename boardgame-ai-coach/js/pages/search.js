@@ -53,11 +53,12 @@ App.registerPage('library', (function() {
         }
     }
 
-    // 解析URL参数
+    // 解析URL参数，返回 true 表示应用了新参数
     function parseUrlParams() {
         var hash = window.location.hash;
         var params = {};
         var match = hash.match(/\?(.+)$/);
+        var applied = false;
         if (match) {
             match[1].split('&').forEach(function(pair) {
                 var parts = pair.split('=');
@@ -68,18 +69,25 @@ App.registerPage('library', (function() {
         if (params.category) {
             var cat = params.category;
             if (categoryOptions.indexOf(cat) !== -1) {
+                if (state.category !== cat) applied = true;
                 state.category = cat;
             }
         }
         // 预选时长
         if (params.duration) {
             var dur = params.duration;
+            var targetDur = '';
             if (dur === '30') {
-                state.duration = '30-60';
+                targetDur = '<30';
             } else if (dur === '60') {
-                state.duration = '60-90';
+                targetDur = '30-60';
+            }
+            if (targetDur && state.duration !== targetDur) {
+                applied = true;
+                state.duration = targetDur;
             }
         }
+        return applied;
     }
 
     // ==================== 筛选逻辑 ====================
@@ -277,13 +285,14 @@ App.registerPage('library', (function() {
 
     function renderGameList() {
         if (state.filteredGames.length === 0) {
-            return '<div class="library-empty" id="game-grid" style="text-align:center;padding:60px 20px;color:#666;">' +
+            return '<div class="library-games-grid" id="game-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px;text-align:center;">' +
+                '<div style="grid-column:1/3;padding:60px 20px;color:#666;">' +
                 '<div style="font-size:48px;margin-bottom:16px;">🔍</div>' +
-                '<div>没有符合条件的游戏</div></div>';
+                '<div>没有符合条件的游戏</div></div></div>';
         }
 
         var cards = state.filteredGames.map(renderGameCard).join('');
-        return '<div class="library-games-grid" id="game-grid">' + cards + '</div>';
+        return '<div class="library-games-grid" id="game-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px;">' + cards + '</div>';
     }
 
     function renderFooter() {
@@ -395,11 +404,11 @@ App.registerPage('library', (function() {
     }
 
     function updateGameList() {
-        // 更新游戏网格（用 innerHTML，不会销毁父容器）
+        // 始终保留 #game-grid 容器，只改内部内容，确保双列 grid 不会丢失
         var grid = document.getElementById('game-grid');
         if (grid) {
             if (state.filteredGames.length === 0) {
-                grid.outerHTML = '<div class="library-empty" id="game-grid" style="text-align:center;padding:60px 20px;color:#666;">' +
+                grid.innerHTML = '<div style="grid-column:1/3;padding:60px 20px;color:#666;">' +
                     '<div style="font-size:48px;margin-bottom:16px;">🔍</div>' +
                     '<div>没有符合条件的游戏</div></div>';
             } else {
@@ -442,8 +451,21 @@ App.registerPage('library', (function() {
 
     // ==================== 初始化 ====================
     function init() {
+        // 每次进入页面都重新解析 URL 参数，确保从首页跳转过来能正确预选
+        var needReapply = parseUrlParams();
         if (state.allGames.length === 0) {
             loadGamesFromDB();
+        } else if (needReapply) {
+            // 数据已加载，但 URL 参数变了，重新筛选并更新UI
+            applyFilters();
+            setTimeout(function() {
+                // 更新筛选标签UI高亮
+                updateFiltersUI('category', state.category);
+                updateFiltersUI('difficulty', state.difficulty);
+                updateFiltersUI('player', state.playerCount);
+                updateFiltersUI('duration', state.duration);
+                updateGameList();
+            }, 50);
         }
         setTimeout(bindSearchEvents, 100);
     }
