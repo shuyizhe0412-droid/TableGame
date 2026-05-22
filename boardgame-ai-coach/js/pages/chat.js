@@ -62,69 +62,42 @@ App.registerPage('chat', (function() {
     };
 
     // ==================== 游戏类型预设问题配置 ====================
-    // 根据 category 和 tags 判断游戏类型，返回对应的预设问题
+    // 根据 tags 和 category 判断游戏类型，返回对应的预设问题
+    // 匹配优先级（按顺序）：tags 优先，category 作为兜底
     function getQuestionsByGameType(mode, category, tags) {
         category = category || '';
         tags = tags || [];
-        var tagsStr = tags.join(',').toLowerCase();
 
-        // 判断游戏类型
-        var isCardGame = tagsStr.includes('卡牌') || category === '卡牌' || 
-                         tagsStr.includes('纸牌') || tagsStr.includes('牌');
-        var isPartyGame = tagsStr.includes('派对') || tagsStr.includes('聚会') || 
-                          tagsStr.includes('社交') || category === '聚会';
-        var isDeductionGame = tagsStr.includes('推理') || tagsStr.includes('身份') || 
-                              tagsStr.includes('狼人') || tagsStr.includes('卧底');
-        var isBoardGame = tagsStr.includes('桌游') || tagsStr.includes('版图') || 
-                          tagsStr.includes('德式') || tagsStr.includes('美式');
-
-        // 通用预设问题
-        var universalQuestions = {
-            setup: ['几个人玩？', '游戏流程？', '配件清单？', '怎么开始？'],
-            rules: ['核心规则？', '怎么赢？', '基本操作？', '重要提示？'],
-            faq: ['获胜条件？', '常见问题？', '注意事项？', '技巧建议？']
-        };
-
-        // 桌游/版图类（需要摆盘）
-        var boardQuestions = {
-            setup: ['几个人玩？', '地图怎么摆？', '配件清单？', '初始放置？'],
-            rules: ['怎么获得资源？', '怎么建造？', '怎么赢？', '核心机制？'],
-            faq: ['交易规则', '特殊规则', '计分方式', '常见问题']
-        };
-
-        // 卡牌类
-        var cardQuestions = {
-            setup: ['几人能玩？', '怎么发牌？', '初始手牌？', '牌组构成？'],
-            rules: ['出牌规则？', '怎么赢？', '获胜条件？', '核心机制？'],
-            faq: ['特殊牌效果', '获胜条件', '常见问题', '技巧建议']
-        };
-
-        // 派对/聚会类
-        var partyQuestions = {
-            setup: ['几人能玩？', '角色怎么分配？', '怎么分组？', '初始设置？'],
-            rules: ['游戏流程？', '怎么赢？', '淘汰规则？', '胜利条件？'],
-            faq: ['常见问题', '角色说明', '注意事项', '技巧建议']
-        };
-
-        // 推理/身份类
-        var deductionQuestions = {
-            setup: ['几人能玩？', '角色怎么分配？', '怎么睁眼？', '初始设置？'],
-            rules: ['游戏流程？', '投票规则？', '胜负判定？', '特殊角色？'],
-            faq: ['角色能力', '投票规则', '胜负判定', '常见问题']
-        };
-
-        // 根据游戏类型选择预设
-        if (isDeductionGame) {
-            return deductionQuestions[mode] || universalQuestions[mode];
-        } else if (isPartyGame) {
-            return partyQuestions[mode] || universalQuestions[mode];
-        } else if (isCardGame && !isBoardGame) {
-            return cardQuestions[mode] || universalQuestions[mode];
-        } else if (isBoardGame) {
-            return boardQuestions[mode] || universalQuestions[mode];
+        // 辅助函数：精确匹配 tags 中是否包含指定关键字
+        function hasTag(keywords) {
+            return tags.some(function(tag) {
+                return keywords.indexOf(tag) !== -1;
+            });
         }
 
-        return universalQuestions[mode];
+        // 兜底：通用问题
+        var questions = ['几人能玩？', '游戏流程？', '怎么赢？', '核心规则？'];
+
+        // 规则1：tags包含"社交"或"推理" → 推理阵营类
+        if (hasTag(['社交', '推理'])) {
+            questions = ['几人能玩？', '角色分配？', '怎么投票？', '怎么赢？'];
+        }
+        // 规则2：tags包含"卡牌" → 卡牌类
+        else if (hasTag(['卡牌'])) {
+            questions = ['几人能玩？', '怎么发牌？', '出牌规则？', '怎么赢？'];
+        }
+        // 规则3：tags包含"派对" → 派对类
+        else if (hasTag(['派对'])) {
+            questions = ['几人能玩？', '怎么玩？', '计分规则？', '怎么赢？'];
+        }
+        // 规则4：tags包含"策略" 或 category是"medium"/"german" → 策略类
+        else if (hasTag(['策略']) || category === 'medium' || category === 'german') {
+            questions = ['几个人玩？', '地图怎么摆？', '资源怎么算？', '怎么赢？'];
+        }
+        // 规则5/6：category是"beginner"或其他兜底 → 入门/通用问题（已在默认值中）
+
+        console.log('[chat.js] getQuestionsByGameType - mode:', mode, 'category:', category, 'tags:', tags, 'result:', questions);
+        return questions;
     }
 
     // 语言风格配置
