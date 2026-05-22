@@ -163,6 +163,17 @@ App.registerPage('chat', (function() {
             .replace(/\n/g, '<br>');
     }
 
+    // 格式化AI回复：将 **XX** 和 *XX* 替换为 [XX]，再做HTML转义
+    function formatAIMessage(text) {
+        if (!text) return '';
+        // 将 **XX** 替换为 [XX]
+        text = text.replace(/\*\*(.*?)\*\*/g, '[$1]');
+        // 将 *XX* 替换为 [XX]（单星号也处理）
+        text = text.replace(/\*(.*?)\*/g, '[$1]');
+        // HTML转义 + 换行转<br>
+        return escapeHtml(text);
+    }
+
     // ==================== 从Supabase加载游戏数据 ====================
     async function loadGameData(gameId) {
         console.log('[chat.js] 准备加载游戏数据, gameId:', gameId);
@@ -262,7 +273,7 @@ App.registerPage('chat', (function() {
         } else {
             return '<div class="chat-message chat-message-ai">' +
                 '<div class="chat-avatar">🤖</div>' +
-                '<div class="chat-bubble chat-bubble-ai">' + escapeHtml(msg.content) + '</div>' +
+                '<div class="chat-bubble chat-bubble-ai">' + formatAIMessage(msg.content) + '</div>' +
                 '</div>';
         }
     }
@@ -287,7 +298,7 @@ App.registerPage('chat', (function() {
             // 无消息时显示欢迎语（店家模式 → 店家欢迎语，否则 → 游戏原有欢迎语）
             html += '<div class="chat-message chat-message-ai">' +
                 '<div class="chat-avatar">🤖</div>' +
-                '<div class="chat-bubble chat-bubble-ai">' + getWelcomeText(modeInfo, state.gameName) + '</div>' +
+                '<div class="chat-bubble chat-bubble-ai">' + formatAIMessage(getWelcomeText(modeInfo, state.gameName)) + '</div>' +
                 '</div>';
         } else {
             session.messages.forEach(function(msg) {
@@ -575,7 +586,7 @@ App.registerPage('chat', (function() {
             var welcomeText = state.gameId ? getWelcomeText(modeInfo, session.gameName) : getWelcomeText(modeInfo, '');
             messagesEl.innerHTML = '<div class="chat-message chat-message-ai">' +
                 '<div class="chat-avatar">🤖</div>' +
-                '<div class="chat-bubble chat-bubble-ai">' + welcomeText + '</div>' +
+                '<div class="chat-bubble chat-bubble-ai">' + formatAIMessage(welcomeText) + '</div>' +
                 '</div>';
         } else {
             session.messages.forEach(function(msg) {

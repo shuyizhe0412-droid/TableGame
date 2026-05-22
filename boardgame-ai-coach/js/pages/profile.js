@@ -164,13 +164,19 @@ App.registerPage('profile', (function() {
     }
 
     function renderFeatureList() {
-        return '<div style="margin:0 16px;">' +
-            '<div style="background:#FFFFFF;border-radius:16px;overflow:hidden;">' +
-            renderFeatureItem('📱', '批量二维码', 'profilePage.showBatchQR()') +
-            renderFeatureItem('📖', '使用指南', 'profilePage.showGuide()') +
+        var html = '<div style="margin:0 16px;">' +
+            '<div style="background:#FFFFFF;border-radius:16px;overflow:hidden;">';
+
+        // 店家模式：显示批量二维码入口
+        if (window._shopInfo) {
+            html += renderFeatureItem('📱', '批量二维码', 'profilePage.showBatchQR()');
+        }
+
+        html += renderFeatureItem('📖', '使用指南', 'profilePage.showGuide()') +
             renderFeatureItem('ℹ️', '关于我们', 'profilePage.showAbout()') +
             '</div>' +
             '</div>';
+        return html;
     }
 
     // 4. 开发者工具
