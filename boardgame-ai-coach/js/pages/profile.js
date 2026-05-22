@@ -390,7 +390,7 @@ App.registerPage('profile', (function() {
     window.profilePageRender = function() {
         var app = document.getElementById('app');
         if (app) {
-            app.innerHTML = page.render() + window.getTabBarHtml('profile');
+            app.innerHTML = (window.renderShopHeader ? window.renderShopHeader() : '') + page.render() + window.getTabBarHtml('profile');
             window.bindTabBarEvents();
             page.init();
         }

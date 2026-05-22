@@ -717,7 +717,7 @@ App.registerPage('detail', (function() {
     window.detailPageRender = function() {
         var app = document.getElementById('app');
         if (app) {
-            app.innerHTML = page.render();
+            app.innerHTML = (window.renderShopHeader ? window.renderShopHeader() : '') + page.render();
             window.bindTabBarEvents();
             // 注意：不在这里调用 init()，避免无限递归
         }

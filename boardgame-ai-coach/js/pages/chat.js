@@ -2,12 +2,21 @@
  * 桌游AI教练 - AI对话页
  */
 App.registerPage('chat', (function() {
+    // ==================== 店家欢迎语辅助 ====================
+    function getShopWelcome() {
+        var shopInfo = window._shopInfo;
+        if (!shopInfo || !shopInfo.name) return null;
+        return '欢迎来到' + shopInfo.name + '，我是你的AI桌游助手！';
+    }
+
     // ==================== 模式配置 ====================
     var modeConfig = {
         'setup': {
             name: '摆盘引导',
             icon: '🎯',
             welcome: function(gameName) {
+                var sw = getShopWelcome();
+                if (sw) return sw;
                 return '你好！我是你的摆盘助手。请告诉我你们有几个人玩，我来一步步教你摆放' + gameName + '的配件。';
             },
             // 预设问题会根据游戏类型动态生成
@@ -17,6 +26,8 @@ App.registerPage('chat', (function() {
             name: '规则教学',
             icon: '📖',
             welcome: function(gameName) {
+                var sw = getShopWelcome();
+                if (sw) return sw;
                 return '你好！让我们一起来学习' + gameName + '的规则。你可以随时问我任何问题，我们一步一步来。';
             },
             quickQuestions: []
@@ -25,6 +36,8 @@ App.registerPage('chat', (function() {
             name: '规则速查',
             icon: '🔍',
             welcome: function(gameName) {
+                var sw = getShopWelcome();
+                if (sw) return sw;
                 return '你好！你想查' + gameName + '的什么规则？直接问我就行。';
             },
             quickQuestions: []
@@ -33,6 +46,8 @@ App.registerPage('chat', (function() {
             name: 'AI推荐',
             icon: '🤔',
             welcome: function() {
+                var sw = getShopWelcome();
+                if (sw) return sw;
                 return '你好！我是桌游推荐助手。告诉我你们几个人玩？喜欢什么类型的游戏？我来帮你挑选最合适的桌游！';
             },
             quickQuestions: ['几人玩？', '玩多久？', '喜欢什么类型？'],
@@ -42,6 +57,8 @@ App.registerPage('chat', (function() {
             name: '规则速查',
             icon: '⚡',
             welcome: function() {
+                var sw = getShopWelcome();
+                if (sw) return sw;
                 return '你好！我是桌游规则速查助手。直接告诉我你想查哪款桌游的什么规则，我快速给你答案。';
             },
             quickQuestions: ['卡坦岛怎么交易？', '狼人杀各角色能力？', 'UNO能连出吗？'],
@@ -618,7 +635,7 @@ App.registerPage('chat', (function() {
     window.chatPageRender = function() {
         var app = document.getElementById('app');
         if (app) {
-            app.innerHTML = page.render();
+            app.innerHTML = (window.renderShopHeader ? window.renderShopHeader() : '') + page.render();
             window.bindTabBarEvents();
             page.init();
         }

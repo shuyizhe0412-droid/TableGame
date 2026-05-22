@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">
+  <!-- 背景：沙色岛地图 -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#87CEEB"/>
+      <stop offset="100%" stop-color="#E0F0FF"/>
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4A90D9"/>
+      <stop offset="100%" stop-color="#2C6FB5"/>
+    </linearGradient>
+    <radialGradient id="sunGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFD700"/>
+      <stop offset="100%" stop-color="#FFA500"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 海洋背景 -->
+  <rect width="800" height="400" fill="url(#sea)"/>
+
+  <!-- 太阳 -->
+  <circle cx="680" cy="80" r="40" fill="url(#sunGrad)" opacity="0.9"/>
+
+  <!-- 云朵 -->
+  <ellipse cx="120" cy="70" rx="50" ry="20" fill="white" opacity="0.7"/>
+  <ellipse cx="150" cy="60" rx="40" ry="18" fill="white" opacity="0.7"/>
+  <ellipse cx="600" cy="55" rx="45" ry="16" fill="white" opacity="0.6"/>
+  <ellipse cx="630" cy="48" rx="35" ry="14" fill="white" opacity="0.6"/>
+
+  <!-- 卡坦岛：六边形拼贴 -->
+  <!-- 草原：绿色 -->
+  <polygon points="370,120 430,120 460,165 430,210 370,210 340,165" fill="#5DAE5F" opacity="0.85"/>
+  <!-- 森林：深绿 -->
+  <polygon points="460,165 520,165 550,210 520,255 460,255 430,210" fill="#3A7D44" opacity="0.85"/>
+  <!-- 农田：金黄色 -->
+  <polygon points="340,165 370,120 310,120 280,165 310,210 340,210" fill="#D4B84A" opacity="0.85"/>
+  <!-- 山丘：棕色 -->
+  <polygon points="430,210 460,165 520,165 550,210 520,255 430,255" fill="#B8860B" opacity="0.85"/>
+  <!-- 山脉：灰色 -->
+  <polygon points="520,255 550,210 610,210 640,255 610,300 520,300" fill="#8B8682" opacity="0.85"/>
+  <!-- 牧场：浅绿 -->
+  <polygon points="370,210 340,165 280,165 250,210 280,255 370,255" fill="#7BC67E" opacity="0.85"/>
+
+  <!-- 道路 -->
+  <line x1="400" y1="165" x2="400" y2="255" stroke="#8B7355" stroke-width="4" opacity="0.7"/>
+  <line x1="340" y1="210" x2="460" y2="210" stroke="#8B7355" stroke-width="4" opacity="0.7"/>
+
+  <!-- 定居点：棕色小房子 -->
+  <rect x="390" y="195" width="20" height="18" fill="#8B4513" rx="2"/>
+  <polygon points="390,195 410,195 400,180" fill="#A0522D"/>
+
+  <rect x="470" y="240" width="18" height="16" fill="#8B4513" rx="2"/>
+  <polygon points="470,240 488,240 479,226" fill="#A0522D"/>
+
+  <rect x="320" y="240" width="18" height="16" fill="#8B4513" rx="2"/>
+  <polygon points="320,240 338,240 329,226" fill="#A0522D"/>
+
+  <!-- 资源图标：木材 -->
+  <circle cx="490" cy="175" r="8" fill="#5D4037"/>
+  <rect x="486" y="168" width="8" height="3" fill="#8BC34A" rx="1"/>
+
+  <!-- 资源图标：砖块 -->
+  <rect x="445" y="268" width="10" height="6" fill="#D84315" rx="1"/>
+  <rect x="448" y="264" width="10" height="6" fill="#E64A19" rx="1"/>
+
+  <!-- 资源图标：羊毛 -->
+  <circle cx="295" cy="175" r="6" fill="white" opacity="0.8"/>
+
+  <!-- 标题文字 -->
+  <text x="100" y="340" font-family="'Noto Serif SC', 'STSong', serif" font-size="42" font-weight="bold" fill="#FFD700" stroke="#5D4037" stroke-width="1.5" opacity="0.95">卡坦岛</text>
+  <text x="100" y="375" font-family="'Noto Serif SC', 'STSong', serif" font-size="18" fill="rgba(255,255,255,0.85)">Catan · 经典德式策略</text>
+
+  <!-- 装饰：骰子 -->
+  <rect x="640" y="300" width="42" height="42" fill="white" rx="6" stroke="#D4893F" stroke-width="2"/>
+  <circle cx="654" cy="314" r="3.5" fill="#D4893F"/>
+  <circle cx="670" cy="314" r="3.5" fill="#D4893F"/>
+  <circle cx="662" cy="326" r="3.5" fill="#D4893F"/>
+  <circle cx="654" cy="338" r="3.5" fill="#D4893F"/>
+  <circle cx="670" cy="338" r="3.5" fill="#D4893F"/>
+
+  <!-- 底部装饰线 -->
+  <line x1="80" y1="385" x2="720" y2="385" stroke="#D4893F" stroke-width="1.5" opacity="0.5"/>
+</svg>

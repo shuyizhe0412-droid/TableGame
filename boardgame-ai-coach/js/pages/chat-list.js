@@ -401,7 +401,7 @@ App.registerPage('chat-list', (function() {
     window.chatListPageRender = function() {
         var app = document.getElementById('app');
         if (app) {
-            app.innerHTML = page.render() + window.getTabBarHtml('chat');
+            app.innerHTML = (window.renderShopHeader ? window.renderShopHeader() : '') + page.render() + window.getTabBarHtml('chat');
             window.bindTabBarEvents();
             page.init();
         }

@@ -500,7 +500,7 @@ App.registerPage('library', (function() {
     window.libraryPageRender = function() {
         var app = document.getElementById('app');
         if (app) {
-            app.innerHTML = page.render() + window.getTabBarHtml('library');
+            app.innerHTML = (window.renderShopHeader ? window.renderShopHeader() : '') + page.render() + window.getTabBarHtml('library');
             window.bindTabBarEvents();
             page.init();
         }
