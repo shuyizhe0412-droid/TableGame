@@ -4,13 +4,20 @@
 App.registerPage('chat', (function() {
     // ==================== 店家欢迎语辅助 ====================
     // 欢迎语和预设问题是两个独立的部分：
-    // - 欢迎语：有店家 → 显示店家专属欢迎语，无店家 → 显示游戏原有欢迎语
+    // - 欢迎语：有店家 → 显示店家专属欢迎语（含游戏名），无店家 → 显示游戏原有欢迎语
     // - 预设问题：始终根据游戏 category 动态生成，不受店家模式影响
-    function getWelcomeText(modeInfo, gameName) {
+    function getShopWelcome(gameName) {
         var shopInfo = window._shopInfo;
-        if (shopInfo && shopInfo.name) {
-            return '欢迎来到' + shopInfo.name + '，我是你的AI桌游助手！';
+        if (!shopInfo || !shopInfo.name) return null;
+        if (gameName) {
+            return '欢迎来到' + shopInfo.name + '！让我们一起来学习' + gameName + '的规则。';
         }
+        return '欢迎来到' + shopInfo.name + '！我是你的AI桌游助手，告诉我你想学哪款游戏的规则。';
+    }
+
+    function getWelcomeText(modeInfo, gameName) {
+        var sw = getShopWelcome(gameName);
+        if (sw) return sw;
         return modeInfo.welcome(gameName);
     }
 
