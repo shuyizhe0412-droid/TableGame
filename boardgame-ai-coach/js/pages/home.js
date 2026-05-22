@@ -94,9 +94,13 @@ App.registerPage('home', (function() {
         localStorage.setItem('recentCategories', cats.slice(0, 5).join(','));
     }
 
+    // 重试计数（模块级，避免因重新初始化而丢失）
+    var _loadRetryCount = 0;
+    var _maxLoadRetries = 3;
+
     // ==================== 数据加载 ====================
     async function loadGamesFromDB() {
-        console.log('[home.js] 开始加载游戏数据');
+        console.log('[home.js] 开始加载游戏数据 (第' + (_loadRetryCount + 1) + '次尝试)');
         try {
             if (typeof window.getGames !== 'function') {
                 throw new Error('API 未加载');
@@ -107,13 +111,28 @@ App.registerPage('home', (function() {
             }
             state.allGames = games;
             state.isLoading = false;
+            state.loadError = null;
+            _loadRetryCount = 0;  // 成功后重置
             state.guessGames = getGuessGames();
             window.homePageRender();
         } catch (error) {
-            console.error('[home.js] 加载失败:', error);
-            state.loadError = error.message;
+            _loadRetryCount++;
+            console.error('[home.js] 加载失败 (第' + _loadRetryCount + '次):', error);
+
+            var errMsg = error.message || '未知错误';
+            if (_loadRetryCount >= _maxLoadRetries) {
+                errMsg = errMsg + '（已重试' + _maxLoadRetries + '次，请检查网络后手动刷新）';
+            }
+
+            state.loadError = errMsg;
             state.isLoading = false;
-            window.homePageRender();
+
+            // 直接更新DOM显示错误页，不触发 homePageRender → init → loadGamesFromDB 循环
+            var app = document.getElementById('app');
+            if (app) {
+                app.innerHTML = (window.renderShopHeader ? window.renderShopHeader() : '') + render() + window.getTabBarHtml('home');
+                window.bindTabBarEvents();
+            }
         }
     }
 
@@ -320,6 +339,7 @@ App.registerPage('home', (function() {
     }
 
     function reload() {
+        _loadRetryCount = 0;  // 手动重试时重置计数
         state.isLoading = true;
         state.loadError = null;
         window.homePageRender();
@@ -400,8 +420,14 @@ App.registerPage('home', (function() {
 
     // ==================== 初始化 ====================
     function init() {
-        // 加载数据
-        if (state.allGames.length === 0) {
+        // 已超过最大重试次数，不再自动加载
+        if (state.loadError && _loadRetryCount >= _maxLoadRetries) {
+            // 仅绑Banner，不重试加载
+            setTimeout(bindBannerEvents, 100);
+            return;
+        }
+        // 加载数据（仅当列表为空且无错误时自动加载）
+        if (state.allGames.length === 0 && !state.loadError) {
             loadGamesFromDB();
         }
         // 绑定Banner事件
