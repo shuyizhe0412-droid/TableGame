@@ -159,8 +159,13 @@ function buildShopContext() {
 
 /**
  * AI 对话接口（通过 Supabase Edge Function 代理）
+ * @param {Array} messages - 历史消息
+ * @param {string} gameName - 游戏名称
+ * @param {string} mode - 模式（setup/rules/faq/recommend/quick）
+ * @param {string} style - 风格（teacher/friend/dict）
+ * @param {object} gameData - 游戏完整数据（可选，setup/rules/faq模式需要）
  */
-async function aiChat(messages, gameName, mode, style) {
+async function aiChat(messages, gameName, mode, style, gameData) {
     var SUPABASE_FUNCTION_URL = SUPABASE_URL + '/functions/v1/deepseek-proxy';
     var shopContext = buildShopContext();
 
@@ -196,6 +201,57 @@ async function aiChat(messages, gameName, mode, style) {
             '4. 尽量给出实例帮助理解' + shopContext
     };
 
+    // 防幻觉约束前缀（仅 setup/rules/faq 模式添加）
+    var ANTI_HALLUCINATION_PREFIX = '你是一个桌游规则教学AI。请严格遵守以下规则：\n\n' +
+        '1. 【只教当前游戏】你只能讲解用户正在学习的这款游戏的规则。\n' +
+        '   绝对不能引用、对比、或提及任何其他桌游的规则。\n' +
+        '   不要说"类似于XX游戏"或"和XX一样"。\n\n' +
+        '2. 【基于提供的规则】你的回答必须完全基于以下提供的游戏规则文本。\n' +
+        '   如果提供的规则中没有某个细节，明确告诉用户"这个细节需要参考说明书确认"。\n' +
+        '   不要编造规则。\n\n' +
+        '3. 【不确定时标注】如果你不确定某个规则细节，必须说：\n' +
+        '   "这个部分我不太确定，建议查阅官方规则书确认。"\n' +
+        '   绝对不要编造或猜测。\n\n' +
+        '4. 【不混合规则】不要把不同游戏的机制混合在一起。\n' +
+        '   每个游戏的规则是独立的。\n\n' +
+        '5. 【结构化回答】回答时使用清晰的格式：\n' +
+        '   - 先用一句话概括核心\n' +
+        '   - 再分步骤详细讲解\n' +
+        '   - 最后提醒注意事项';
+
+    /**
+     * 构建游戏规则参考文本（附在 system prompt 末尾）
+     */
+    function buildGameRulesText(data) {
+        if (!data) return '';
+        var parts = [];
+        parts.push('---');
+        if (data.name) parts.push('游戏名称：' + data.name);
+        if (data.description) parts.push('游戏描述：' + data.description);
+        if (data.rules) parts.push('完整规则：' + data.rules);
+
+        // FAQ
+        if (data.faq && Array.isArray(data.faq) && data.faq.length > 0) {
+            var faqLines = ['常见问题：'];
+            data.faq.forEach(function(item) {
+                faqLines.push('Q: ' + item.q);
+                faqLines.push('A: ' + item.a);
+            });
+            parts.push(faqLines.join('\n'));
+        }
+
+        // 摆盘步骤
+        if (data.setupSteps && Array.isArray(data.setupSteps) && data.setupSteps.length > 0) {
+            var stepLines = ['摆盘步骤：'];
+            data.setupSteps.forEach(function(step, i) {
+                stepLines.push((i + 1) + '. ' + step);
+            });
+            parts.push(stepLines.join('\n'));
+        }
+
+        return '\n\n' + parts.join('\n');
+    }
+
     // 推荐/速查模式使用专用 system prompt，忽略 style
     var systemPrompt;
     if (mode === 'recommend') {
@@ -204,6 +260,11 @@ async function aiChat(messages, gameName, mode, style) {
         systemPrompt = systemPrompts._quick;
     } else {
         systemPrompt = systemPrompts[style] || systemPrompts.teacher;
+    }
+
+    // 对 setup/rules/faq 模式：添加防幻觉前缀 + 游戏规则参考文本
+    if (gameData && (mode === 'setup' || mode === 'rules' || mode === 'faq')) {
+        systemPrompt = ANTI_HALLUCINATION_PREFIX + '\n\n' + systemPrompt + buildGameRulesText(gameData);
     }
 
     try {

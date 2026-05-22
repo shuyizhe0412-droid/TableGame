@@ -224,8 +224,8 @@ App.registerPage('chat', (function() {
             .filter(function(msg) { return msg.role !== 'system'; })
             .map(function(msg) { return { role: msg.role, content: msg.content }; });
 
-        // 调用 DeepSeek API
-        aiChat(historyMessages, session.gameName, session.mode, session.style)
+        // 调用 DeepSeek API（传入游戏数据以获得防幻觉约束和规则参考）
+        aiChat(historyMessages, session.gameName, session.mode, session.style, session.gameData)
             .then(function(response) {
                 session.messages.push({
                     role: 'assistant',
