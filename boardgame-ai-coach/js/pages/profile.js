@@ -16,7 +16,13 @@ App.registerPage('profile', (function() {
         statsLoaded: false,
         qrLoaded: false,
         showGuideModal: false,
-        showAboutModal: false
+        showAboutModal: false,
+        showReviewPage: false,
+        reviewGames: [],
+        reviewLoaded: false,
+        reviewStats: { pending: 0, approved: 0 },
+        reviewStatsLoaded: false,
+        reviewExpanded: {}
     };
 
     // ==================== 渲染函数 ====================
@@ -167,9 +173,10 @@ App.registerPage('profile', (function() {
         var html = '<div style="margin:0 16px;">' +
             '<div style="background:#FFFFFF;border-radius:16px;overflow:hidden;">';
 
-        // 店家模式：显示批量二维码入口
+        // 店家模式：显示批量二维码入口 + 规则审核入口
         if (window._shopInfo) {
             html += renderFeatureItem('📱', '批量二维码', 'profilePage.showBatchQR()');
+            html += renderFeatureItem('📋', '规则审核', 'profilePage.showReviewPage()');
         }
 
         html += renderFeatureItem('📖', '使用指南', 'profilePage.showGuide()') +
@@ -269,11 +276,134 @@ App.registerPage('profile', (function() {
             '</div>';
     }
 
+    // ==================== 规则审核页面渲染 ====================
+
+    function renderReviewHeader() {
+        return '<div style="background:#FFFFFF;display:flex;align-items:center;padding:12px 16px;' +
+            'border-bottom:1px solid #E5E0D8;">' +
+            '<span onclick="profilePage.hideReviewPage()" style="font-size:18px;color:#C4864B;' +
+            'cursor:pointer;margin-right:12px;">←</span>' +
+            '<span style="font-size:17px;font-weight:600;color:#2D2A26;">📋 规则审核</span>' +
+            '</div>';
+    }
+
+    function renderReviewStats() {
+        var s = state.reviewStats;
+        return '<div style="margin:12px 16px;">' +
+            '<div style="background:#FFFFFF;border-radius:16px;padding:20px;">' +
+            '<div style="font-size:15px;font-weight:600;color:#2D2A26;margin-bottom:16px;">📊 审核统计</div>' +
+            '<div style="display:flex;justify-content:space-around;text-align:center;">' +
+            '<div>' +
+            '<div id="review-pending-count" style="font-size:28px;font-weight:700;color:#E67E22;">' + s.pending + '</div>' +
+            '<div style="font-size:12px;color:#8C8578;margin-top:4px;">待审核</div>' +
+            '</div>' +
+            '<div>' +
+            '<div id="review-approved-count" style="font-size:28px;font-weight:700;color:#4CAF50;">' + s.approved + '</div>' +
+            '<div style="font-size:12px;color:#8C8578;margin-top:4px;">已审核</div>' +
+            '</div>' +
+            '</div>' +
+            '</div>' +
+            '</div>';
+    }
+
+    function renderReviewActions() {
+        return '<div style="margin:0 16px 12px;">' +
+            '<button onclick="profilePage.approveAllGames()" style="width:100%;padding:10px 0;' +
+            'background:#C4864B;color:#FFFFFF;border:none;border-radius:8px;font-size:14px;' +
+            'cursor:pointer;">✅ 全部通过</button>' +
+            '</div>';
+    }
+
+    function renderReviewGameCard(game) {
+        var isExpanded = state.reviewExpanded[game.id] || false;
+        var emoji = game.emoji || '🎲';
+        var name = game.name || '未知游戏';
+        var tags = (game.tags && Array.isArray(game.tags)) ? game.tags.join(' | ') : '';
+        var desc = game.description || '';
+        var shortDesc = desc.length > 80 ? desc.substring(0, 80) + '...' : desc;
+
+        var html = '<div id="review-card-' + game.id + '" style="background:#FFFFFF;border-radius:12px;' +
+            'padding:16px;margin-bottom:10px;">';
+
+        html += '<div style="display:flex;align-items:flex-start;gap:12px;">' +
+            '<span style="font-size:28px;flex-shrink:0;">' + emoji + '</span>' +
+            '<div style="flex:1;min-width:0;">' +
+            '<div style="font-size:18px;font-weight:600;color:#2D2A26;margin-bottom:4px;">' + name + '</div>';
+        if (tags) {
+            html += '<div style="font-size:12px;color:#C4864B;margin-bottom:6px;">' + tags + '</div>';
+        }
+        html += '<div style="font-size:14px;color:#8C8578;line-height:1.5;">' + shortDesc + '</div>';
+
+        html += '<div style="margin-top:10px;">' +
+            '<span onclick="profilePage.toggleReviewCard(\'' + game.id + '\')" style="font-size:13px;' +
+            'color:#C4864B;cursor:pointer;">' + (isExpanded ? '🔼 收起' : '🔽 展开查看规则') + '</span>' +
+            '</div>';
+
+        if (isExpanded) {
+            html += '<div style="margin-top:12px;background:#F5F3EE;border-radius:8px;padding:12px;' +
+                'max-height:300px;overflow-y:auto;">' +
+                '<div style="font-size:12px;font-weight:600;color:#2D2A26;margin-bottom:8px;">📜 完整规则内容：</div>' +
+                '<div style="font-size:12px;color:#555555;line-height:1.7;white-space:pre-wrap;">' +
+                (game.rules || '暂无规则文本') +
+                '</div>' +
+                '</div>';
+        }
+
+        html += '<div style="display:flex;gap:10px;margin-top:12px;">' +
+            '<button onclick="profilePage.approveGame(\'' + game.id + '\')" style="flex:1;padding:8px 0;' +
+            'background:#4CAF50;color:#FFFFFF;border:none;border-radius:8px;font-size:14px;cursor:pointer;">✅ 通过</button>' +
+            '<button onclick="profilePage.rejectGame(\'' + game.id + '\')" style="flex:1;padding:8px 0;' +
+            'background:#E8E0D8;color:#8C8578;border:none;border-radius:8px;font-size:14px;cursor:pointer;">↩️ 驳回</button>' +
+            '</div>';
+
+        html += '</div></div>';
+        return html;
+    }
+
+    function renderReviewGameList() {
+        var games = state.reviewGames;
+        if (!state.reviewLoaded) {
+            return '<div style="margin:0 16px;text-align:center;padding:40px 0;color:#8C8578;">' +
+                '<div style="font-size:32px;margin-bottom:12px;">⏳</div>' +
+                '<div>加载待审核游戏...</div>' +
+                '</div>';
+        }
+        if (games.length === 0) {
+            return '<div style="margin:12px 16px;">' +
+                '<div style="background:#FFFFFF;border-radius:16px;padding:32px 20px;text-align:center;">' +
+                '<div style="font-size:48px;margin-bottom:12px;">✅</div>' +
+                '<div style="font-size:16px;font-weight:600;color:#2D2A26;margin-bottom:8px;">所有游戏已审核完毕</div>' +
+                '<div style="font-size:13px;color:#8C8578;">当前共' + state.reviewStats.approved + '款游戏已通过审核</div>' +
+                '</div>' +
+                '</div>';
+        }
+        var html = '<div style="margin:0 16px;">';
+        for (var i = 0; i < games.length; i++) {
+            html += renderReviewGameCard(games[i]);
+        }
+        html += '</div>';
+        return html;
+    }
+
+    function renderReviewPage() {
+        return '<div class="review-page" style="background:#F8F6F1;min-height:100vh;padding-bottom:80px;">' +
+            renderReviewHeader() +
+            renderReviewStats() +
+            renderReviewActions() +
+            renderReviewGameList() +
+            '</div>';
+    }
+
     // ==================== 主渲染 ====================
     function render() {
         // 批量二维码视图
         if (state.showBatchQR) {
             return renderBatchQRPage();
+        }
+
+        // 规则审核视图
+        if (state.showReviewPage) {
+            return renderReviewPage();
         }
 
         var modalHtml = '';
@@ -635,9 +765,210 @@ App.registerPage('profile', (function() {
         await QRUtils.downloadAllQRZip(games);
     }
 
+    // ==================== 规则审核 API 操作 ====================
+
+    async function loadReviewStats() {
+        if (state.reviewStatsLoaded) return;
+        var pending = 0;
+        var approved = 0;
+        try {
+            var pendingResp = await fetch(
+                SUPABASE_URL + '/rest/v1/games?select=count&reviewed=eq.false',
+                {
+                    method: 'HEAD',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+                        'Prefer': 'count=exact'
+                    }
+                }
+            );
+            var cr = pendingResp.headers.get('content-range');
+            pending = cr ? parseInt(cr.split('/')[1]) : 0;
+        } catch (e) {
+            console.error('[review] 加载待审核数失败:', e);
+        }
+        try {
+            var approvedResp = await fetch(
+                SUPABASE_URL + '/rest/v1/games?select=count&reviewed=eq.true',
+                {
+                    method: 'HEAD',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+                        'Prefer': 'count=exact'
+                    }
+                }
+            );
+            var ar = approvedResp.headers.get('content-range');
+            approved = ar ? parseInt(ar.split('/')[1]) : 0;
+        } catch (e) {
+            console.error('[review] 加载已审核数失败:', e);
+        }
+        state.reviewStats = { pending: pending, approved: approved };
+        state.reviewStatsLoaded = true;
+    }
+
+    async function loadPendingGames() {
+        if (state.reviewLoaded) return;
+        try {
+            var resp = await fetch(
+                SUPABASE_URL + '/rest/v1/games?reviewed=eq.false&order=name.asc&select=id,name,emoji,tags,description,rules',
+                {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+                    }
+                }
+            );
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            state.reviewGames = await resp.json();
+        } catch (e) {
+            console.error('[review] 加载待审核游戏失败:', e);
+            state.reviewGames = [];
+        }
+        state.reviewLoaded = true;
+    }
+
+    async function approveGame(gameId) {
+        try {
+            var resp = await fetch(
+                SUPABASE_URL + '/rest/v1/games?id=eq.' + gameId,
+                {
+                    method: 'PATCH',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify({ reviewed: true })
+                }
+            );
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+
+            state.reviewGames = state.reviewGames.filter(function(g) { return g.id !== gameId; });
+            state.reviewStats.pending = Math.max(0, state.reviewStats.pending - 1);
+            state.reviewStats.approved = state.reviewStats.approved + 1;
+            updateReviewStatsDOM();
+
+            var card = document.getElementById('review-card-' + gameId);
+            if (card) {
+                card.style.transition = 'opacity 0.3s';
+                card.style.opacity = '0';
+                setTimeout(function() {
+                    if (card.parentNode) card.parentNode.removeChild(card);
+                    if (state.reviewGames.length === 0) {
+                        state.reviewLoaded = false;
+                        state.reviewLoaded = true;
+                        window.profilePageRender();
+                    }
+                }, 300);
+            }
+        } catch (e) {
+            console.error('[review] 通过游戏失败:', e);
+            alert('操作失败，请重试');
+        }
+    }
+
+    async function approveAllGames() {
+        if (!confirm('确定将所有待审核游戏标记为已审核吗？')) return;
+        try {
+            var resp = await fetch(
+                SUPABASE_URL + '/rest/v1/games?reviewed=eq.false',
+                {
+                    method: 'PATCH',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify({ reviewed: true })
+                }
+            );
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+
+            state.reviewStats.approved = state.reviewStats.approved + state.reviewStats.pending;
+            state.reviewStats.pending = 0;
+            state.reviewGames = [];
+            updateReviewStatsDOM();
+            window.profilePageRender();
+        } catch (e) {
+            console.error('[review] 全部通过失败:', e);
+            alert('操作失败，请重试');
+        }
+    }
+
+    function rejectGame(gameId) {
+        state.reviewGames = state.reviewGames.filter(function(g) { return g.id !== gameId; });
+        state.reviewStats.pending = Math.max(0, state.reviewStats.pending - 1);
+        updateReviewStatsDOM();
+
+        var card = document.getElementById('review-card-' + gameId);
+        if (card) {
+            card.style.transition = 'opacity 0.3s';
+            card.style.opacity = '0';
+            setTimeout(function() {
+                if (card.parentNode) card.parentNode.removeChild(card);
+                if (state.reviewGames.length === 0) {
+                    state.reviewLoaded = false;
+                    state.reviewLoaded = true;
+                    window.profilePageRender();
+                }
+            }, 300);
+        }
+        alert('已标记为待修改，后续可重新审核');
+    }
+
+    function toggleReviewCard(gameId) {
+        state.reviewExpanded[gameId] = !state.reviewExpanded[gameId];
+        var card = document.getElementById('review-card-' + gameId);
+        if (card) {
+            var game = null;
+            for (var i = 0; i < state.reviewGames.length; i++) {
+                if (state.reviewGames[i].id === gameId) { game = state.reviewGames[i]; break; }
+            }
+            if (game) {
+                var parent = card.parentNode;
+                var tempDiv = document.createElement('div');
+                tempDiv.innerHTML = renderReviewGameCard(game);
+                var newCard = tempDiv.firstChild;
+                parent.replaceChild(newCard, card);
+            }
+        }
+    }
+
+    function updateReviewStatsDOM() {
+        var pendingEl = document.getElementById('review-pending-count');
+        var approvedEl = document.getElementById('review-approved-count');
+        if (pendingEl) pendingEl.textContent = state.reviewStats.pending;
+        if (approvedEl) approvedEl.textContent = state.reviewStats.approved;
+    }
+
+    async function showReviewPage() {
+        if (!window._shopInfo) return;
+        state.showReviewPage = true;
+        state.reviewLoaded = false;
+        state.reviewStatsLoaded = false;
+        state.reviewExpanded = {};
+        window.profilePageRender();
+        await loadReviewStats();
+        await loadPendingGames();
+        window.profilePageRender();
+    }
+
+    function hideReviewPage() {
+        state.showReviewPage = false;
+        state.reviewLoaded = false;
+        state.reviewStatsLoaded = false;
+        state.reviewExpanded = {};
+        window.profilePageRender();
+    }
+
     // ==================== 初始化 ====================
     function init() {
-        if (!state.showBatchQR) {
+        if (!state.showBatchQR && !state.showReviewPage) {
             // 加载扫码统计数据
             loadStats();
             // 生成二维码（延迟确保DOM就绪）
@@ -665,7 +996,16 @@ App.registerPage('profile', (function() {
         batchQRNextPage: batchQRNextPage,
         downloadAllQRZip: downloadAllQRZip,
         loadBatchQRImages: loadBatchQRImages,
-        loadBatchQRFallback: loadBatchQRFallback
+        loadBatchQRFallback: loadBatchQRFallback,
+        // 规则审核
+        showReviewPage: showReviewPage,
+        hideReviewPage: hideReviewPage,
+        approveGame: approveGame,
+        approveAllGames: approveAllGames,
+        rejectGame: rejectGame,
+        toggleReviewCard: toggleReviewCard,
+        loadReviewStats: loadReviewStats,
+        loadPendingGames: loadPendingGames
     };
 
     // 全局暴露
