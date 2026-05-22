@@ -323,7 +323,7 @@ App.registerPage('profile', (function() {
         var shortDesc = desc.length > 80 ? desc.substring(0, 80) + '...' : desc;
 
         var html = '<div id="review-card-' + game.id + '" style="background:#FFFFFF;border-radius:12px;' +
-            'padding:16px;margin-bottom:10px;">';
+            'padding:16px;margin:0 0 10px 0;">';
 
         html += '<div style="display:flex;align-items:flex-start;gap:12px;">' +
             '<span style="font-size:28px;flex-shrink:0;">' + emoji + '</span>' +
@@ -356,7 +356,8 @@ App.registerPage('profile', (function() {
             'background:#E8E0D8;color:#8C8578;border:none;border-radius:8px;font-size:14px;cursor:pointer;">↩️ 驳回</button>' +
             '</div>';
 
-        html += '</div></div>';
+        // 三层嵌套: 内容区(flex:1) > flex容器 > 卡片外层
+        html += '</div></div></div>';
         return html;
     }
 
@@ -377,7 +378,7 @@ App.registerPage('profile', (function() {
                 '</div>' +
                 '</div>';
         }
-        var html = '<div style="margin:0 16px;">';
+        var html = '<div style="margin:0;padding:0;">';
         for (var i = 0; i < games.length; i++) {
             html += renderReviewGameCard(games[i]);
         }
