@@ -246,11 +246,93 @@ async function saveConversation(conversation) {
     return true;
 }
 
+/**
+ * 记录一次扫码
+ * @param {string|null} shopId - 店家ID（可为空）
+ * @param {string|null} gameId - 游戏ID（可为空）
+ */
+async function logScan(shopId, gameId) {
+    console.log('[logScan] 记录扫码, shopId:', shopId, 'gameId:', gameId);
+    try {
+        var body = { game_id: gameId };
+        if (shopId) body.shop_id = shopId;
+
+        var url = SUPABASE_URL + '/rest/v1/scan_logs';
+        var response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify(body)
+        });
+
+        console.log('[logScan] 响应状态:', response.status);
+        if (!response.ok) {
+            console.error('[logScan] 记录失败');
+        }
+    } catch (e) {
+        console.error('[logScan] 错误:', e);
+    }
+}
+
+/**
+ * 获取扫码统计
+ * @param {string|null} shopId - 店家ID（为空则查询全部）
+ * @returns {Promise<{data: {total: number, today: number, week: number}, error: string|null}>}
+ */
+async function getScanStats(shopId) {
+    console.log('[getScanStats] 查询统计, shopId:', shopId);
+    try {
+        var headers = {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json',
+            'Prefer': 'count=exact'
+        };
+
+        // 查询总数
+        var totalUrl = SUPABASE_URL + '/rest/v1/scan_logs?select=count';
+        if (shopId) totalUrl += '&shop_id=eq.' + shopId;
+        var totalResp = await fetch(totalUrl, { method: 'GET', headers: headers });
+        var totalCount = parseInt((totalResp.headers.get('content-range') || '/0').split('/')[1] || '0');
+
+        // 查询今日
+        var today = new Date();
+        today.setHours(0, 0, 0, 0);
+        var todayUrl = SUPABASE_URL + '/rest/v1/scan_logs?select=count&scanned_at=gte.' + today.toISOString();
+        if (shopId) todayUrl += '&shop_id=eq.' + shopId;
+        var todayResp = await fetch(todayUrl, { method: 'GET', headers: headers });
+        var todayCount = parseInt((todayResp.headers.get('content-range') || '/0').split('/')[1] || '0');
+
+        // 查询本周
+        var weekStart = new Date();
+        weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+        weekStart.setHours(0, 0, 0, 0);
+        var weekUrl = SUPABASE_URL + '/rest/v1/scan_logs?select=count&scanned_at=gte.' + weekStart.toISOString();
+        if (shopId) weekUrl += '&shop_id=eq.' + shopId;
+        var weekResp = await fetch(weekUrl, { method: 'GET', headers: headers });
+        var weekCount = parseInt((weekResp.headers.get('content-range') || '/0').split('/')[1] || '0');
+
+        return {
+            data: { total: totalCount, today: todayCount, week: weekCount },
+            error: null
+        };
+    } catch (e) {
+        console.error('[getScanStats] 错误:', e);
+        return { data: { total: 0, today: 0, week: 0 }, error: e.message };
+    }
+}
+
 // 挂载到全局
 window.getGames = getGames;
 window.getGameDetail = getGameDetail;
 window.getShopInfo = getShopInfo;
 window.aiChat = aiChat;
 window.saveConversation = saveConversation;
+window.logScan = logScan;
+window.getScanStats = getScanStats;
 
 console.log('[api.js] 加载完成，已挂载到 window');

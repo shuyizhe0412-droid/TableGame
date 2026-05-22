@@ -11,73 +11,129 @@ App.registerPage('profile', (function() {
         showBatchQR: false,
         batchQRPage: 0,
         batchQRPerPage: 6,
-        allGamesLoaded: false
+        allGamesLoaded: false,
+        stats: { total: 0, today: 0, week: 0 },
+        statsLoaded: false,
+        showGuideModal: false,
+        showAboutModal: false
     };
 
     // ==================== 渲染函数 ====================
-    function renderHeader() {
-        return '<div class="profile-header">' +
-            '<div class="profile-avatar">' +
-            (state.isLoggedIn ? '<img src="' + state.user.avatar + '" alt="avatar">' : '<span>👤</span>') +
-            '</div>' +
-            '<div class="profile-login-tip">登录后解锁更多功能</div>' +
+
+    // 1. 标题栏
+    function renderPageTitle() {
+        return '<div class="profile-page-title" style="background:#FFFFFF;text-align:center;padding:14px 16px;' +
+            'border-bottom:1px solid #E5E0D8;font-size:17px;font-weight:600;color:#2D2A26;line-height:1.4;">' +
+            '👤 个人中心' +
             '</div>';
     }
 
-    function renderMenuItem(icon, title, badge, onclick) {
-        var badgeHtml = badge ? '<span class="menu-badge">' + badge + '</span>' : '';
-        var arrowText = onclick ? '›' : '即将上线';
-        var clickAttr = onclick ? ' onclick="' + onclick + '"' : '';
-        return '<div class="profile-menu-item"' + clickAttr + ' style="' + (onclick ? 'cursor:pointer;' : '') + '">' +
-            '<div class="menu-left">' +
-            '<span class="menu-icon">' + icon + '</span>' +
-            '<span class="menu-title">' + title + '</span>' +
+    // 2. 扫码统计卡片
+    function renderStatsCard() {
+        var s = state.stats;
+        return '<div style="margin:12px 16px;">' +
+            '<div style="background:#FFFFFF;border-radius:16px;padding:20px;">' +
+            '<div style="font-size:15px;font-weight:600;color:#2D2A26;margin-bottom:16px;">📊 扫码统计</div>' +
+            '<div style="display:flex;justify-content:space-around;text-align:center;">' +
+            '<div>' +
+            '<div id="stat-total" style="font-size:24px;font-weight:700;color:#C4864B;">' + s.total + '</div>' +
+            '<div style="font-size:12px;color:#8C8578;margin-top:4px;">总扫码</div>' +
             '</div>' +
-            '<div class="menu-right">' +
-            badgeHtml +
-            '<span class="menu-arrow">' + arrowText + '</span>' +
+            '<div>' +
+            '<div id="stat-today" style="font-size:24px;font-weight:700;color:#C4864B;">' + s.today + '</div>' +
+            '<div style="font-size:12px;color:#8C8578;margin-top:4px;">今日</div>' +
+            '</div>' +
+            '<div>' +
+            '<div id="stat-week" style="font-size:24px;font-weight:700;color:#C4864B;">' + s.week + '</div>' +
+            '<div style="font-size:12px;color:#8C8578;margin-top:4px;">本周</div>' +
+            '</div>' +
+            '</div>' +
             '</div>' +
             '</div>';
     }
 
-    function renderMenu() {
-        return '<div class="profile-menu">' +
-            renderMenuItem('⭐', '我的收藏') +
-            renderMenuItem('📜', '浏览记录') +
-            renderMenuItem('📦', '批量生成二维码', null, 'profilePage.showBatchQR()') +
-            renderMenuItem('⚙️', '设置') +
-            '</div>';
-    }
-
-    // ==================== 分享二维码区块 ====================
-    function renderShareQR() {
-        var isRestricted = QRUtils.isRestrictedBrowser();
-        var tipText = isRestricted ? '长按二维码可保存到手机' : '扫码进入桌游AI教练';
-
-        return '<div class="share-qr-section">' +
-            '<div class="section-title">📤 分享给朋友</div>' +
-            '<div class="section-subtitle">让更多桌游爱好者加入我们</div>' +
-            '<div class="share-qr-canvas-wrap" id="share-qr-canvas-wrap">' +
-            '<div style="width:200px;height:200px;background:#F0EDE6;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#B5AFA6;font-size:14px;">二维码加载中...</div>' +
+    // 3. 功能列表
+    function renderFeatureItem(icon, title, onclick) {
+        return '<div style="display:flex;align-items:center;justify-content:space-between;' +
+            'padding:0 16px;height:56px;border-bottom:1px solid #E5E0D8;' +
+            (onclick ? 'cursor:pointer;' : '') + '"' +
+            (onclick ? ' onclick="' + onclick + '"' : '') + '>' +
+            '<div style="display:flex;align-items:center;gap:12px;">' +
+            '<span style="font-size:20px;">' + icon + '</span>' +
+            '<span style="font-size:15px;color:#2D2A26;">' + title + '</span>' +
             '</div>' +
-            '<div id="share-qr-img-wrap" style="display:none;text-align:center;margin-top:8px;"></div>' +
-            '<div class="share-qr-tip">' + tipText + '</div>' +
-            '<button class="share-qr-btn" onclick="profilePage.downloadSiteQR()">💾 保存二维码图片</button>' +
+            '<span style="font-size:16px;color:#B5AFA6;">›</span>' +
             '</div>';
     }
 
-    // ==================== 批量二维码入口 ====================
-    function renderBatchQREntry() {
-        return '<div class="batch-qr-entry" onclick="profilePage.showBatchQR()">' +
-            '<div class="batch-qr-entry-left">' +
-            '<span class="batch-qr-entry-icon">📦</span>' +
-            '<span class="batch-qr-entry-text">批量生成二维码</span>' +
+    function renderFeatureList() {
+        return '<div style="margin:0 16px;">' +
+            '<div style="background:#FFFFFF;border-radius:16px;overflow:hidden;">' +
+            renderFeatureItem('📱', '批量二维码', 'profilePage.showBatchQR()') +
+            renderFeatureItem('📖', '使用指南', 'profilePage.showGuide()') +
+            renderFeatureItem('ℹ️', '关于我们', 'profilePage.showAbout()') +
             '</div>' +
-            '<span class="batch-qr-entry-arrow">为所有游戏生成分享码 ›</span>' +
             '</div>';
     }
 
-    // ==================== 批量二维码页面 ====================
+    // 4. 开发者工具
+    function renderDevTools() {
+        var isShop = !!(window._shopInfo && window._shopInfo.name);
+        var btnText = isShop
+            ? '退出店家模式（当前：' + window._shopInfo.name + '）'
+            : '切换到店家模式';
+
+        return '<div style="margin:12px 16px;">' +
+            '<div style="background:#FFFFFF;border-radius:16px;padding:16px 20px;">' +
+            '<div style="font-size:14px;font-weight:600;color:#2D2A26;margin-bottom:12px;">🔧 开发者工具</div>' +
+            '<button onclick="profilePage.toggleShopMode()" style="width:100%;padding:10px 0;' +
+            'background:#F0EDE6;border:1px solid #E5E0D8;border-radius:8px;' +
+            'font-size:14px;color:#2D2A26;cursor:pointer;">' + btnText + '</button>' +
+            '</div>' +
+            '</div>';
+    }
+
+    // 5. 版本信息
+    function renderVersion() {
+        return '<div style="text-align:center;padding:24px 16px;font-size:12px;color:#B5AFA6;line-height:1.8;">' +
+            '<div>桌游AI教练 v1.0</div>' +
+            '<div>boardgame-ai.pages.dev</div>' +
+            '</div>';
+    }
+
+    // ==================== 弹窗 ====================
+    function renderModal(title, content) {
+        return '<div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);' +
+            'z-index:9999;display:flex;align-items:center;justify-content:center;" onclick="profilePage.closeModal()">' +
+            '<div style="background:#FFFFFF;border-radius:16px;padding:24px;margin:0 24px;max-width:320px;width:100%;' +
+            'box-shadow:0 8px 32px rgba(0,0,0,0.12);" onclick="event.stopPropagation()">' +
+            '<div style="font-size:17px;font-weight:600;color:#2D2A26;margin-bottom:16px;">' + title + '</div>' +
+            '<div style="font-size:14px;color:#4A4540;line-height:1.8;white-space:pre-line;">' + content + '</div>' +
+            '<button onclick="profilePage.closeModal()" style="margin-top:20px;width:100%;padding:12px 0;' +
+            'background:#C4864B;color:#FFFFFF;border:none;border-radius:8px;font-size:15px;cursor:pointer;">关闭</button>' +
+            '</div>' +
+            '</div>';
+    }
+
+    function getGuideContent() {
+        return '1. 在首页浏览推荐桌游\n' +
+            '2. 点击任意游戏查看详情\n' +
+            '3. 选择AI教学模式：\n' +
+            '   • 摆盘引导：教你摆放配件\n' +
+            '   • 规则教学：完整教你玩游戏\n' +
+            '   • 规则速查：快速查询规则问题\n' +
+            '4. 店家可以在详情页生成二维码\n' +
+            '5. 顾客扫码即可开始学习';
+    }
+
+    function getAboutContent() {
+        return '桌游AI教练 v1.0\n' +
+            'AI驱动的桌游教学助手\n' +
+            '让桌游入门不再难\n' +
+            'boardgame-ai.pages.dev';
+    }
+
+    // ==================== 批量二维码页面（保留） ====================
     function renderBatchQRPage() {
         var games = window.allGames || [];
         if (games.length === 0) {
@@ -86,7 +142,8 @@ App.registerPage('profile', (function() {
                 '<div style="text-align:center;padding:60px 20px;color:#8C8578;">' +
                 '<div style="font-size:48px;margin-bottom:16px;">📦</div>' +
                 '<div>游戏数据加载中，请稍后重试...</div>' +
-                '<button onclick="profilePage.loadAllGames()" style="margin-top:16px;padding:10px 20px;background:#C4864B;color:#fff;border:none;border-radius:8px;cursor:pointer;">重新加载</button>' +
+                '<button onclick="profilePage.loadAllGames()" style="margin-top:16px;padding:10px 20px;' +
+                'background:#C4864B;color:#fff;border:none;border-radius:8px;cursor:pointer;">重新加载</button>' +
                 '</div>' +
                 '</div>';
         }
@@ -95,7 +152,8 @@ App.registerPage('profile', (function() {
 
         return '<div class="batch-qr-page">' +
             renderBatchQRHeader() +
-            '<div id="batch-qr-progress" style="display:none;text-align:center;padding:16px;color:#C4864B;font-size:14px;font-weight:500;"></div>' +
+            '<div id="batch-qr-progress" style="display:none;text-align:center;padding:16px;' +
+            'color:#C4864B;font-size:14px;font-weight:500;"></div>' +
             gridHtml +
             '</div>';
     }
@@ -108,14 +166,6 @@ App.registerPage('profile', (function() {
             '</div>';
     }
 
-    // ==================== 页面标题栏 ====================
-    function renderPageTitle() {
-        return '<div class="profile-page-title" style="background:#FFFFFF;text-align:center;padding:14px 16px;' +
-            'border-bottom:1px solid #E5E0D8;font-size:17px;font-weight:600;color:#2D2A26;line-height:1.4;">' +
-            '👤 个人中心' +
-            '</div>';
-    }
-
     // ==================== 主渲染 ====================
     function render() {
         // 批量二维码视图
@@ -123,91 +173,90 @@ App.registerPage('profile', (function() {
             return renderBatchQRPage();
         }
 
-        return '<div class="profile-page" style="background:#F8F6F1;min-height:100vh;padding-bottom:56px;">' +
+        var modalHtml = '';
+        if (state.showGuideModal) {
+            modalHtml = renderModal('📖 使用指南', getGuideContent());
+        } else if (state.showAboutModal) {
+            modalHtml = renderModal('关于我们', getAboutContent());
+        }
+
+        return '<div class="profile-page" style="background:#F8F6F1;min-height:100vh;padding-bottom:80px;">' +
             renderPageTitle() +
-            '<div class="profile-container">' +
-            renderHeader() +
-            renderMenu() +
-            renderShareQR() +
-            renderBatchQREntry() +
-            '</div>' +
+            renderStatsCard() +
+            '<div style="height:12px;"></div>' +
+            renderFeatureList() +
+            '<div style="height:12px;"></div>' +
+            renderDevTools() +
+            renderVersion() +
+            modalHtml +
             '</div>';
     }
 
     // ==================== 事件处理 ====================
-    function goLogin() {
-        alert('登录功能即将上线');
-    }
 
-    // ==================== 二维码相关 ====================
-
-    /** 加载总入口二维码到 canvas */
-    async function loadSiteQR() {
-        var wrap = document.getElementById('share-qr-canvas-wrap');
-        if (!wrap) return;
-
-        var displayW = 200;
-        var displayH = Math.round(displayW * QRUtils.CARD_H / QRUtils.CARD_W);
-
+    // 扫码统计
+    async function loadStats() {
+        if (state.statsLoaded) return;
         try {
-            var canvas = await QRUtils.generateSiteQRCard();
-            canvas.style.width = displayW + 'px';
-            canvas.style.height = displayH + 'px';
-
-            if (QRUtils.isRestrictedBrowser()) {
-                // 微信/QQ：隐藏canvas，只展示img（支持长按保存）
-                canvas.style.display = 'none';
-                wrap.innerHTML = '';
-                wrap.appendChild(canvas);
-                try {
-                    var dataUrl = canvas.toDataURL('image/png');
-                    var imgWrap = document.getElementById('share-qr-img-wrap');
-                    if (imgWrap) {
-                        imgWrap.style.display = 'block';
-                        imgWrap.innerHTML = '<img src="' + dataUrl +
-                            '" style="width:' + displayW + 'px;border-radius:12px;" />' +
-                            '<div style="font-size:11px;color:#8C8578;margin-top:4px;">👆 长按二维码保存</div>';
-                    }
-                } catch (e) {
-                    console.error('生成img回退失败:', e);
+            var shopId = window._shopInfo ? window._shopInfo.id : null;
+            if (typeof window.getScanStats === 'function') {
+                var result = await window.getScanStats(shopId);
+                if (result.data) {
+                    state.stats = result.data;
+                    state.statsLoaded = true;
+                    // 更新DOM中的数字
+                    var totalEl = document.getElementById('stat-total');
+                    var todayEl = document.getElementById('stat-today');
+                    var weekEl = document.getElementById('stat-week');
+                    if (totalEl) totalEl.textContent = state.stats.total;
+                    if (todayEl) todayEl.textContent = state.stats.today;
+                    if (weekEl) weekEl.textContent = state.stats.week;
                 }
-            } else {
-                // 普通浏览器：展示canvas
-                wrap.innerHTML = '';
-                wrap.appendChild(canvas);
             }
         } catch (e) {
-            console.error('生成总入口二维码失败:', e);
-            // 在线API兜底
-            var onlineUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=2D2A26&bgcolor=FFFFFF&data=' +
-                encodeURIComponent(QRUtils.SITE_URL);
-            var imgHtml = '<img src="' + onlineUrl + '" style="width:200px;height:200px;border-radius:12px;">';
+            console.error('[profile.js] 加载扫码统计失败:', e);
+        }
+    }
 
-            if (QRUtils.isRestrictedBrowser()) {
-                // 微信/QQ：清空wrap，只在img-wrap展示
-                wrap.innerHTML = '';
-                var imgWrap = document.getElementById('share-qr-img-wrap');
-                if (imgWrap) {
-                    imgWrap.style.display = 'block';
-                    imgWrap.innerHTML = imgHtml +
-                        '<div style="font-size:11px;color:#8C8578;margin-top:4px;">👆 长按保存二维码</div>';
-                }
-            } else {
-                wrap.innerHTML = imgHtml;
+    // 店家模式切换
+    async function toggleShopMode() {
+        if (window._shopInfo) {
+            sessionStorage.removeItem('shopId');
+            window._shopInfo = null;
+            window.location.hash = '/home';
+            location.reload();
+            return;
+        }
+        var shopId = 'd9bb4f57-4b4b-48f7-810f-276266404813';
+        if (typeof window.getShopInfo === 'function') {
+            var result = await window.getShopInfo(shopId);
+            if (result.data) {
+                sessionStorage.setItem('shopId', shopId);
+                window._shopInfo = result.data;
+                window.location.hash = '/home';
+                location.reload();
             }
         }
     }
 
-    /** 下载总入口二维码 */
-    async function downloadSiteQR() {
-        try {
-            var canvas = await QRUtils.generateSiteQRCard();
-            QRUtils.saveQRImage(canvas, '桌游AI教练-入口二维码.png');
-        } catch (e) {
-            console.error('下载失败:', e);
-            alert('保存失败: ' + (e.message || '请尝试截图保存'));
-        }
+    // 弹窗
+    function showGuide() {
+        state.showGuideModal = true;
+        window.profilePageRender();
     }
+
+    function showAbout() {
+        state.showAboutModal = true;
+        window.profilePageRender();
+    }
+
+    function closeModal() {
+        state.showGuideModal = false;
+        state.showAboutModal = false;
+        window.profilePageRender();
+    }
+
+    // ==================== 批量二维码功能（保留） ====================
 
     /** 加载所有游戏数据 */
     async function loadAllGames() {
@@ -220,7 +269,6 @@ App.registerPage('profile', (function() {
                 window.allGames = games || [];
                 state.allGamesLoaded = true;
                 window.profilePageRender();
-                // 重新渲染后需要重新渲染批量视图中的二维码
                 setTimeout(function() { loadBatchQRImages(); }, 500);
             }
         } catch (e) {
@@ -237,7 +285,6 @@ App.registerPage('profile', (function() {
         state.batchQRPage = 0;
         window.profilePageRender();
 
-        // 确保有数据
         await loadAllGames();
         setTimeout(function() { loadBatchQRImages(); }, 600);
     }
@@ -246,8 +293,6 @@ App.registerPage('profile', (function() {
     function hideBatchQR() {
         state.showBatchQR = false;
         window.profilePageRender();
-        // 恢复总入口二维码
-        setTimeout(function() { loadSiteQR(); }, 100);
     }
 
     /** 在批量视图中渲染所有可见的二维码 */
@@ -262,7 +307,6 @@ App.registerPage('profile', (function() {
             if (!imgContainer) continue;
 
             try {
-                // 优先使用本地库生成
                 if (QRUtils.isQRCodeAvailable()) {
                     var tempDiv = document.createElement('div');
                     tempDiv.style.position = 'absolute';
@@ -286,7 +330,8 @@ App.registerPage('profile', (function() {
                                     var qrImg = div.querySelector('img');
                                     var qrCanvas = div.querySelector('canvas');
                                     if (qrImg && qrImg.src) {
-                                        container.innerHTML = '<img src="' + qrImg.src + '" style="width:80px;height:80px;border-radius:4px;">';
+                                        container.innerHTML = '<img src="' + qrImg.src +
+                                            '" style="width:80px;height:80px;border-radius:4px;">';
                                     } else if (qrCanvas) {
                                         var cloned = qrCanvas.cloneNode(true);
                                         cloned.style.width = '80px';
@@ -307,7 +352,6 @@ App.registerPage('profile', (function() {
                         }
                     })(imgContainer, tempDiv, QRUtils.getGameUrl(game.id), i);
                 } else {
-                    // 库不可用，在线API兜底
                     loadBatchQRFallback(imgContainer, QRUtils.getGameUrl(game.id));
                 }
             } catch (e) {
@@ -361,10 +405,9 @@ App.registerPage('profile', (function() {
 
     // ==================== 初始化 ====================
     function init() {
-        // 初始化用户状态
-        // 页面渲染后延迟加载总入口二维码
         if (!state.showBatchQR) {
-            setTimeout(function() { loadSiteQR(); }, 300);
+            // 加载扫码统计数据
+            loadStats();
         }
     }
 
@@ -372,15 +415,17 @@ App.registerPage('profile', (function() {
     var page = {
         render: render,
         init: init,
-        goLogin: goLogin,
-        loadSiteQR: loadSiteQR,
-        downloadSiteQR: downloadSiteQR,
+        loadStats: loadStats,
+        toggleShopMode: toggleShopMode,
+        showGuide: showGuide,
+        showAbout: showAbout,
+        closeModal: closeModal,
+        loadAllGames: loadAllGames,
         showBatchQR: showBatchQR,
         hideBatchQR: hideBatchQR,
         batchQRPrevPage: batchQRPrevPage,
         batchQRNextPage: batchQRNextPage,
         downloadAllQRZip: downloadAllQRZip,
-        loadAllGames: loadAllGames,
         loadBatchQRImages: loadBatchQRImages,
         loadBatchQRFallback: loadBatchQRFallback
     };

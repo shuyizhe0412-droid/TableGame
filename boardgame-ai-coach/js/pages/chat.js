@@ -463,6 +463,12 @@ App.registerPage('chat', (function() {
             refreshMessages();
             refreshQuickQuestions();
 
+            // 记录扫码（每次进入AI对话页都记录）
+            if (gameData && gameData.id) {
+                var shopId = window._shopInfo ? window._shopInfo.id : null;
+                window.logScan(shopId, gameData.id);
+            }
+
             // 初始化输入框
             setTimeout(function() {
                 var input = document.getElementById('chat-input');
