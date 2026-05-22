@@ -29,55 +29,40 @@ App.registerPage('profile', (function() {
             '</div>';
     }
 
-    // 2. 二维码管理
+    // 2. 二维码管理（仅店家模式显示）
     function renderQRCodeSection() {
         var shopInfo = window._shopInfo;
-        if (shopInfo && shopInfo.name) {
-            // 店家模式：两个二维码
-            return '<div style="margin:12px 16px;">' +
-                '<div style="background:#FFFFFF;border-radius:16px;padding:20px;">' +
-                '<div style="font-size:15px;font-weight:600;color:#2D2A26;margin-bottom:16px;">📱 二维码管理</div>' +
-                // 顾客入口二维码
-                '<div style="background:#F8F6F1;border-radius:12px;padding:16px;margin-bottom:12px;">' +
-                '<div style="font-size:14px;font-weight:600;color:#2D2A26;margin-bottom:4px;">👥 顾客入口二维码</div>' +
-                '<div style="font-size:12px;color:#8C8578;margin-bottom:12px;">贴在桌游盒子上，顾客扫码学习</div>' +
-                '<div id="customer-qr-wrap" style="text-align:center;margin-bottom:8px;">' +
-                '<div style="width:200px;height:200px;margin:0 auto;background:#E5E0D8;border-radius:8px;' +
-                'display:flex;align-items:center;justify-content:center;color:#B5AFA6;font-size:14px;">加载中...</div>' +
-                '</div>' +
-                '<div style="font-size:11px;color:#8C8578;text-align:center;margin-bottom:10px;">扫码进入AI桌游教学</div>' +
-                '<button onclick="profilePage.downloadCustomerQR()" style="width:100%;padding:10px 0;' +
-                'background:#C4864B;color:#FFFFFF;border:none;border-radius:8px;font-size:14px;cursor:pointer;">💾 保存二维码</button>' +
-                '</div>' +
-                // 店家管理入口二维码
-                '<div style="background:#F8F6F1;border-radius:12px;padding:16px;">' +
-                '<div style="font-size:14px;font-weight:600;color:#2D2A26;margin-bottom:4px;">🔧 店家管理入口</div>' +
-                '<div style="font-size:12px;color:#8C8578;margin-bottom:12px;">自己查看数据用，请勿公开</div>' +
-                '<div id="admin-qr-wrap" style="text-align:center;margin-bottom:8px;">' +
-                '<div style="width:200px;height:200px;margin:0 auto;background:#E5E0D8;border-radius:8px;' +
-                'display:flex;align-items:center;justify-content:center;color:#B5AFA6;font-size:14px;">加载中...</div>' +
-                '</div>' +
-                '<div style="font-size:11px;color:#8C8578;text-align:center;margin-bottom:10px;">扫码进入管理页面</div>' +
-                '<button onclick="profilePage.downloadAdminQR()" style="width:100%;padding:10px 0;' +
-                'background:#C4864B;color:#FFFFFF;border:none;border-radius:8px;font-size:14px;cursor:pointer;">💾 保存二维码</button>' +
-                '</div>' +
-                '</div>' +
-                '</div>';
+        if (!shopInfo || !shopInfo.name) {
+            // 普通用户模式：不显示二维码模块
+            return '';
         }
 
-        // 普通模式：一个通用入口二维码
+        // 店家模式：两个二维码
         return '<div style="margin:12px 16px;">' +
             '<div style="background:#FFFFFF;border-radius:16px;padding:20px;">' +
             '<div style="font-size:15px;font-weight:600;color:#2D2A26;margin-bottom:16px;">📱 二维码管理</div>' +
-            '<div style="background:#F8F6F1;border-radius:12px;padding:16px;">' +
-            '<div style="font-size:14px;font-weight:600;color:#2D2A26;margin-bottom:4px;">📱 网站入口二维码</div>' +
-            '<div style="font-size:12px;color:#8C8578;margin-bottom:12px;">分享给朋友，一起学桌游</div>' +
-            '<div id="general-qr-wrap" style="text-align:center;margin-bottom:8px;">' +
+            // 顾客入口二维码
+            '<div style="background:#F8F6F1;border-radius:12px;padding:16px;margin-bottom:12px;">' +
+            '<div style="font-size:14px;font-weight:600;color:#2D2A26;margin-bottom:4px;">👥 顾客入口二维码</div>' +
+            '<div style="font-size:12px;color:#8C8578;margin-bottom:12px;">贴在桌游盒子上，顾客扫码学习</div>' +
+            '<div id="customer-qr-wrap" style="text-align:center;margin-bottom:8px;">' +
             '<div style="width:200px;height:200px;margin:0 auto;background:#E5E0D8;border-radius:8px;' +
             'display:flex;align-items:center;justify-content:center;color:#B5AFA6;font-size:14px;">加载中...</div>' +
             '</div>' +
-            '<div style="font-size:11px;color:#8C8578;text-align:center;margin-bottom:10px;">扫码进入桌游AI教练</div>' +
-            '<button onclick="profilePage.downloadGeneralQR()" style="width:100%;padding:10px 0;' +
+            '<div style="font-size:11px;color:#8C8578;text-align:center;margin-bottom:10px;">扫码进入AI桌游教学</div>' +
+            '<button onclick="profilePage.downloadCustomerQR()" style="width:100%;padding:10px 0;' +
+            'background:#C4864B;color:#FFFFFF;border:none;border-radius:8px;font-size:14px;cursor:pointer;">💾 保存二维码</button>' +
+            '</div>' +
+            // 店家管理入口二维码
+            '<div style="background:#F8F6F1;border-radius:12px;padding:16px;">' +
+            '<div style="font-size:14px;font-weight:600;color:#2D2A26;margin-bottom:4px;">🔧 店家管理入口</div>' +
+            '<div style="font-size:12px;color:#8C8578;margin-bottom:12px;">自己查看数据用，请勿公开</div>' +
+            '<div id="admin-qr-wrap" style="text-align:center;margin-bottom:8px;">' +
+            '<div style="width:200px;height:200px;margin:0 auto;background:#E5E0D8;border-radius:8px;' +
+            'display:flex;align-items:center;justify-content:center;color:#B5AFA6;font-size:14px;">加载中...</div>' +
+            '</div>' +
+            '<div style="font-size:11px;color:#8C8578;text-align:center;margin-bottom:10px;">扫码进入管理页面</div>' +
+            '<button onclick="profilePage.downloadAdminQR()" style="width:100%;padding:10px 0;' +
             'background:#C4864B;color:#FFFFFF;border:none;border-radius:8px;font-size:14px;cursor:pointer;">💾 保存二维码</button>' +
             '</div>' +
             '</div>' +
@@ -331,17 +316,16 @@ App.registerPage('profile', (function() {
         }
     }
 
-    // 二维码生成
+    // 二维码生成（仅店家模式）
     function generateQRCodes() {
         if (state.qrLoaded) return;
         state.qrLoaded = true;
         var shopInfo = window._shopInfo;
-        if (shopInfo && shopInfo.name) {
-            generateCustomerQR();
-            generateAdminQR();
-        } else {
-            generateGeneralQR();
-        }
+        // 普通用户模式：不生成二维码
+        if (!shopInfo || !shopInfo.name) return;
+        // 店家模式：生成两个二维码
+        generateCustomerQR();
+        generateAdminQR();
     }
 
     async function generateCustomerQR() {
