@@ -3,10 +3,15 @@
  */
 App.registerPage('chat', (function() {
     // ==================== 店家欢迎语辅助 ====================
-    function getShopWelcome() {
+    // 欢迎语和预设问题是两个独立的部分：
+    // - 欢迎语：有店家 → 显示店家专属欢迎语，无店家 → 显示游戏原有欢迎语
+    // - 预设问题：始终根据游戏 category 动态生成，不受店家模式影响
+    function getWelcomeText(modeInfo, gameName) {
         var shopInfo = window._shopInfo;
-        if (!shopInfo || !shopInfo.name) return null;
-        return '欢迎来到' + shopInfo.name + '，我是你的AI桌游助手！';
+        if (shopInfo && shopInfo.name) {
+            return '欢迎来到' + shopInfo.name + '，我是你的AI桌游助手！';
+        }
+        return modeInfo.welcome(gameName);
     }
 
     // ==================== 模式配置 ====================
@@ -15,8 +20,6 @@ App.registerPage('chat', (function() {
             name: '摆盘引导',
             icon: '🎯',
             welcome: function(gameName) {
-                var sw = getShopWelcome();
-                if (sw) return sw;
                 return '你好！我是你的摆盘助手。请告诉我你们有几个人玩，我来一步步教你摆放' + gameName + '的配件。';
             },
             // 预设问题会根据游戏类型动态生成
@@ -26,8 +29,6 @@ App.registerPage('chat', (function() {
             name: '规则教学',
             icon: '📖',
             welcome: function(gameName) {
-                var sw = getShopWelcome();
-                if (sw) return sw;
                 return '你好！让我们一起来学习' + gameName + '的规则。你可以随时问我任何问题，我们一步一步来。';
             },
             quickQuestions: []
@@ -36,8 +37,6 @@ App.registerPage('chat', (function() {
             name: '规则速查',
             icon: '🔍',
             welcome: function(gameName) {
-                var sw = getShopWelcome();
-                if (sw) return sw;
                 return '你好！你想查' + gameName + '的什么规则？直接问我就行。';
             },
             quickQuestions: []
@@ -46,8 +45,6 @@ App.registerPage('chat', (function() {
             name: 'AI推荐',
             icon: '🤔',
             welcome: function() {
-                var sw = getShopWelcome();
-                if (sw) return sw;
                 return '你好！我是桌游推荐助手。告诉我你们几个人玩？喜欢什么类型的游戏？我来帮你挑选最合适的桌游！';
             },
             quickQuestions: ['几人玩？', '玩多久？', '喜欢什么类型？'],
@@ -57,8 +54,6 @@ App.registerPage('chat', (function() {
             name: '规则速查',
             icon: '⚡',
             welcome: function() {
-                var sw = getShopWelcome();
-                if (sw) return sw;
                 return '你好！我是桌游规则速查助手。直接告诉我你想查哪款桌游的什么规则，我快速给你答案。';
             },
             quickQuestions: ['卡坦岛怎么交易？', '狼人杀各角色能力？', 'UNO能连出吗？'],
@@ -309,10 +304,10 @@ App.registerPage('chat', (function() {
         var html = '<div class="chat-messages" id="chat-messages">';
 
         if (session.messages.length === 0) {
-            // 无消息时显示欢迎语
+            // 无消息时显示欢迎语（店家模式 → 店家欢迎语，否则 → 游戏原有欢迎语）
             html += '<div class="chat-message chat-message-ai">' +
                 '<div class="chat-avatar">🤖</div>' +
-                '<div class="chat-bubble chat-bubble-ai">' + modeInfo.welcome(state.gameName) + '</div>' +
+                '<div class="chat-bubble chat-bubble-ai">' + getWelcomeText(modeInfo, state.gameName) + '</div>' +
                 '</div>';
         } else {
             session.messages.forEach(function(msg) {
@@ -328,12 +323,12 @@ App.registerPage('chat', (function() {
         return html;
     }
 
-    // 渲染快捷问题
+    // 渲染快捷问题（欢迎语和预设问题是独立的：店家模式只影响欢迎语，不影响预设问题分类）
     function renderQuickQuestions() {
         var session = state.session;
         var mode = session.mode;
 
-        // recommend / quick 模式使用modeConfig中的固定预设
+        // recommend / quick 模式使用modeConfig中的固定预设（无需 gameData）
         var modeInfo = modeConfig[mode];
         if (modeInfo && modeInfo.quickQuestions && modeInfo.quickQuestions.length > 0) {
             var html = '<div class="chat-quick-questions">' +
@@ -345,10 +340,18 @@ App.registerPage('chat', (function() {
             return html;
         }
 
-        // 根据游戏类型动态获取预设问题
-        var category = session.gameData ? session.gameData.category : '';
-        var tags = session.gameData ? (session.gameData.tags || []) : [];
+        // 游戏数据未加载完成时不显示预设问题，避免出现错误的通用问题
+        // 等 loadGameData 完成后会通过 refreshQuickQuestions() 更新为正确的分类问题
+        if (!session.gameData) {
+            console.log('[chat.js] renderQuickQuestions - gameData 未加载，延迟显示预设问题');
+            return '<div class="chat-quick-questions chat-quick-pending"></div>';
+        }
+
+        // 根据游戏类型动态获取预设问题（不受店家模式影响）
+        var category = session.gameData.category || '';
+        var tags = session.gameData.tags || [];
         var questions = getQuestionsByGameType(mode, category, tags);
+        console.log('[chat.js] renderQuickQuestions - mode:', mode, 'category:', category, 'tags:', tags, 'questions:', questions);
 
         var html = '<div class="chat-quick-questions">' +
             '<div class="chat-quick-scroll">';
@@ -437,13 +440,13 @@ App.registerPage('chat', (function() {
             console.log('[chat.js] 无 gameId，跳过数据加载，使用模式:', state.mode);
             session.loaded = true;
 
-            // 首次进入该会话，发送欢迎语
+            // 首次进入该会话，发送欢迎语（店家模式 → 店家欢迎语，否则 → 游戏原有欢迎语）
             if (!session.welcomeSent && session.messages.length === 0) {
                 session.welcomeSent = true;
                 var modeInfo = modeConfig[session.mode];
                 session.messages.push({
                     role: 'assistant',
-                    content: modeInfo.welcome(session.gameName)
+                    content: getWelcomeText(modeInfo, session.gameName)
                 });
             }
 
@@ -466,13 +469,13 @@ App.registerPage('chat', (function() {
             console.log('[chat.js] 游戏分类:', session.gameData ? session.gameData.category : '未知');
             console.log('[chat.js] 游戏标签:', session.gameData ? session.gameData.tags : '未知');
 
-            // 首次进入该会话，发送欢迎语（作为一条 AI 消息）
+            // 首次进入该会话，发送欢迎语（店家模式 → 店家欢迎语，否则 → 游戏原有欢迎语）
             if (!session.welcomeSent && session.messages.length === 0) {
                 session.welcomeSent = true;
                 var modeInfo = modeConfig[session.mode];
                 session.messages.push({
                     role: 'assistant',
-                    content: modeInfo.welcome(session.gameName)
+                    content: getWelcomeText(modeInfo, session.gameName)
                 });
             }
 
@@ -583,8 +586,7 @@ App.registerPage('chat', (function() {
 
         if (session.messages.length === 0) {
             var modeInfo = modeConfig[session.mode];
-            // recommend/quick 模式的 welcome 不需要 gameName 参数
-            var welcomeText = state.gameId ? modeInfo.welcome(session.gameName) : modeInfo.welcome();
+            var welcomeText = state.gameId ? getWelcomeText(modeInfo, session.gameName) : getWelcomeText(modeInfo, '');
             messagesEl.innerHTML = '<div class="chat-message chat-message-ai">' +
                 '<div class="chat-avatar">🤖</div>' +
                 '<div class="chat-bubble chat-bubble-ai">' + welcomeText + '</div>' +
