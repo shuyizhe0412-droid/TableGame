@@ -14,6 +14,7 @@ App.registerPage('profile', (function() {
         allGamesLoaded: false,
         stats: { total: 0, today: 0, week: 0 },
         statsLoaded: false,
+        qrLoaded: false,
         showGuideModal: false,
         showAboutModal: false
     };
@@ -28,7 +29,118 @@ App.registerPage('profile', (function() {
             '</div>';
     }
 
-    // 2. 扫码统计卡片
+    // 2. 二维码管理
+    function renderQRCodeSection() {
+        var shopInfo = window._shopInfo;
+        if (shopInfo && shopInfo.name) {
+            // 店家模式：两个二维码
+            return '<div style="margin:12px 16px;">' +
+                '<div style="background:#FFFFFF;border-radius:16px;padding:20px;">' +
+                '<div style="font-size:15px;font-weight:600;color:#2D2A26;margin-bottom:16px;">📱 二维码管理</div>' +
+                // 顾客入口二维码
+                '<div style="background:#F8F6F1;border-radius:12px;padding:16px;margin-bottom:12px;">' +
+                '<div style="font-size:14px;font-weight:600;color:#2D2A26;margin-bottom:4px;">👥 顾客入口二维码</div>' +
+                '<div style="font-size:12px;color:#8C8578;margin-bottom:12px;">贴在桌游盒子上，顾客扫码学习</div>' +
+                '<div id="customer-qr-wrap" style="text-align:center;margin-bottom:8px;">' +
+                '<div style="width:200px;height:200px;margin:0 auto;background:#E5E0D8;border-radius:8px;' +
+                'display:flex;align-items:center;justify-content:center;color:#B5AFA6;font-size:14px;">加载中...</div>' +
+                '</div>' +
+                '<div style="font-size:11px;color:#8C8578;text-align:center;margin-bottom:10px;">扫码进入AI桌游教学</div>' +
+                '<button onclick="profilePage.downloadCustomerQR()" style="width:100%;padding:10px 0;' +
+                'background:#C4864B;color:#FFFFFF;border:none;border-radius:8px;font-size:14px;cursor:pointer;">💾 保存二维码</button>' +
+                '</div>' +
+                // 店家管理入口二维码
+                '<div style="background:#F8F6F1;border-radius:12px;padding:16px;">' +
+                '<div style="font-size:14px;font-weight:600;color:#2D2A26;margin-bottom:4px;">🔧 店家管理入口</div>' +
+                '<div style="font-size:12px;color:#8C8578;margin-bottom:12px;">自己查看数据用，请勿公开</div>' +
+                '<div id="admin-qr-wrap" style="text-align:center;margin-bottom:8px;">' +
+                '<div style="width:200px;height:200px;margin:0 auto;background:#E5E0D8;border-radius:8px;' +
+                'display:flex;align-items:center;justify-content:center;color:#B5AFA6;font-size:14px;">加载中...</div>' +
+                '</div>' +
+                '<div style="font-size:11px;color:#8C8578;text-align:center;margin-bottom:10px;">扫码进入管理页面</div>' +
+                '<button onclick="profilePage.downloadAdminQR()" style="width:100%;padding:10px 0;' +
+                'background:#C4864B;color:#FFFFFF;border:none;border-radius:8px;font-size:14px;cursor:pointer;">💾 保存二维码</button>' +
+                '</div>' +
+                '</div>' +
+                '</div>';
+        }
+
+        // 普通模式：一个通用入口二维码
+        return '<div style="margin:12px 16px;">' +
+            '<div style="background:#FFFFFF;border-radius:16px;padding:20px;">' +
+            '<div style="font-size:15px;font-weight:600;color:#2D2A26;margin-bottom:16px;">📱 二维码管理</div>' +
+            '<div style="background:#F8F6F1;border-radius:12px;padding:16px;">' +
+            '<div style="font-size:14px;font-weight:600;color:#2D2A26;margin-bottom:4px;">📱 网站入口二维码</div>' +
+            '<div style="font-size:12px;color:#8C8578;margin-bottom:12px;">分享给朋友，一起学桌游</div>' +
+            '<div id="general-qr-wrap" style="text-align:center;margin-bottom:8px;">' +
+            '<div style="width:200px;height:200px;margin:0 auto;background:#E5E0D8;border-radius:8px;' +
+            'display:flex;align-items:center;justify-content:center;color:#B5AFA6;font-size:14px;">加载中...</div>' +
+            '</div>' +
+            '<div style="font-size:11px;color:#8C8578;text-align:center;margin-bottom:10px;">扫码进入桌游AI教练</div>' +
+            '<button onclick="profilePage.downloadGeneralQR()" style="width:100%;padding:10px 0;' +
+            'background:#C4864B;color:#FFFFFF;border:none;border-radius:8px;font-size:14px;cursor:pointer;">💾 保存二维码</button>' +
+            '</div>' +
+            '</div>' +
+            '</div>';
+    }
+
+    // 店家门店模式的二维码信息卡下载
+    function makeShopCardCanvas(title, subtitle, urlText) {
+        var dpr = window.devicePixelRatio || 1;
+        if (QRUtils.isRestrictedBrowser() && dpr > 2) dpr = 2;
+        var W = QRUtils.CARD_W;
+        var H = QRUtils.CARD_H;
+        var canvas = document.createElement('canvas');
+        canvas.width = W * dpr;
+        canvas.height = H * dpr;
+        canvas.style.width = W + 'px';
+        canvas.style.height = H + 'px';
+        var ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+
+        // 白色背景圆角
+        ctx.fillStyle = '#FFFFFF';
+        roundRectCanvas(ctx, 0, 0, W, H, 16);
+        ctx.fill();
+        ctx.strokeStyle = '#E5E0D8';
+        ctx.lineWidth = 1;
+        roundRectCanvas(ctx, 0.5, 0.5, W - 1, H - 1, 16);
+        ctx.stroke();
+
+        // 标题
+        ctx.fillStyle = '#2D2A26';
+        ctx.font = 'bold 16px "PingFang SC","Microsoft YaHei",sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(title, W / 2, 40);
+
+        // 副标题
+        ctx.fillStyle = '#8C8578';
+        ctx.font = '12px "PingFang SC","Microsoft YaHei",sans-serif';
+        ctx.fillText(subtitle, W / 2, 62);
+
+        // URL
+        ctx.fillStyle = '#B5AFA6';
+        ctx.font = '11px "PingFang SC","Microsoft YaHei",sans-serif';
+        ctx.fillText(urlText, W / 2, H - 20);
+
+        return canvas;
+    }
+
+    function roundRectCanvas(ctx, x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + w - r, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+        ctx.lineTo(x + w, y + h - r);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        ctx.lineTo(x + r, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+    }
+
+    // 3. 扫码统计卡片
     function renderStatsCard() {
         var s = state.stats;
         return '<div style="margin:12px 16px;">' +
@@ -182,6 +294,7 @@ App.registerPage('profile', (function() {
 
         return '<div class="profile-page" style="background:#F8F6F1;min-height:100vh;padding-bottom:80px;">' +
             renderPageTitle() +
+            renderQRCodeSection() +
             renderStatsCard() +
             '<div style="height:12px;"></div>' +
             renderFeatureList() +
@@ -215,6 +328,135 @@ App.registerPage('profile', (function() {
             }
         } catch (e) {
             console.error('[profile.js] 加载扫码统计失败:', e);
+        }
+    }
+
+    // 二维码生成
+    function generateQRCodes() {
+        if (state.qrLoaded) return;
+        state.qrLoaded = true;
+        var shopInfo = window._shopInfo;
+        if (shopInfo && shopInfo.name) {
+            generateCustomerQR();
+            generateAdminQR();
+        } else {
+            generateGeneralQR();
+        }
+    }
+
+    async function generateCustomerQR() {
+        var container = document.getElementById('customer-qr-wrap');
+        if (!container) return;
+        var shopInfo = window._shopInfo;
+        var url = QRUtils.SITE_URL + '/#/?shop=' + shopInfo.id;
+        try {
+            var canvas = document.createElement('canvas');
+            await QRUtils.drawQRCard(canvas, url, {
+                title: '扫码学习桌游规则',
+                subtitle: shopInfo.name,
+                urlText: 'boardgame-ai.pages.dev'
+            });
+            canvas.style.width = '200px';
+            canvas.style.height = Math.round(200 * QRUtils.CARD_H / QRUtils.CARD_W) + 'px';
+            container.innerHTML = '';
+            container.appendChild(canvas);
+        } catch (e) {
+            console.error('[profile.js] 生成顾客二维码失败:', e);
+            container.innerHTML = '<div style="color:#8C8578;font-size:13px;">二维码生成失败</div>';
+        }
+    }
+
+    async function generateAdminQR() {
+        var container = document.getElementById('admin-qr-wrap');
+        if (!container) return;
+        var shopInfo = window._shopInfo;
+        var url = QRUtils.SITE_URL + '/#/profile?shop=' + shopInfo.id;
+        try {
+            var canvas = document.createElement('canvas');
+            await QRUtils.drawQRCard(canvas, url, {
+                title: shopInfo.name + '·管理入口',
+                subtitle: '仅限店家使用',
+                urlText: 'boardgame-ai.pages.dev'
+            });
+            canvas.style.width = '200px';
+            canvas.style.height = Math.round(200 * QRUtils.CARD_H / QRUtils.CARD_W) + 'px';
+            container.innerHTML = '';
+            container.appendChild(canvas);
+        } catch (e) {
+            console.error('[profile.js] 生成管理二维码失败:', e);
+            container.innerHTML = '<div style="color:#8C8578;font-size:13px;">二维码生成失败</div>';
+        }
+    }
+
+    async function generateGeneralQR() {
+        var container = document.getElementById('general-qr-wrap');
+        if (!container) return;
+        try {
+            var canvas = document.createElement('canvas');
+            await QRUtils.drawQRCard(canvas, QRUtils.SITE_URL, {
+                title: '桌游AI教练',
+                subtitle: '扫码开始学习桌游规则',
+                urlText: 'boardgame-ai.pages.dev'
+            });
+            canvas.style.width = '200px';
+            canvas.style.height = Math.round(200 * QRUtils.CARD_H / QRUtils.CARD_W) + 'px';
+            container.innerHTML = '';
+            container.appendChild(canvas);
+        } catch (e) {
+            console.error('[profile.js] 生成通用二维码失败:', e);
+            container.innerHTML = '<div style="color:#8C8578;font-size:13px;">二维码生成失败</div>';
+        }
+    }
+
+    // 下载二维码
+    async function downloadCustomerQR() {
+        var shopInfo = window._shopInfo;
+        if (!shopInfo) return;
+        var url = QRUtils.SITE_URL + '/#/?shop=' + shopInfo.id;
+        try {
+            var canvas = document.createElement('canvas');
+            await QRUtils.drawQRCard(canvas, url, {
+                title: '扫码学习桌游规则',
+                subtitle: shopInfo.name,
+                urlText: 'boardgame-ai.pages.dev'
+            });
+            QRUtils.saveQRImage(canvas, '顾客入口二维码-' + shopInfo.name + '.png');
+        } catch (e) {
+            console.error('[profile.js] 下载顾客二维码失败:', e);
+            alert('保存失败，请重试');
+        }
+    }
+
+    async function downloadAdminQR() {
+        var shopInfo = window._shopInfo;
+        if (!shopInfo) return;
+        var url = QRUtils.SITE_URL + '/#/profile?shop=' + shopInfo.id;
+        try {
+            var canvas = document.createElement('canvas');
+            await QRUtils.drawQRCard(canvas, url, {
+                title: shopInfo.name + '·管理入口',
+                subtitle: '仅限店家使用',
+                urlText: 'boardgame-ai.pages.dev'
+            });
+            QRUtils.saveQRImage(canvas, '店家管理入口-' + shopInfo.name + '.png');
+        } catch (e) {
+            console.error('[profile.js] 下载管理二维码失败:', e);
+            alert('保存失败，请重试');
+        }
+    }
+
+    async function downloadGeneralQR() {
+        try {
+            var canvas = document.createElement('canvas');
+            await QRUtils.drawQRCard(canvas, QRUtils.SITE_URL, {
+                title: '桌游AI教练',
+                subtitle: '扫码开始学习桌游规则',
+                urlText: 'boardgame-ai.pages.dev'
+            });
+            QRUtils.saveQRImage(canvas, '桌游AI教练-入口二维码.png');
+        } catch (e) {
+            console.error('[profile.js] 下载通用二维码失败:', e);
+            alert('保存失败，请重试');
         }
     }
 
@@ -408,6 +650,8 @@ App.registerPage('profile', (function() {
         if (!state.showBatchQR) {
             // 加载扫码统计数据
             loadStats();
+            // 生成二维码（延迟确保DOM就绪）
+            setTimeout(function() { generateQRCodes(); }, 200);
         }
     }
 
@@ -416,6 +660,10 @@ App.registerPage('profile', (function() {
         render: render,
         init: init,
         loadStats: loadStats,
+        generateQRCodes: generateQRCodes,
+        downloadCustomerQR: downloadCustomerQR,
+        downloadAdminQR: downloadAdminQR,
+        downloadGeneralQR: downloadGeneralQR,
         toggleShopMode: toggleShopMode,
         showGuide: showGuide,
         showAbout: showAbout,
