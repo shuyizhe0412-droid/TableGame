@@ -225,7 +225,7 @@ App.registerPage('chat', (function() {
             .map(function(msg) { return { role: msg.role, content: msg.content }; });
 
         // 调用 DeepSeek API
-        aiChat(historyMessages, session.gameName, session.mode, session.style)
+        aiChat(historyMessages, session.gameName, session.mode, session.style, session.gameData)
             .then(function(response) {
                 session.messages.push({
                     role: 'assistant',
