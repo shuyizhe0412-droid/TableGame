@@ -160,9 +160,34 @@ function buildShopContext() {
 /**
  * AI 对话接口（通过 Supabase Edge Function 代理）
  */
-async function aiChat(messages, gameName, mode, style) {
+async function aiChat(messages, gameName, mode, style, gameData) {
     var SUPABASE_FUNCTION_URL = SUPABASE_URL + '/functions/v1/deepseek-proxy';
     var shopContext = buildShopContext();
+
+    // ==================== 防幻觉前缀 ====================
+    var antiHallucinationPrefix = '' +
+        '你是一个桌游规则教学AI。请严格遵守以下规则：\n' +
+        '\n' +
+        '1. 你只能讲解当前正在学习的这款游戏的规则，绝对不能引用任何其他桌游。\n' +
+        '\n' +
+        '2. 你的回答必须100%基于下方提供的游戏规则文本。规则文本中没有的内容，你绝对不能编造。\n' +
+        '\n' +
+        '3. 如果规则文本中没有提到某个机制或细节，你必须回答：\n' +
+        '   "这部分规则在数据库中没有记录，建议查阅官方规则书确认。"\n' +
+        '\n' +
+        '4. 宁可少说，也不能说错。不确定的内容必须标注[需确认]。\n' +
+        '\n' +
+        '5. 回答格式：先用一句话概括，再分点详细讲解。\n';
+
+    // ==================== 数据库规则注入 ====================
+    var gameDataSection = '';
+    if (gameData) {
+        gameDataSection = '\n---\n' +
+            '游戏名称：' + (gameData.name || gameName || '') + '\n' +
+            '完整规则：' + (gameData.rules || '无') + '\n' +
+            '常见问题：' + (gameData.faq || '无') + '\n' +
+            '摆盘步骤：' + (gameData.setup_steps || '无') + '\n';
+    }
 
     var systemPrompts = {
         teacher: '你是一位专业的桌游教练"正经老师"。你正在教用户玩《' + (gameName || '桌游') + '》。\n' +
@@ -205,6 +230,9 @@ async function aiChat(messages, gameName, mode, style) {
     } else {
         systemPrompt = systemPrompts[style] || systemPrompts.teacher;
     }
+
+    // 注入防幻觉前缀 + 数据库规则
+    systemPrompt = antiHallucinationPrefix + '\n' + systemPrompt + gameDataSection;
 
     try {
         var response = await fetch(SUPABASE_FUNCTION_URL, {
