@@ -332,23 +332,49 @@ async function getPublicGame(id) {
 /**
  * 获取游戏列表（统一入口）
  * 玩家端：调用 getPublicGames(storeId)
- * 店家端（已登录）：调用 getMyGames()
+ * 店家端（已登录）：调用 getMyGames() + 合并全局默认桌游
  * @param {object} filters - 筛选条件（暂未在后端实现，前端自行过滤）
  * @param {string} [storeId] - 店家ID（玩家端使用）
  */
 async function getGames(filters, storeId) {
     console.log('[getGames] 开始, storeId:', storeId, ', loggedIn:', isLoggedIn());
 
-    // 店家已登录：使用管理端 API
+    // Bug 3 修复：店家已登录时，合并店家自己的桌游 + 全局默认桌游（去重）
     if (isLoggedIn()) {
-        console.log('[getGames] 店家模式，调用 getMyGames');
+        console.log('[getGames] 店家模式，合并我的桌游和全局桌游');
+        var myGames = [];
+        var globalGames = [];
         try {
-            var games = await getMyGames();
-            return games || [];
+            myGames = await getMyGames();
+            myGames = myGames || [];
         } catch (e) {
-            console.error('[getGames] 管理端获取失败:', e);
-            throw e;
+            console.warn('[getGames] getMyGames 失败:', e.message);
         }
+        try {
+            globalGames = await getGlobalGames();
+            globalGames = globalGames || [];
+        } catch (e) {
+            console.warn('[getGames] getGlobalGames 失败:', e.message);
+        }
+        // 合并去重：按 name 去重，优先保留 myGames 中的数据
+        var mergedMap = {};
+        if (globalGames.length > 0) {
+            globalGames.forEach(function(g) {
+                if (g.name) mergedMap[g.name] = g;
+            });
+        }
+        if (myGames.length > 0) {
+            myGames.forEach(function(g) {
+                if (g.name) mergedMap[g.name] = g;  // 店家自己的覆盖全局
+            });
+        }
+        var merged = [];
+        var keys = Object.keys(mergedMap);
+        for (var i = 0; i < keys.length; i++) {
+            merged.push(mergedMap[keys[i]]);
+        }
+        console.log('[getGames] 合并后桌游数量:', merged.length, '(我的:' + myGames.length + ', 全局:' + globalGames.length + ')');
+        return merged;
     }
 
     // 玩家端：优先用传入的 storeId，其次从 session 取
@@ -370,8 +396,8 @@ async function getGames(filters, storeId) {
     // 无 storeId 且未登录 → 调用全局默认桌游 API
     console.log('[getGames] 未登录且无 storeId，调用全局默认桌游');
     try {
-        var globalGames = await getGlobalGames();
-        return globalGames || [];
+        var globalGamesOnly = await getGlobalGames();
+        return globalGamesOnly || [];
     } catch (e) {
         console.error('[getGames] 全局桌游获取失败:', e);
         return [];
@@ -389,26 +415,32 @@ async function getGameDetail(id) {
     // 店家已登录：尝试管理端
     if (isLoggedIn()) {
         try {
-            return await getMyGameDetail(id);
+            var myGame = await getMyGameDetail(id);
+            if (myGame) return myGame;
         } catch (e) {
             console.warn('[getGameDetail] 管理端获取失败，尝试公开接口:', e.message);
         }
     }
 
-    // 公开接口兜底
+    // Bug 2 修复：公开接口可能返回 null（不是异常），需检查结果
     try {
-        return await getPublicGame(id);
+        var publicGame = await getPublicGame(id);
+        if (publicGame) return publicGame;
     } catch (e) {
         console.warn('[getGameDetail] 公开接口获取失败，尝试全局桌游:', e.message);
     }
 
     // 全局默认桌游接口兜底
     try {
-        return await getGlobalGame(id);
+        var globalGame = await getGlobalGame(id);
+        if (globalGame) return globalGame;
     } catch (e) {
-        console.error('[getGameDetail] 所有接口获取失败:', e);
-        throw e;
+        console.warn('[getGameDetail] 全局桌游接口获取失败:', e.message);
     }
+
+    // 所有接口都未返回有效数据
+    console.error('[getGameDetail] 所有接口均未返回数据，ID:', id);
+    return null;
 }
 
 /**

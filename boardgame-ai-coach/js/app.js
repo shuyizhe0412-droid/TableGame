@@ -233,6 +233,17 @@ async function initApp() {
     // 监听路由变化，渲染页面
     window.addEventListener('routechange', function(e) {
         var page = resolvePage(e.detail.page, e.detail.params);
+        var currentHash = window.location.hash;
+
+        // Bug 4 修复：进入 detail/chat 页面前保存来源页
+        if (page === 'detail' || page === 'chat') {
+            var prevPage = sessionStorage.getItem('currentMainPage') || '/home';
+            sessionStorage.setItem('prevPageBeforeDetail', prevPage);
+        } else {
+            // 记录当前页作为"主页"（用于从 detail 返回）
+            var hashWithoutParams = currentHash.split('?')[0];
+            sessionStorage.setItem('currentMainPage', hashWithoutParams);
+        }
 
         // 认证守卫
         if (!authGuard(page)) return;

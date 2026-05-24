@@ -241,6 +241,23 @@ App.registerPage('detail', (function() {
         return mockGames[id] || null;
     }
 
+    // 从全局兜底数据中按 id 或 name 匹配游戏（Bug 1 修复：刷新后兜底）
+    function getFallbackGame(idOrName) {
+        var fallback = window._fallbackGames;
+        if (!fallback || !fallback.length) return null;
+        // 先精确匹配 id
+        var found = fallback.find(function(g) { return g.id === idOrName; });
+        if (found) return found;
+        // 再按 name 模糊匹配（API 可能返回了游戏名但 id 不同）
+        found = fallback.find(function(g) { return g.name === idOrName || g.name_en === idOrName; });
+        if (found) return found;
+        // 最后尝试 name 包含匹配（decode 后的中文名）
+        var decoded = '';
+        try { decoded = decodeURIComponent(idOrName); } catch(e) { decoded = idOrName; }
+        found = fallback.find(function(g) { return g.name === decoded; });
+        return found || null;
+    }
+
     function formatDuration(minutes) {
         if (minutes >= 60) {
             var h = Math.floor(minutes / 60);
@@ -641,10 +658,19 @@ App.registerPage('detail', (function() {
             
             if (!game) {
                 // 尝试从 mockGames 回退（仅匹配数字ID）
-                console.warn('[detail.js] API未找到，尝试使用兜底数据');
+                console.warn('[detail.js] API未找到，尝试mockGames');
                 game = getMockGameById(id);
                 if (game) {
-                    console.log('[detail.js] 使用兜底数据:', game.name);
+                    console.log('[detail.js] mockGames命中:', game.name);
+                }
+            }
+            
+            if (!game) {
+                // Bug 1 修复：从内置25款兜底数据中匹配（按 id 或 name）
+                console.warn('[detail.js] 尝试内置兜底数据，ID:', id);
+                game = getFallbackGame(id);
+                if (game) {
+                    console.log('[detail.js] 兜底数据命中:', game.name);
                 }
             }
             
@@ -661,8 +687,9 @@ App.registerPage('detail', (function() {
             }
         } catch (error) {
             console.error('[detail.js] 加载失败:', error);
-            // 回退到兜底数据
+            // 逐级回退
             var mockGame = getMockGameById(id);
+            if (!mockGame) mockGame = getFallbackGame(id);
             if (mockGame) {
                 console.log('[detail.js] 使用兜底数据:', mockGame.name);
                 state.game = mockGame;
@@ -679,7 +706,21 @@ App.registerPage('detail', (function() {
     }
 
     function goBack() {
-        window.location.hash = '/home';
+        // Bug 4 修复：回到上一页，而非总是跳转首页
+        var prevPage = sessionStorage.getItem('prevPageBeforeDetail');
+        if (prevPage) {
+            sessionStorage.removeItem('prevPageBeforeDetail');
+            window.location.hash = prevPage;
+        } else {
+            // 兜底：优先用浏览器历史
+            try {
+                if (window.history.length > 1) {
+                    window.history.back();
+                    return;
+                }
+            } catch(e) {}
+            window.location.hash = '/home';
+        }
     }
 
     function share() {

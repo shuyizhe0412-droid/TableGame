@@ -54,6 +54,9 @@ App.registerPage('home', (function() {
         { id: 'default_25', name: '王国保卫战', name_en: 'The King Is Dead', min_players: 2, max_players: 4, play_time: 45, difficulty: 3, category: '策略', tags: ['区域控制','政治','历史'], description: '玩家扮演英国贵族派系，在国王去世后争夺王国控制权，谨慎使用有限的政治力量。' }
     ];
 
+    // 暴露到全局，供 detail.js 等页面使用
+    window._fallbackGames = fallbackGames;
+
     // 热门游戏列表
     var hotGameNames = ['卡坦岛', '狼人杀', '阿瓦隆', '璀璨宝石', '情书', '行动代号'];
 
