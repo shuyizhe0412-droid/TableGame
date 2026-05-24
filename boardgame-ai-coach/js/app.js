@@ -140,6 +140,60 @@ function renderPageContent(pageName, params, activeTab) {
 }
 
 /**
+ * 认证守卫：检查是否需要跳转
+ * @param {string} page - 页面名
+ * @returns {boolean} 是否允许访问
+ */
+function authGuard(page) {
+    var loggedIn = window.isLoggedIn && window.isLoggedIn();
+
+    // profile 页面需要登录
+    if (page === 'profile' && !loggedIn) {
+        console.log('[app.js] 未登录，跳转到登录页');
+        window.location.hash = '/auth';
+        return false;
+    }
+
+    // auth 页面：已登录则跳转到 profile
+    if (page === 'auth' && loggedIn) {
+        console.log('[app.js] 已登录，跳转到个人中心');
+        window.location.hash = '/profile';
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * 已登录时自动加载店家信息
+ */
+async function loadAuthShopInfo() {
+    var loggedIn = window.isLoggedIn && window.isLoggedIn();
+    if (!loggedIn) return;
+
+    // 如果已经通过 URL shop 参数加载了店家信息，不覆盖
+    if (window._shopInfo) return;
+
+    try {
+        if (window.authGetMe) {
+            var me = await window.authGetMe();
+            if (me) {
+                window._shopInfo = {
+                    id: me.id || me.store_id || '',
+                    name: me.store_name || me.name || '我的桌游吧',
+                    logo_url: me.logo_url || '',
+                    theme_color: me.theme_color || '#C4864B'
+                };
+                sessionStorage.setItem('shopId', window._shopInfo.id);
+                console.log('[app.js] 已登录店家:', window._shopInfo.name);
+            }
+        }
+    } catch (e) {
+        console.warn('[app.js] 自动加载店家信息失败:', e.message);
+    }
+}
+
+/**
  * 初始化应用
  */
 async function initApp() {
@@ -148,6 +202,9 @@ async function initApp() {
 
     // 先加载店家信息（从URL shop参数）
     await loadShopInfo();
+
+    // 已登录店家自动加载信息
+    await loadAuthShopInfo();
 
     // 路由到页面名的映射（/chat 无任何参数时映射到入口页）
     function resolvePage(route, params) {
@@ -175,16 +232,19 @@ async function initApp() {
 
     // 监听路由变化，渲染页面
     window.addEventListener('routechange', function(e) {
+        var page = resolvePage(e.detail.page, e.detail.params);
+
+        // 认证守卫
+        if (!authGuard(page)) return;
+
         // 路由变化时也检查 shop 参数（可能从新URL中获取）
         var shopIdFromUrl = getShopIdFromUrl();
         if (shopIdFromUrl && (!window._shopInfo || window._shopInfo.id !== shopIdFromUrl)) {
             loadShopInfo().then(function() {
-                var page = resolvePage(e.detail.page, e.detail.params);
                 var tabOverride = (page === 'chat-list') ? 'chat' : null;
                 renderPageContent(page, e.detail.params, tabOverride);
             });
         } else {
-            var page = resolvePage(e.detail.page, e.detail.params);
             var tabOverride = (page === 'chat-list') ? 'chat' : null;
             renderPageContent(page, e.detail.params, tabOverride);
         }
@@ -193,6 +253,10 @@ async function initApp() {
     // 渲染初始页面
     var hashInfo = parseHash(window.location.hash);
     var page = resolvePage(hashInfo.route || 'home', hashInfo.params);
+
+    // 初始页面的认证守卫
+    if (!authGuard(page)) return;
+
     var tabOverride = (page === 'chat-list') ? 'chat' : null;
     renderPageContent(page, hashInfo.params, tabOverride);
 }

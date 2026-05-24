@@ -1,165 +1,390 @@
 /**
  * 桌游AI教练 - API 封装模块
- * 包含 Supabase 和 DeepSeek API 的接口调用
+ * 对接 boardgame-hub.onrender.com 后端
+ * 包含店家认证、桌游管理、文件上传、玩家端公开接口、AI对话
  */
-
 console.log('[api.js] 开始加载...');
 
+// ==================== Token 管理 ====================
+function getToken() {
+    return localStorage.getItem('auth_token');
+}
+
+function setToken(token) {
+    localStorage.setItem('auth_token', token);
+}
+
+function clearToken() {
+    localStorage.removeItem('auth_token');
+}
+
+function isLoggedIn() {
+    return !!getToken();
+}
+
+// 构建带 Bearer Token 的请求头
+function getAuthHeaders() {
+    var token = getToken();
+    var headers = { 'Content-Type': 'application/json' };
+    if (token) {
+        headers['Authorization'] = 'Bearer ' + token;
+    }
+    return headers;
+}
+
+// ==================== 通用 fetch 封装 ====================
+async function apiFetch(url, options) {
+    options = options || {};
+    var headers = options.headers || {};
+    // 如果有 token 自动带上
+    if (!headers['Authorization']) {
+        var token = getToken();
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+    }
+    if (!headers['Content-Type'] && options.method && options.method !== 'GET') {
+        headers['Content-Type'] = 'application/json';
+    }
+    options.headers = headers;
+
+    var resp = await fetch(url, options);
+    var data = null;
+    try { data = await resp.json(); } catch (e) { data = null; }
+
+    if (!resp.ok) {
+        var msg = (data && data.error) || (data && data.message) || ('HTTP ' + resp.status);
+        throw new Error(msg);
+    }
+    return data;
+}
+
+// ==================== 店家认证 API ====================
+
 /**
- * 获取游戏列表
- * @param {object} filters - 筛选条件（可选）
- * @returns {Promise<Array>} 游戏列表
+ * 注册店家账号
+ * @param {string} email
+ * @param {string} password
+ * @param {string} storeName - 店名
  */
-async function getGames(filters) {
-    filters = filters || {};
-    
-    console.log('========== [getGames] 开始 ==========');
-    console.log('Supabase URL:', SUPABASE_URL);
-    console.log('Supabase Key 存在:', !!SUPABASE_ANON_KEY);
-    console.log('Supabase Key 前20位:', SUPABASE_ANON_KEY ? SUPABASE_ANON_KEY.substring(0, 20) + '...' : 'undefined');
-    
+async function authRegister(email, password, storeName) {
+    console.log('[authRegister] 注册:', email, storeName);
+    var data = await apiFetch(API_BASE_URL + '/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ email: email, password: password, store_name: storeName })
+    });
+    if (data && data.token) {
+        setToken(data.token);
+    }
+    return data;
+}
+
+/**
+ * 店家登录
+ * @param {string} email
+ * @param {string} password
+ */
+async function authLogin(email, password) {
+    console.log('[authLogin] 登录:', email);
+    var data = await apiFetch(API_BASE_URL + '/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email: email, password: password })
+    });
+    if (data && data.token) {
+        setToken(data.token);
+    }
+    return data;
+}
+
+/**
+ * 获取当前登录店家信息
+ */
+async function authGetMe() {
+    console.log('[authGetMe] 查询当前用户');
+    return await apiFetch(API_BASE_URL + '/auth/me', { method: 'GET' });
+}
+
+/**
+ * 登出
+ */
+function authLogout() {
+    clearToken();
+    window._shopInfo = null;
+    sessionStorage.removeItem('shopId');
+}
+
+// ==================== 桌游管理 API（需要认证） ====================
+
+/**
+ * 获取我的桌游列表（店家后台）
+ */
+async function getMyGames() {
+    console.log('[getMyGames] 获取我的桌游列表');
+    return await apiFetch(API_BASE_URL + '/games', { method: 'GET' });
+}
+
+/**
+ * 获取我的桌游详情（店家后台）
+ * @param {string} id
+ */
+async function getMyGameDetail(id) {
+    console.log('[getMyGameDetail] ID:', id);
+    return await apiFetch(API_BASE_URL + '/games/' + encodeURIComponent(id), { method: 'GET' });
+}
+
+/**
+ * 添加桌游
+ * @param {object} data - { game_name, player_min, player_max, duration, difficulty, tags }
+ */
+async function createGame(data) {
+    console.log('[createGame] 添加:', data.game_name);
+    return await apiFetch(API_BASE_URL + '/games', {
+        method: 'POST',
+        body: JSON.stringify(data)
+    });
+}
+
+/**
+ * 编辑桌游
+ * @param {string} id
+ * @param {object} data
+ */
+async function updateGame(id, data) {
+    console.log('[updateGame] ID:', id);
+    return await apiFetch(API_BASE_URL + '/games/' + encodeURIComponent(id), {
+        method: 'PUT',
+        body: JSON.stringify(data)
+    });
+}
+
+/**
+ * 删除桌游
+ * @param {string} id
+ */
+async function deleteGame(id) {
+    console.log('[deleteGame] ID:', id);
+    return await apiFetch(API_BASE_URL + '/games/' + encodeURIComponent(id), {
+        method: 'DELETE'
+    });
+}
+
+// ==================== 文件上传 API（需要认证） ====================
+
+/**
+ * 上传封面图
+ * @param {File} file - 图片文件
+ * @param {string} gameId - 游戏ID
+ */
+async function uploadCover(file, gameId) {
+    console.log('[uploadCover] gameId:', gameId);
+    var formData = new FormData();
+    formData.append('file', file);
+    formData.append('game_id', gameId);
+
+    var token = getToken();
+    var headers = {};
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    // 不设 Content-Type，浏览器自动设 multipart/form-data
+
+    var resp = await fetch(API_BASE_URL + '/upload/cover', {
+        method: 'POST',
+        headers: headers,
+        body: formData
+    });
+    var data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || data.message || '上传失败');
+    return data;
+}
+
+/**
+ * 上传规则书
+ * @param {File} file - PDF/文档文件
+ * @param {string} gameId - 游戏ID
+ */
+async function uploadRules(file, gameId) {
+    console.log('[uploadRules] gameId:', gameId);
+    var formData = new FormData();
+    formData.append('file', file);
+    formData.append('game_id', gameId);
+
+    var token = getToken();
+    var headers = {};
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+
+    var resp = await fetch(API_BASE_URL + '/upload', {
+        method: 'POST',
+        headers: headers,
+        body: formData
+    });
+    var data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || data.message || '上传失败');
+    return data;
+}
+
+/**
+ * 获取某桌游的文件列表（需要认证）
+ * @param {string} gameId
+ */
+async function getUploads(gameId) {
+    console.log('[getUploads] gameId:', gameId);
+    return await apiFetch(API_BASE_URL + '/upload/' + encodeURIComponent(gameId), { method: 'GET' });
+}
+
+// ==================== 玩家端公开 API（不需要认证） ====================
+
+/**
+ * 获取某店家的桌游列表（玩家端）
+ * @param {string} storeId - 店家ID
+ */
+async function getPublicGames(storeId) {
+    console.log('[getPublicGames] storeId:', storeId);
+    return await apiFetch(API_BASE_URL + '/public/games/' + encodeURIComponent(storeId), { method: 'GET' });
+}
+
+/**
+ * 获取某桌游详情（玩家端）
+ * @param {string} id - 游戏ID
+ */
+async function getPublicGame(id) {
+    console.log('[getPublicGame] ID:', id);
+    return await apiFetch(API_BASE_URL + '/public/game/' + encodeURIComponent(id), { method: 'GET' });
+}
+
+// ==================== 兼容旧API的统一入口 ====================
+
+/**
+ * 获取游戏列表（统一入口）
+ * 玩家端：调用 getPublicGames(storeId)
+ * 店家端（已登录）：调用 getMyGames()
+ * @param {object} filters - 筛选条件（暂未在后端实现，前端自行过滤）
+ * @param {string} [storeId] - 店家ID（玩家端使用）
+ */
+async function getGames(filters, storeId) {
+    console.log('[getGames] 开始, storeId:', storeId, ', loggedIn:', isLoggedIn());
+
+    // 店家已登录：使用管理端 API
+    if (isLoggedIn()) {
+        console.log('[getGames] 店家模式，调用 getMyGames');
+        try {
+            var games = await getMyGames();
+            return games || [];
+        } catch (e) {
+            console.error('[getGames] 管理端获取失败:', e);
+            throw e;
+        }
+    }
+
+    // 玩家端：需要 storeId
+    if (!storeId) {
+        storeId = sessionStorage.getItem('shopId');
+    }
+    if (!storeId) {
+        console.warn('[getGames] 无 storeId，返回空列表');
+        return [];
+    }
+
     try {
-        var url = SUPABASE_URL + '/rest/v1/games?select=*';
-
-        // 筛选条件
-        if (filters.category) {
-            url += '&category=eq.' + encodeURIComponent(filters.category);
-        }
-        if (filters.difficulty) {
-            url += '&difficulty=eq.' + filters.difficulty;
-        }
-        if (filters.min_players) {
-            url += '&min_players=lte.' + filters.min_players;
-        }
-        if (filters.max_players) {
-            url += '&max_players=gte.' + filters.max_players;
-        }
-
-        // 排序
-        url += '&order=name.asc';
-
-        console.log('[getGames] 完整请求URL:', url);
-
-        console.log('[getGames] 发送请求...');
-        var response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'apikey': SUPABASE_ANON_KEY,
-                'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        console.log('[getGames] 响应状态:', response.status, response.statusText);
-
-        if (!response.ok) {
-            var errorText = await response.text();
-            console.error('[getGames] HTTP错误:', response.status, errorText);
-            throw new Error('获取游戏列表失败 (HTTP ' + response.status + '): ' + errorText);
-        }
-
-        var games = await response.json();
-        console.log('[getGames] 成功! 获取到', games ? games.length : 0, '条数据');
-        console.log('[getGames] 前3条数据:', JSON.stringify(games ? games.slice(0, 3) : []));
-        console.log('========== [getGames] 结束 ==========');
-        
-        return games || [];
-    } catch (error) {
-        console.error('[getGames] 请求失败:', error);
-        console.error('[getGames] 错误消息:', error.message);
-        console.log('========== [getGames] 异常结束 ==========');
-        throw error;
+        var publicGames = await getPublicGames(storeId);
+        return publicGames || [];
+    } catch (e) {
+        console.error('[getGames] 玩家端获取失败:', e);
+        throw e;
     }
 }
 
 /**
- * 获取游戏详情
- * @param {string} id - 游戏ID
- * @returns {Promise<object>} 游戏详情
+ * 获取游戏详情（统一入口）
+ * 优先使用公开接口（不需要登录）
+ * @param {string} id
  */
 async function getGameDetail(id) {
-    console.log('[getGameDetail] 开始, ID:', id);
+    console.log('[getGameDetail] ID:', id);
+
+    // 店家已登录：尝试管理端
+    if (isLoggedIn()) {
+        try {
+            return await getMyGameDetail(id);
+        } catch (e) {
+            console.warn('[getGameDetail] 管理端获取失败，尝试公开接口:', e.message);
+        }
+    }
+
+    // 公开接口兜底
     try {
-        var url = SUPABASE_URL + '/rest/v1/games?id=eq.' + encodeURIComponent(id) + '&limit=1';
-        console.log('[getGameDetail] 请求URL:', url);
-
-        var response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'apikey': SUPABASE_ANON_KEY,
-                'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        console.log('[getGameDetail] 响应状态:', response.status);
-
-        if (!response.ok) {
-            var errorText = await response.text();
-            throw new Error('获取游戏详情失败 (HTTP ' + response.status + '): ' + errorText);
-        }
-
-        var games = await response.json();
-        console.log('[getGameDetail] 查询结果:', games ? games.length + ' 条' : 'null');
-        if (games && games.length > 0) {
-            console.log('[getGameDetail] 找到游戏:', games[0].name);
-        }
-        return (games && games.length > 0) ? games[0] : null;
-    } catch (error) {
-        console.error('[getGameDetail] 请求失败:', error);
-        throw error;
+        return await getPublicGame(id);
+    } catch (e) {
+        console.error('[getGameDetail] 获取失败:', e);
+        throw e;
     }
 }
 
 /**
  * 获取店家信息
  * @param {string} shopId - 店家UUID
- * @returns {Promise<{data: object|null, error: string|null}>}
  */
 async function getShopInfo(shopId) {
-    console.log('[getShopInfo] 开始, shopId:', shopId);
-    try {
-        var url = SUPABASE_URL + '/rest/v1/shops?id=eq.' + encodeURIComponent(shopId) + '&limit=1';
-        console.log('[getShopInfo] 请求URL:', url);
+    console.log('[getShopInfo] shopId:', shopId);
 
-        var response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'apikey': SUPABASE_ANON_KEY,
-                'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-                'Content-Type': 'application/json'
+    // 已登录且shopId匹配当前用户
+    if (isLoggedIn()) {
+        try {
+            var me = await authGetMe();
+            if (me && (me.id === shopId || me.store_id === shopId)) {
+                console.log('[getShopInfo] 从认证信息获取:', me.store_name || me.name);
+                return {
+                    data: {
+                        id: me.id || me.store_id || shopId,
+                        name: me.store_name || me.name || '我的桌游吧',
+                        logo_url: me.logo_url || '',
+                        theme_color: me.theme_color || '#C4864B'
+                    },
+                    error: null
+                };
             }
-        });
-
-        console.log('[getShopInfo] 响应状态:', response.status);
-
-        if (!response.ok) {
-            var errorText = await response.text();
-            throw new Error('获取店家信息失败 (HTTP ' + response.status + '): ' + errorText);
+        } catch (e) {
+            console.warn('[getShopInfo] authGetMe 失败:', e.message);
         }
-
-        var shops = await response.json();
-        var shop = (shops && shops.length > 0) ? shops[0] : null;
-        console.log('[getShopInfo] 结果:', shop ? shop.name : 'null');
-        return { data: shop, error: null };
-    } catch (error) {
-        console.error('[getShopInfo] 请求失败:', error);
-        return { data: null, error: error.message };
     }
+
+    // 公开模式：根据 storeId 构建基本信息
+    // 尝试从游戏列表推断店名
+    try {
+        var games = await getPublicGames(shopId);
+        if (games && games.length > 0) {
+            // 游戏数据中可能包含 store_name 字段
+            var storeName = games[0].store_name || '桌游吧';
+            return {
+                data: {
+                    id: shopId,
+                    name: storeName,
+                    logo_url: '',
+                    theme_color: '#C4864B'
+                },
+                error: null
+            };
+        }
+    } catch (e) {
+        console.warn('[getShopInfo] 获取游戏列表失败:', e.message);
+    }
+
+    // 兜底：返回基本信息
+    return {
+        data: {
+            id: shopId,
+            name: '桌游吧',
+            logo_url: '',
+            theme_color: '#C4864B'
+        },
+        error: null
+    };
 }
 
-/**
- * 构建带店家上下文的 system prompt
- */
+// ==================== AI 对话（保持使用 Supabase 代理） ====================
+
 function buildShopContext() {
     var shopInfo = window._shopInfo;
     if (!shopInfo || !shopInfo.name) return '';
     return '\n【店家上下文】你正在"' + shopInfo.name + '"桌游吧为顾客服务。请保持专业友好的服务态度。';
 }
 
-/**
- * AI 对话接口（通过 Supabase Edge Function 代理）
- */
 async function aiChat(messages, gameName, mode, style, gameData) {
     var SUPABASE_FUNCTION_URL = SUPABASE_URL + '/functions/v1/deepseek-proxy';
     var shopContext = buildShopContext();
@@ -179,7 +404,6 @@ async function aiChat(messages, gameName, mode, style, gameData) {
         '\n' +
         '5. 回答格式：先用一句话概括，再分点详细讲解。\n';
 
-    // ==================== 数据库规则注入 ====================
     var gameDataSection = '';
     if (gameData) {
         gameDataSection = '\n---\n' +
@@ -203,16 +427,12 @@ async function aiChat(messages, gameName, mode, style, gameData) {
             '回答规则同上，但语气更随意有趣。' + shopContext,
         dict: '你是《' + (gameName || '桌游') + '》规则词典。只输出精炼的事实性答案，不废话。\n' +
             '格式：直接给结论 → 简要解释。当前模式：' + (mode === 'setup' ? '摆盘引导' : mode === 'rules' ? '规则教学' : mode === 'faq' ? '规则速查' : mode === 'recommend' ? 'AI推荐' : '规则速查') + '。' + shopContext,
-
-        // 推荐模式专用 system prompt（覆盖 style）
         _recommend: '你是一个桌游推荐助手。根据用户的人数、时长、类型偏好等条件，从已知的桌游数据库中推荐最合适的游戏。\n' +
             '引导流程：\n' +
             '1. 先问清楚用户：多少人玩？想玩多久？喜欢什么类型（策略/聚会/推理/卡牌等）？\n' +
             '2. 根据回答推荐 2-3 款桌游，每款简要说明推荐理由、人数、时长、难度\n' +
             '3. 回答风格：热情友好，用emoji增添趣味\n' +
             '如果用户已经说了具体需求，直接推荐，不用再反问。' + shopContext,
-
-        // 速查模式专用 system prompt
         _quick: '你是一个桌游规则速查助手。用户会询问具体桌游的规则问题，请快速简洁地回答。\n' +
             '回答要求：\n' +
             '1. 直接给出规则答案，不需要铺垫\n' +
@@ -221,7 +441,6 @@ async function aiChat(messages, gameName, mode, style, gameData) {
             '4. 尽量给出实例帮助理解' + shopContext
     };
 
-    // 推荐/速查模式使用专用 system prompt，忽略 style
     var systemPrompt;
     if (mode === 'recommend') {
         systemPrompt = systemPrompts._recommend;
@@ -231,7 +450,6 @@ async function aiChat(messages, gameName, mode, style, gameData) {
         systemPrompt = systemPrompts[style] || systemPrompts.teacher;
     }
 
-    // 注入防幻觉前缀 + 数据库规则
     systemPrompt = antiHallucinationPrefix + '\n' + systemPrompt + gameDataSection;
 
     try {
@@ -252,11 +470,9 @@ async function aiChat(messages, gameName, mode, style, gameData) {
         });
 
         var data = await response.json();
-
         if (data.error) {
             throw new Error('API 返回错误: ' + (data.error.message || data.error));
         }
-
         if (data.choices && data.choices[0]) {
             return data.choices[0].message.content;
         }
@@ -267,18 +483,12 @@ async function aiChat(messages, gameName, mode, style, gameData) {
     }
 }
 
-/**
- * 保存对话记录
- */
-async function saveConversation(conversation) {
+function saveConversation(conversation) {
     return true;
 }
 
-/**
- * 记录一次扫码
- * @param {string|null} shopId - 店家ID（可为空）
- * @param {string|null} gameId - 游戏ID（可为空）
- */
+// ==================== 扫码统计（暂保留 Supabase 接口） ====================
+
 async function logScan(shopId, gameId) {
     console.log('[logScan] 记录扫码, shopId:', shopId, 'gameId:', gameId);
     try {
@@ -296,21 +506,12 @@ async function logScan(shopId, gameId) {
             },
             body: JSON.stringify(body)
         });
-
         console.log('[logScan] 响应状态:', response.status);
-        if (!response.ok) {
-            console.error('[logScan] 记录失败');
-        }
     } catch (e) {
         console.error('[logScan] 错误:', e);
     }
 }
 
-/**
- * 获取扫码统计
- * @param {string|null} shopId - 店家ID（为空则查询全部）
- * @returns {Promise<{data: {total: number, today: number, week: number}, error: string|null}>}
- */
 async function getScanStats(shopId) {
     console.log('[getScanStats] 查询统计, shopId:', shopId);
     try {
@@ -321,13 +522,11 @@ async function getScanStats(shopId) {
             'Prefer': 'count=exact'
         };
 
-        // 查询总数
         var totalUrl = SUPABASE_URL + '/rest/v1/scan_logs?select=count';
         if (shopId) totalUrl += '&shop_id=eq.' + shopId;
         var totalResp = await fetch(totalUrl, { method: 'GET', headers: headers });
         var totalCount = parseInt((totalResp.headers.get('content-range') || '/0').split('/')[1] || '0');
 
-        // 查询今日
         var today = new Date();
         today.setHours(0, 0, 0, 0);
         var todayUrl = SUPABASE_URL + '/rest/v1/scan_logs?select=count&scanned_at=gte.' + today.toISOString();
@@ -335,7 +534,6 @@ async function getScanStats(shopId) {
         var todayResp = await fetch(todayUrl, { method: 'GET', headers: headers });
         var todayCount = parseInt((todayResp.headers.get('content-range') || '/0').split('/')[1] || '0');
 
-        // 查询本周
         var weekStart = new Date();
         weekStart.setDate(weekStart.getDate() - weekStart.getDay());
         weekStart.setHours(0, 0, 0, 0);
@@ -354,7 +552,8 @@ async function getScanStats(shopId) {
     }
 }
 
-// 挂载到全局
+// ==================== 全局挂载 ====================
+// 原有函数（保持兼容）
 window.getGames = getGames;
 window.getGameDetail = getGameDetail;
 window.getShopInfo = getShopInfo;
@@ -362,5 +561,30 @@ window.aiChat = aiChat;
 window.saveConversation = saveConversation;
 window.logScan = logScan;
 window.getScanStats = getScanStats;
+
+// 认证函数
+window.authRegister = authRegister;
+window.authLogin = authLogin;
+window.authGetMe = authGetMe;
+window.authLogout = authLogout;
+window.isLoggedIn = isLoggedIn;
+window.getToken = getToken;
+
+// 管理端 API
+window.getMyGames = getMyGames;
+window.getMyGameDetail = getMyGameDetail;
+window.createGame = createGame;
+window.updateGame = updateGame;
+window.deleteGame = deleteGame;
+
+// 上传 API
+window.uploadCover = uploadCover;
+window.uploadRules = uploadRules;
+window.getUploads = getUploads;
+
+// 玩家端公开 API
+window.getPublicGames = getPublicGames;
+window.getPublicGame = getPublicGame;
+window.getAuthHeaders = getAuthHeaders;
 
 console.log('[api.js] 加载完成，已挂载到 window');

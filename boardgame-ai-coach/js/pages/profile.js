@@ -22,24 +22,49 @@ App.registerPage('profile', (function() {
         reviewLoaded: false,
         reviewStats: { pending: 0, approved: 0 },
         reviewStatsLoaded: false,
-        reviewExpanded: {}
+        reviewExpanded: {},
+        showMyGames: false,
+        myGames: [],
+        myGamesLoaded: false
     };
 
     // ==================== 渲染函数 ====================
 
-    // 1. 标题栏
+    // 1. 标题栏（含登录状态）
     function renderPageTitle() {
-        return '<div class="profile-page-title" style="background:#FFFFFF;text-align:center;padding:14px 16px;' +
-            'border-bottom:1px solid #E5E0D8;font-size:17px;font-weight:600;color:#2D2A26;line-height:1.4;">' +
-            '👤 个人中心' +
+        var loggedIn = window.isLoggedIn && window.isLoggedIn();
+        var shopInfo = window._shopInfo;
+        var titleHtml = '';
+        if (loggedIn && shopInfo && shopInfo.name) {
+            titleHtml = '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;">' +
+                '<div style="display:flex;align-items:center;gap:8px;">' +
+                '<span style="font-size:12px;color:#4CAF50;">● 已登录</span>' +
+                '<span style="font-size:15px;font-weight:600;">' + shopInfo.name + '</span>' +
+                '</div>' +
+                '<button onclick="profilePage.logout()" style="padding:6px 14px;background:#E8E0D8;color:#8C8578;border:none;' +
+                'border-radius:6px;font-size:12px;cursor:pointer;">退出登录</button>' +
+                '</div>';
+        } else {
+            titleHtml = '<div style="text-align:center;padding:6px 0;">' +
+                '<span style="font-size:17px;font-weight:600;color:#2D2A26;">👤 个人中心</span>' +
+                '<div style="margin-top:8px;">' +
+                '<button onclick="window.location.hash=\'/auth\'" style="padding:8px 24px;background:#C4864B;color:#FFFFFF;' +
+                'border:none;border-radius:8px;font-size:14px;cursor:pointer;">🔑 店家登录</button>' +
+                '</div>' +
+                '</div>';
+        }
+        return '<div class="profile-page-title" style="background:#FFFFFF;padding:12px 16px;' +
+            'border-bottom:1px solid #E5E0D8;font-size:17px;color:#2D2A26;line-height:1.4;">' +
+            titleHtml +
             '</div>';
     }
 
-    // 2. 二维码管理（仅店家模式显示）
+    // 2. 二维码管理（仅登录店家显示）
     function renderQRCodeSection() {
+        var loggedIn = window.isLoggedIn && window.isLoggedIn();
         var shopInfo = window._shopInfo;
-        if (!shopInfo || !shopInfo.name) {
-            // 普通用户模式：不显示二维码模块
+        if (!loggedIn || !shopInfo || !shopInfo.name) {
+            // 未登录用户：不显示二维码模块
             return '';
         }
 
@@ -173,10 +198,11 @@ App.registerPage('profile', (function() {
         var html = '<div style="margin:0 16px;">' +
             '<div style="background:#FFFFFF;border-radius:16px;overflow:hidden;">';
 
-        // 店家模式：显示批量二维码入口 + 规则审核入口
-        if (window._shopInfo) {
+        // 已登录店家模式：显示管理功能
+        var loggedIn = window.isLoggedIn && window.isLoggedIn();
+        if (loggedIn && window._shopInfo) {
             html += renderFeatureItem('📱', '批量二维码', 'profilePage.showBatchQR()');
-            html += renderFeatureItem('📋', '规则审核', 'profilePage.showReviewPage()');
+            html += renderFeatureItem('🎮', '我的桌游', 'profilePage.showReviewPage()');
         }
 
         html += renderFeatureItem('📖', '使用指南', 'profilePage.showGuide()') +
@@ -186,19 +212,27 @@ App.registerPage('profile', (function() {
         return html;
     }
 
-    // 4. 开发者工具
+    // 4. 账号操作
     function renderDevTools() {
-        var isShop = !!(window._shopInfo && window._shopInfo.name);
-        var btnText = isShop
-            ? '退出店家模式（当前：' + window._shopInfo.name + '）'
-            : '切换到店家模式';
-
+        var loggedIn = window.isLoggedIn && window.isLoggedIn();
+        if (loggedIn) {
+            var shopInfo = window._shopInfo;
+            return '<div style="margin:12px 16px;">' +
+                '<div style="background:#FFFFFF;border-radius:16px;padding:16px 20px;">' +
+                '<div style="font-size:14px;font-weight:600;color:#2D2A26;margin-bottom:12px;">🔧 账号管理</div>' +
+                '<button onclick="profilePage.logout()" style="width:100%;padding:10px 0;' +
+                'background:#F0EDE6;border:1px solid #E5E0D8;border-radius:8px;' +
+                'font-size:14px;color:#D32F2F;cursor:pointer;">退出登录（' + (shopInfo ? shopInfo.name : '') + '）</button>' +
+                '</div>' +
+                '</div>';
+        }
+        // 未登录也显示一个入口
         return '<div style="margin:12px 16px;">' +
             '<div style="background:#FFFFFF;border-radius:16px;padding:16px 20px;">' +
-            '<div style="font-size:14px;font-weight:600;color:#2D2A26;margin-bottom:12px;">🔧 开发者工具</div>' +
-            '<button onclick="profilePage.toggleShopMode()" style="width:100%;padding:10px 0;' +
-            'background:#F0EDE6;border:1px solid #E5E0D8;border-radius:8px;' +
-            'font-size:14px;color:#2D2A26;cursor:pointer;">' + btnText + '</button>' +
+            '<div style="font-size:14px;font-weight:600;color:#2D2A26;margin-bottom:12px;">🔧 账号管理</div>' +
+            '<button onclick="window.location.hash=\'/auth\'" style="width:100%;padding:10px 0;' +
+            'background:#C4864B;color:#FFFFFF;border:none;border-radius:8px;' +
+            'font-size:14px;cursor:pointer;">🔑 店家登录</button>' +
             '</div>' +
             '</div>';
     }
@@ -283,7 +317,7 @@ App.registerPage('profile', (function() {
             'border-bottom:1px solid #E5E0D8;">' +
             '<span onclick="profilePage.hideReviewPage()" style="font-size:18px;color:#C4864B;' +
             'cursor:pointer;margin-right:12px;">←</span>' +
-            '<span style="font-size:17px;font-weight:600;color:#2D2A26;">📋 规则审核</span>' +
+            '<span style="font-size:17px;font-weight:600;color:#2D2A26;">🎮 我的桌游</span>' +
             '</div>';
     }
 
@@ -291,15 +325,15 @@ App.registerPage('profile', (function() {
         var s = state.reviewStats;
         return '<div style="margin:12px 16px;">' +
             '<div style="background:#FFFFFF;border-radius:16px;padding:20px;">' +
-            '<div style="font-size:15px;font-weight:600;color:#2D2A26;margin-bottom:16px;">📊 审核统计</div>' +
+            '<div style="font-size:15px;font-weight:600;color:#2D2A26;margin-bottom:16px;">📊 桌游统计</div>' +
             '<div style="display:flex;justify-content:space-around;text-align:center;">' +
             '<div>' +
             '<div id="review-pending-count" style="font-size:28px;font-weight:700;color:#E67E22;">' + s.pending + '</div>' +
-            '<div style="font-size:12px;color:#8C8578;margin-top:4px;">待审核</div>' +
+            '<div style="font-size:12px;color:#8C8578;margin-top:4px;">桌游总数</div>' +
             '</div>' +
             '<div>' +
             '<div id="review-approved-count" style="font-size:28px;font-weight:700;color:#4CAF50;">' + s.approved + '</div>' +
-            '<div style="font-size:12px;color:#8C8578;margin-top:4px;">已审核</div>' +
+            '<div style="font-size:12px;color:#8C8578;margin-top:4px;">已发布</div>' +
             '</div>' +
             '</div>' +
             '</div>' +
@@ -308,9 +342,9 @@ App.registerPage('profile', (function() {
 
     function renderReviewActions() {
         return '<div style="margin:0 16px 12px;">' +
-            '<button onclick="profilePage.approveAllGames()" style="width:100%;padding:10px 0;' +
+            '<button onclick="profilePage.refreshMyGames()" style="width:100%;padding:10px 0;' +
             'background:#C4864B;color:#FFFFFF;border:none;border-radius:8px;font-size:14px;' +
-            'cursor:pointer;">✅ 全部通过</button>' +
+            'cursor:pointer;">🔄 刷新列表</button>' +
             '</div>';
     }
 
@@ -351,9 +385,9 @@ App.registerPage('profile', (function() {
 
         html += '<div style="display:flex;gap:10px;margin-top:12px;">' +
             '<button onclick="profilePage.approveGame(\'' + game.id + '\')" style="flex:1;padding:8px 0;' +
-            'background:#4CAF50;color:#FFFFFF;border:none;border-radius:8px;font-size:14px;cursor:pointer;">✅ 通过</button>' +
-            '<button onclick="profilePage.rejectGame(\'' + game.id + '\')" style="flex:1;padding:8px 0;' +
-            'background:#E8E0D8;color:#8C8578;border:none;border-radius:8px;font-size:14px;cursor:pointer;">↩️ 驳回</button>' +
+            'background:#4CAF50;color:#FFFFFF;border:none;border-radius:8px;font-size:14px;cursor:pointer;">✏️ 编辑</button>' +
+            '<button onclick="profilePage.deleteGameById(\'' + game.id + '\')" style="flex:1;padding:8px 0;' +
+            'background:#E8E0D8;color:#D32F2F;border:none;border-radius:8px;font-size:14px;cursor:pointer;">🗑️ 删除</button>' +
             '</div>';
 
         // 三层嵌套: 内容区(flex:1) > flex容器 > 卡片外层
@@ -366,15 +400,15 @@ App.registerPage('profile', (function() {
         if (!state.reviewLoaded) {
             return '<div style="margin:0 16px;text-align:center;padding:40px 0;color:#8C8578;">' +
                 '<div style="font-size:32px;margin-bottom:12px;">⏳</div>' +
-                '<div>加载待审核游戏...</div>' +
+                '<div>加载桌游列表...</div>' +
                 '</div>';
         }
         if (games.length === 0) {
             return '<div style="margin:12px 16px;">' +
                 '<div style="background:#FFFFFF;border-radius:16px;padding:32px 20px;text-align:center;">' +
-                '<div style="font-size:48px;margin-bottom:12px;">✅</div>' +
-                '<div style="font-size:16px;font-weight:600;color:#2D2A26;margin-bottom:8px;">所有游戏已审核完毕</div>' +
-                '<div style="font-size:13px;color:#8C8578;">当前共' + state.reviewStats.approved + '款游戏已通过审核</div>' +
+                '<div style="font-size:48px;margin-bottom:12px;">📦</div>' +
+                '<div style="font-size:16px;font-weight:600;color:#2D2A26;margin-bottom:8px;">还没有添加桌游</div>' +
+                '<div style="font-size:13px;color:#8C8578;">去管理后台添加桌游吧</div>' +
                 '</div>' +
                 '</div>';
         }
@@ -453,14 +487,15 @@ App.registerPage('profile', (function() {
         }
     }
 
-    // 二维码生成（仅店家模式）
+    // 二维码生成（仅登录店家模式）
     function generateQRCodes() {
         if (state.qrLoaded) return;
         state.qrLoaded = true;
+        var loggedIn = window.isLoggedIn && window.isLoggedIn();
         var shopInfo = window._shopInfo;
-        // 普通用户模式：不生成二维码
-        if (!shopInfo || !shopInfo.name) return;
-        // 店家模式：生成两个二维码
+        // 未登录用户：不生成二维码
+        if (!loggedIn || !shopInfo || !shopInfo.name) return;
+        // 登录店家：生成两个二维码
         generateCustomerQR();
         generateAdminQR();
     }
@@ -578,27 +613,6 @@ App.registerPage('profile', (function() {
         } catch (e) {
             console.error('[profile.js] 下载通用二维码失败:', e);
             alert('保存失败，请重试');
-        }
-    }
-
-    // 店家模式切换
-    async function toggleShopMode() {
-        if (window._shopInfo) {
-            sessionStorage.removeItem('shopId');
-            window._shopInfo = null;
-            window.location.hash = '/home';
-            location.reload();
-            return;
-        }
-        var shopId = 'd9bb4f57-4b4b-48f7-810f-276266404813';
-        if (typeof window.getShopInfo === 'function') {
-            var result = await window.getShopInfo(shopId);
-            if (result.data) {
-                sessionStorage.setItem('shopId', shopId);
-                window._shopInfo = result.data;
-                window.location.hash = '/home';
-                location.reload();
-            }
         }
     }
 
@@ -766,66 +780,31 @@ App.registerPage('profile', (function() {
         await QRUtils.downloadAllQRZip(games);
     }
 
-    // ==================== 规则审核 API 操作 ====================
+    // ==================== 桌游管理 API 操作 ====================
 
     async function loadReviewStats() {
         if (state.reviewStatsLoaded) return;
-        var pending = 0;
-        var approved = 0;
         try {
-            var pendingResp = await fetch(
-                SUPABASE_URL + '/rest/v1/games?select=count&reviewed=eq.false',
-                {
-                    method: 'HEAD',
-                    headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-                        'Prefer': 'count=exact'
-                    }
-                }
-            );
-            var cr = pendingResp.headers.get('content-range');
-            pending = cr ? parseInt(cr.split('/')[1]) : 0;
+            if (typeof window.getMyGames === 'function') {
+                var games = await window.getMyGames();
+                var all = games || [];
+                state.reviewStats = { pending: all.length, approved: 0 };
+            }
         } catch (e) {
-            console.error('[review] 加载待审核数失败:', e);
+            console.error('[review] 加载统计失败:', e);
         }
-        try {
-            var approvedResp = await fetch(
-                SUPABASE_URL + '/rest/v1/games?select=count&reviewed=eq.true',
-                {
-                    method: 'HEAD',
-                    headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-                        'Prefer': 'count=exact'
-                    }
-                }
-            );
-            var ar = approvedResp.headers.get('content-range');
-            approved = ar ? parseInt(ar.split('/')[1]) : 0;
-        } catch (e) {
-            console.error('[review] 加载已审核数失败:', e);
-        }
-        state.reviewStats = { pending: pending, approved: approved };
         state.reviewStatsLoaded = true;
     }
 
     async function loadPendingGames() {
         if (state.reviewLoaded) return;
         try {
-            var resp = await fetch(
-                SUPABASE_URL + '/rest/v1/games?reviewed=eq.false&order=name.asc&select=id,name,emoji,tags,description,rules',
-                {
-                    headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
-                    }
-                }
-            );
-            if (!resp.ok) throw new Error('HTTP ' + resp.status);
-            state.reviewGames = await resp.json();
+            if (typeof window.getMyGames === 'function') {
+                var games = await window.getMyGames();
+                state.reviewGames = games || [];
+            }
         } catch (e) {
-            console.error('[review] 加载待审核游戏失败:', e);
+            console.error('[review] 加载游戏列表失败:', e);
             state.reviewGames = [];
         }
         state.reviewLoaded = true;
@@ -833,21 +812,9 @@ App.registerPage('profile', (function() {
 
     async function approveGame(gameId) {
         try {
-            var resp = await fetch(
-                SUPABASE_URL + '/rest/v1/games?id=eq.' + gameId,
-                {
-                    method: 'PATCH',
-                    headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-                        'Content-Type': 'application/json',
-                        'Prefer': 'return=minimal'
-                    },
-                    body: JSON.stringify({ reviewed: true })
-                }
-            );
-            if (!resp.ok) throw new Error('HTTP ' + resp.status);
-
+            if (typeof window.updateGame === 'function') {
+                await window.updateGame(gameId, { reviewed: true });
+            }
             state.reviewGames = state.reviewGames.filter(function(g) { return g.id !== gameId; });
             state.reviewStats.pending = Math.max(0, state.reviewStats.pending - 1);
             state.reviewStats.approved = state.reviewStats.approved + 1;
@@ -867,36 +834,27 @@ App.registerPage('profile', (function() {
                 }, 300);
             }
         } catch (e) {
-            console.error('[review] 通过游戏失败:', e);
+            console.error('[review] 操作失败:', e);
             alert('操作失败，请重试');
         }
     }
 
     async function approveAllGames() {
-        if (!confirm('确定将所有待审核游戏标记为已审核吗？')) return;
+        if (!confirm('确定要标记所有游戏吗？')) return;
         try {
-            var resp = await fetch(
-                SUPABASE_URL + '/rest/v1/games?reviewed=eq.false',
-                {
-                    method: 'PATCH',
-                    headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-                        'Content-Type': 'application/json',
-                        'Prefer': 'return=minimal'
-                    },
-                    body: JSON.stringify({ reviewed: true })
+            for (var i = 0; i < state.reviewGames.length; i++) {
+                var game = state.reviewGames[i];
+                if (typeof window.updateGame === 'function') {
+                    await window.updateGame(game.id, { reviewed: true });
                 }
-            );
-            if (!resp.ok) throw new Error('HTTP ' + resp.status);
-
+            }
             state.reviewStats.approved = state.reviewStats.approved + state.reviewStats.pending;
             state.reviewStats.pending = 0;
             state.reviewGames = [];
             updateReviewStatsDOM();
             window.profilePageRender();
         } catch (e) {
-            console.error('[review] 全部通过失败:', e);
+            console.error('[review] 批量操作失败:', e);
             alert('操作失败，请重试');
         }
     }
@@ -919,7 +877,36 @@ App.registerPage('profile', (function() {
                 }
             }, 300);
         }
-        alert('已标记为待修改，后续可重新审核');
+        alert('已移除');
+    }
+
+    async function deleteGameById(gameId) {
+        if (!confirm('确定删除这款桌游吗？此操作不可恢复。')) return;
+        try {
+            if (typeof window.deleteGame === 'function') {
+                await window.deleteGame(gameId);
+            }
+            state.reviewGames = state.reviewGames.filter(function(g) { return g.id !== gameId; });
+            state.reviewStats.pending = Math.max(0, state.reviewStats.pending - 1);
+            updateReviewStatsDOM();
+
+            var card = document.getElementById('review-card-' + gameId);
+            if (card) {
+                card.style.transition = 'opacity 0.3s';
+                card.style.opacity = '0';
+                setTimeout(function() {
+                    if (card.parentNode) card.parentNode.removeChild(card);
+                    if (state.reviewGames.length === 0) {
+                        state.reviewLoaded = false;
+                        state.reviewLoaded = true;
+                        window.profilePageRender();
+                    }
+                }, 300);
+            }
+        } catch (e) {
+            console.error('[review] 删除失败:', e);
+            alert('删除失败，请重试');
+        }
     }
 
     function toggleReviewCard(gameId) {
@@ -948,7 +935,11 @@ App.registerPage('profile', (function() {
     }
 
     async function showReviewPage() {
-        if (!window._shopInfo) return;
+        var loggedIn = window.isLoggedIn && window.isLoggedIn();
+        if (!loggedIn) {
+            window.location.hash = '/auth';
+            return;
+        }
         state.showReviewPage = true;
         state.reviewLoaded = false;
         state.reviewStatsLoaded = false;
@@ -967,6 +958,23 @@ App.registerPage('profile', (function() {
         window.profilePageRender();
     }
 
+    async function refreshMyGames() {
+        state.reviewLoaded = false;
+        state.reviewStatsLoaded = false;
+        window.profilePageRender();
+        await loadReviewStats();
+        await loadPendingGames();
+        window.profilePageRender();
+    }
+
+    function logout() {
+        if (window.authLogout) {
+            window.authLogout();
+        }
+        window.location.hash = '/home';
+        location.reload();
+    }
+
     // ==================== 初始化 ====================
     function init() {
         if (!state.showBatchQR && !state.showReviewPage) {
@@ -981,12 +989,12 @@ App.registerPage('profile', (function() {
     var page = {
         render: render,
         init: init,
+        logout: logout,
         loadStats: loadStats,
         generateQRCodes: generateQRCodes,
         downloadCustomerQR: downloadCustomerQR,
         downloadAdminQR: downloadAdminQR,
         downloadGeneralQR: downloadGeneralQR,
-        toggleShopMode: toggleShopMode,
         showGuide: showGuide,
         showAbout: showAbout,
         closeModal: closeModal,
@@ -998,12 +1006,14 @@ App.registerPage('profile', (function() {
         downloadAllQRZip: downloadAllQRZip,
         loadBatchQRImages: loadBatchQRImages,
         loadBatchQRFallback: loadBatchQRFallback,
-        // 规则审核
+        // 桌游管理
         showReviewPage: showReviewPage,
         hideReviewPage: hideReviewPage,
+        refreshMyGames: refreshMyGames,
         approveGame: approveGame,
         approveAllGames: approveAllGames,
         rejectGame: rejectGame,
+        deleteGameById: deleteGameById,
         toggleReviewCard: toggleReviewCard,
         loadReviewStats: loadReviewStats,
         loadPendingGames: loadPendingGames

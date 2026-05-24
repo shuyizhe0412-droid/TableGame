@@ -9,7 +9,8 @@ const routes = {
     'library': '/library',
     'detail': '/detail',
     'chat': '/chat',
-    'profile': '/profile'
+    'profile': '/profile',
+    'auth': '/auth'
 };
 
 // 存储当前路由名称
