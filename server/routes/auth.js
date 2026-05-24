@@ -145,16 +145,53 @@ router.get('/me', authMiddleware, (req, res) => {
     const gameCount = db.prepare('SELECT COUNT(*) as count FROM store_games WHERE store_id = ?').get(req.store.id);
     const fileCount = db.prepare('SELECT COUNT(*) as count FROM game_files WHERE store_id = ?').get(req.store.id);
 
+    // 扁平返回，兼容前端直接读取 store_name / id
     res.json({
-      store: {
-        ...store,
-        game_count: gameCount.count,
-        file_count: fileCount.count
-      }
+      id: store.id,
+      email: store.email,
+      store_name: store.store_name,
+      phone: store.phone,
+      address: store.address,
+      avatar: store.avatar,
+      created_at: store.created_at,
+      game_count: gameCount.count,
+      file_count: fileCount.count
     });
   } catch (err) {
     console.error('[AUTH] 获取信息失败:', err.message);
     res.status(500).json({ error: '获取信息失败' });
+  }
+});
+
+// PUT /api/auth/update-profile - 更新店铺名称（需认证）
+router.put('/update-profile', authMiddleware, (req, res) => {
+  try {
+    const { store_name } = req.body;
+
+    if (!store_name || !store_name.trim()) {
+      return res.status(400).json({ error: '店铺名称不能为空' });
+    }
+
+    if (store_name.length > 50) {
+      return res.status(400).json({ error: '店铺名称不能超过50个字符' });
+    }
+
+    db.prepare('UPDATE stores SET store_name = ?, updated_at = datetime(\'now\') WHERE id = ?')
+      .run(store_name.trim(), req.store.id);
+
+    console.log('[AUTH] 更新店铺名称:', req.store.email, '→', store_name.trim());
+
+    const store = db.prepare(
+      'SELECT id, email, store_name, phone, address, avatar, created_at, updated_at FROM stores WHERE id = ?'
+    ).get(req.store.id);
+
+    res.json({
+      message: '更新成功',
+      store: store
+    });
+  } catch (err) {
+    console.error('[AUTH] 更新店铺信息失败:', err.message);
+    res.status(500).json({ error: '更新失败' });
   }
 });
 
