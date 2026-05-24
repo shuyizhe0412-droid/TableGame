@@ -143,4 +143,24 @@ router.post('/global-games', (req, res) => {
   }
 });
 
+// GET /api/admin/stores - 查看所有注册店家
+router.get('/stores', (req, res) => {
+  try {
+    const stores = db.prepare(
+      'SELECT id, email, store_name, created_at FROM stores ORDER BY created_at DESC'
+    ).all();
+
+    // status 字段暂不存在于表中，统一返回 active
+    const result = stores.map(s => ({
+      ...s,
+      status: 'active'
+    }));
+
+    res.json(result);
+  } catch (err) {
+    console.error('[ADMIN] 获取店家列表失败:', err.message);
+    res.status(500).json({ error: '获取失败' });
+  }
+});
+
 module.exports = router;
