@@ -238,7 +238,7 @@ App.registerPage('detail', (function() {
     }
 
     function getMockGameById(id) {
-        return mockGames[id] || mockGames['1'];
+        return mockGames[id] || null;
     }
 
     function formatDuration(minutes) {
@@ -631,8 +631,17 @@ App.registerPage('detail', (function() {
             console.log('[detail.js] getGameDetail 返回:', game ? game.name : 'null');
             
             if (!game) {
-                // 尝试从 mockGames 回退
-                console.warn('[detail.js] 数据库未找到，尝试使用兜底数据');
+                // 尝试全局桌游接口
+                if (typeof window.getGlobalGame === 'function') {
+                    console.log('[detail.js] 尝试全局桌游接口');
+                    game = await window.getGlobalGame(id);
+                    console.log('[detail.js] getGlobalGame 返回:', game ? game.name : 'null');
+                }
+            }
+            
+            if (!game) {
+                // 尝试从 mockGames 回退（仅匹配数字ID）
+                console.warn('[detail.js] API未找到，尝试使用兜底数据');
                 game = getMockGameById(id);
                 if (game) {
                     console.log('[detail.js] 使用兜底数据:', game.name);

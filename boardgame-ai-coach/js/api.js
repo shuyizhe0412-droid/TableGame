@@ -298,6 +298,16 @@ async function getGlobalGames() {
 }
 
 /**
+ * 获取单个默认桌游详情（不需要认证）
+ * @param {string} id - 游戏ID
+ */
+async function getGlobalGame(id) {
+    console.log('[getGlobalGame] ID:', id);
+    var data = await apiFetch(API_BASE_URL + '/admin/global-games/' + encodeURIComponent(id), { method: 'GET' });
+    return normalizeGameData(data);
+}
+
+/**
  * 获取某店家的桌游列表（玩家端）
  * @param {string} storeId - 店家ID
  */
@@ -389,7 +399,14 @@ async function getGameDetail(id) {
     try {
         return await getPublicGame(id);
     } catch (e) {
-        console.error('[getGameDetail] 获取失败:', e);
+        console.warn('[getGameDetail] 公开接口获取失败，尝试全局桌游:', e.message);
+    }
+
+    // 全局默认桌游接口兜底
+    try {
+        return await getGlobalGame(id);
+    } catch (e) {
+        console.error('[getGameDetail] 所有接口获取失败:', e);
         throw e;
     }
 }
@@ -663,6 +680,7 @@ window.getUploads = getUploads;
 
 // 玩家端公开 API
 window.getGlobalGames = getGlobalGames;
+window.getGlobalGame = getGlobalGame;
 window.getPublicGames = getPublicGames;
 window.getPublicGame = getPublicGame;
 window.getAuthHeaders = getAuthHeaders;

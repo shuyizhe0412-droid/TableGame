@@ -566,13 +566,12 @@ App.registerPage('profile', (function() {
 
     // 二维码生成（仅登录店家模式）
     function generateQRCodes() {
-        if (state.qrLoaded) return;
-        state.qrLoaded = true;
         var loggedIn = window.isLoggedIn && window.isLoggedIn();
         var shopInfo = window._shopInfo;
-        // 未登录用户：不生成二维码
-        if (!loggedIn || !shopInfo || !shopInfo.name) return;
-        // 登录店家：生成两个二维码
+        // 未登录或shopInfo未就绪：不生成二维码，也不标记qrLoaded
+        if (!loggedIn || !shopInfo || !shopInfo.id) return;
+        // 已登录且shopInfo就绪：生成二维码并标记已加载
+        state.qrLoaded = true;
         generateCustomerQR();
         generateAdminQR();
     }
@@ -1053,14 +1052,15 @@ App.registerPage('profile', (function() {
     }
 
     // ==================== 初始化 ====================
-    function init() {
+    async function init() {
         if (!state.showBatchQR && !state.showReviewPage && !state.showStoreSettings) {
             // 刷新店铺信息（从后端获取真实店名）
-            refreshShopInfo();
+            await refreshShopInfo();
             // 加载扫码统计数据
             loadStats();
-            // 生成二维码（延迟确保DOM就绪）
-            setTimeout(function() { generateQRCodes(); }, 200);
+            // 生成二维码（shopInfo已就绪）
+            state.qrLoaded = false;  // 重置标志，确保每次进入都重新生成
+            setTimeout(function() { generateQRCodes(); }, 100);
         }
     }
 

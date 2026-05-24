@@ -25,6 +25,35 @@ App.registerPage('home', (function() {
         { emoji: '⚒️', name: '德式经典', param: '德式' }
     ];
 
+    // 内置兜底桌游数据（25款默认桌游，当后端API未返回足够数据时使用）
+    var fallbackGames = [
+        { id: 'default_1', name: '卡坦岛', name_en: 'Catan', min_players: 3, max_players: 4, play_time: 90, difficulty: 2, category: '德式', tags: ['策略','资源管理','交易'], description: '经典的德式桌游，玩家在卡坦岛上建立殖民地、收集资源、交易谈判。' },
+        { id: 'default_2', name: '狼人杀', name_en: 'Werewolf', min_players: 6, max_players: 12, play_time: 30, difficulty: 1, category: '聚会', tags: ['推理','社交','嘴炮'], description: '经典的社交推理游戏，玩家分为狼人和村民两个阵营斗智斗勇。' },
+        { id: 'default_3', name: '三国杀', name_en: 'Sanguosha', min_players: 4, max_players: 10, play_time: 40, difficulty: 2, category: '聚会', tags: ['角色','对抗','策略'], description: '以三国为背景的卡牌对战游戏，扮演文臣武将，使用技能击败对手。' },
+        { id: 'default_4', name: '情书', name_en: 'Love Letter', min_players: 2, max_players: 6, play_time: 15, difficulty: 1, category: '入门', tags: ['卡牌','推理','小品'], description: '轻度卡牌推理游戏，通过出牌推测其他玩家手牌，让公主收到情书。' },
+        { id: 'default_5', name: '宝石商人', name_en: 'Gem Merchant', min_players: 2, max_players: 4, play_time: 30, difficulty: 1, category: '入门', tags: ['收集','成套','策略'], description: '快速收集资源，通过购买宝石和发展卡积累财富。' },
+        { id: 'default_6', name: '德国心脏病', name_en: 'Halli Galli', min_players: 3, max_players: 6, play_time: 20, difficulty: 1, category: '聚会', tags: ['反应','欢乐','家庭'], description: '考验反应速度的欢乐游戏，出现特定水果组合时抢按铃铛。' },
+        { id: 'default_7', name: '行动代号', name_en: 'Codenames', min_players: 4, max_players: 8, play_time: 15, difficulty: 1, category: '聚会', tags: ['配合','词汇','猜词'], description: '双人对抗猜词游戏，队长给出线索，队员在25张词卡中猜出己方词语。' },
+        { id: 'default_8', name: '阿瓦隆', name_en: 'Avalon', min_players: 5, max_players: 10, play_time: 30, difficulty: 2, category: '推理', tags: ['推理','隐藏身份','团队'], description: '狼人杀的升级版，抵抗军与莫甘娜阵营对抗，没有淘汰机制全程参与。' },
+        { id: 'default_9', name: '璀璨宝石', name_en: 'Splendor', min_players: 2, max_players: 4, play_time: 30, difficulty: 1, category: '入门', tags: ['收集','策略','卡牌'], description: '精美的资源收集游戏，扮演宝石商人收集宝石、购买开发卡积累声望。' },
+        { id: 'default_10', name: '七大奇迹', name_en: '7 Wonders', min_players: 3, max_players: 7, play_time: 30, difficulty: 2, category: '策略', tags: ['文明','卡牌','积分'], description: '文明发展主题卡牌游戏，建设奇迹、发展科技和贸易获取最高声望。' },
+        { id: 'default_11', name: 'UNO', name_en: 'UNO', min_players: 2, max_players: 10, play_time: 20, difficulty: 1, category: '聚会', tags: ['卡牌','欢乐','家庭'], description: '经典卡牌游戏，出完手牌即可获胜，功能牌可改变游戏局势。' },
+        { id: 'default_12', name: '谁是卧底', name_en: 'Undercover', min_players: 4, max_players: 12, play_time: 25, difficulty: 1, category: '聚会', tags: ['推理','社交','猜词'], description: '玩家用词语描述自己的身份，通过推理找出隐藏的卧底。' },
+        { id: 'default_13', name: '花火', name_en: 'Hanabi', min_players: 2, max_players: 5, play_time: 25, difficulty: 2, category: '入门', tags: ['合作','记忆','卡牌'], description: '独特的合作游戏，玩家看不到自己的手牌但可以看到其他玩家的牌。' },
+        { id: 'default_14', name: '矮人矿工', name_en: 'Saboteur', min_players: 3, max_players: 10, play_time: 30, difficulty: 1, category: '聚会', tags: ['隐藏身份','卡牌','竞速'], description: '矿工挖金矿，但有破坏者在暗中捣乱，需要通过出牌判断谁是破坏者。' },
+        { id: 'default_15', name: '车票之旅', name_en: 'Ticket to Ride', min_players: 2, max_players: 5, play_time: 45, difficulty: 1, category: '入门', tags: ['路线','收集','策略'], description: '收集火车卡牌，在地图上连接城市，争夺铁路路线完成车票目标。' },
+        { id: 'default_16', name: '大富翁', name_en: 'Monopoly', min_players: 2, max_players: 8, play_time: 90, difficulty: 2, category: '聚会', tags: ['交易','地产','经济'], description: '经典地产交易游戏，购买地产、收取租金，让对手破产获得胜利。' },
+        { id: 'default_17', name: '爆炸猫', name_en: 'Exploding Kittens', min_players: 2, max_players: 5, play_time: 15, difficulty: 1, category: '聚会', tags: ['卡牌','运气','欢乐'], description: '俄罗斯轮盘式的卡牌游戏，抽到爆炸猫就出局，用各种功能牌避开。' },
+        { id: 'default_18', name: '瘟疫危机', name_en: 'Pandemic', min_players: 2, max_players: 4, play_time: 45, difficulty: 3, category: '策略', tags: ['合作','策略','危机'], description: '合作桌游经典，玩家扮演疾控专家，在全球范围内控制病毒传播。' },
+        { id: 'default_19', name: '东海道', name_en: 'Tokaido', min_players: 2, max_players: 5, play_time: 45, difficulty: 1, category: '入门', tags: ['旅行','收集','艺术'], description: '玩家沿东海道旅行，享受风景、美食、温泉，体验日本传统文化。' },
+        { id: 'default_20', name: '抵抗组织', name_en: 'The Resistance', min_players: 5, max_players: 10, play_time: 30, difficulty: 2, category: '推理', tags: ['推理','隐藏身份','团队'], description: '简洁的推理游戏，抵抗组织成员和间谍在任务中斗智斗勇。' },
+        { id: 'default_21', name: '谍报风云', name_en: 'Decrypto', min_players: 3, max_players: 8, play_time: 30, difficulty: 2, category: '推理', tags: ['猜词','团队','配合'], description: '两队通过编码员给出的线索猜出数字密码，同时防止对手破解。' },
+        { id: 'default_22', name: '妙探寻凶', name_en: 'Clue', min_players: 3, max_players: 6, play_time: 45, difficulty: 2, category: '推理', tags: ['推理','侦探','逻辑'], description: '经典推理游戏，通过问询和排除法找出凶手、凶器和案发地点。' },
+        { id: 'default_23', name: '四季物语', name_en: 'Seasons', min_players: 2, max_players: 4, play_time: 60, difficulty: 3, category: '策略', tags: ['卡牌','骰子','魔法'], description: '魔法世界桌游，用季节骰子获取资源，召唤魔法生物，在十二个月中争取最高分。' },
+        { id: 'default_24', name: '骆驼大赛', name_en: 'Camel Up', min_players: 2, max_players: 8, play_time: 30, difficulty: 1, category: '聚会', tags: ['竞速','下注','欢乐'], description: '欢乐的骆驼赛跑游戏，在比赛不同阶段下注，预测最终获胜的骆驼。' },
+        { id: 'default_25', name: '王国保卫战', name_en: 'The King Is Dead', min_players: 2, max_players: 4, play_time: 45, difficulty: 3, category: '策略', tags: ['区域控制','政治','历史'], description: '玩家扮演英国贵族派系，在国王去世后争夺王国控制权，谨慎使用有限的政治力量。' }
+    ];
+
     // 热门游戏列表
     var hotGameNames = ['卡坦岛', '狼人杀', '阿瓦隆', '璀璨宝石', '情书', '行动代号'];
 
@@ -101,39 +130,52 @@ App.registerPage('home', (function() {
     // ==================== 数据加载 ====================
     async function loadGamesFromDB() {
         console.log('[home.js] 开始加载游戏数据 (第' + (_loadRetryCount + 1) + '次尝试)');
+        var apiGames = null;
+        var apiError = null;
+
+        // 尝试从API加载
         try {
-            if (typeof window.getGames !== 'function') {
-                throw new Error('API 未加载');
+            if (typeof window.getGames === 'function') {
+                apiGames = await window.getGames({});
+                console.log('[home.js] API返回游戏数量:', apiGames ? apiGames.length : 0);
             }
-            var games = await window.getGames({});
-            if (!games || games.length === 0) {
-                throw new Error('数据库返回空');
+        } catch (error) {
+            apiError = error;
+            console.warn('[home.js] API加载失败:', error.message);
+        }
+
+        // 如果API返回数据不足，合并内置兜底数据
+        if (!apiGames || apiGames.length < 6) {
+            console.log('[home.js] API数据不足(' + (apiGames ? apiGames.length : 0) + '款)，合并内置兜底数据(25款)');
+            // 用API数据覆盖同名兜底数据
+            var mergedMap = {};
+            fallbackGames.forEach(function(g) { mergedMap[g.name] = g; });
+            if (apiGames && apiGames.length > 0) {
+                apiGames.forEach(function(g) {
+                    if (g.name) mergedMap[g.name] = g;
+                });
             }
-            state.allGames = games;
+            var merged = [];
+            var keys = Object.keys(mergedMap);
+            for (var i = 0; i < keys.length; i++) {
+                merged.push(mergedMap[keys[i]]);
+            }
+            state.allGames = merged;
             state.isLoading = false;
             state.loadError = null;
-            _loadRetryCount = 0;  // 成功后重置
+            _loadRetryCount = 0;
             state.guessGames = getGuessGames();
             window.homePageRender();
-        } catch (error) {
-            _loadRetryCount++;
-            console.error('[home.js] 加载失败 (第' + _loadRetryCount + '次):', error);
-
-            var errMsg = error.message || '未知错误';
-            if (_loadRetryCount >= _maxLoadRetries) {
-                errMsg = errMsg + '（已重试' + _maxLoadRetries + '次，请检查网络后手动刷新）';
-            }
-
-            state.loadError = errMsg;
-            state.isLoading = false;
-
-            // 直接更新DOM显示错误页，不触发 homePageRender → init → loadGamesFromDB 循环
-            var app = document.getElementById('app');
-            if (app) {
-                app.innerHTML = (window.renderShopHeader ? window.renderShopHeader() : '') + render() + window.getTabBarHtml('home');
-                window.bindTabBarEvents();
-            }
+            return;
         }
+
+        // API返回足够数据
+        state.allGames = apiGames;
+        state.isLoading = false;
+        state.loadError = null;
+        _loadRetryCount = 0;
+        state.guessGames = getGuessGames();
+        window.homePageRender();
     }
 
     // ==================== 渲染函数 ====================
