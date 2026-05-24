@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>BoardGame Hub - 桌游店管理后台</title>
+ <link rel="preconnect" href="https://fonts.googleapis.com">
+ <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+ <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+ <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+ <div id="app">
+ <div id="toast" class="toast"></div>
+
+ <div id="loading" class="loading-screen">
+ <div class="loading-spinner"></div>
+ </div>
+
+ <!-- ======== 登录/注册页 ======== -->
+ <div id="auth-page" class="page" style="display:none">
+ <div class="auth-container">
+ <div class="auth-brand">
+ <div class="brand-icon">🎲</div>
+ <h1>BoardGame Hub</h1>
+ <p>桌游店管理后台</p>
+ </div>
+ <div class="auth-card">
+ <div class="auth-tabs">
+ <button class="auth-tab active" data-tab="login">登录</button>
+ <button class="auth-tab" data-tab="register">注册</button>
+ </div>
+ <form id="login-form" class="auth-form">
+ <div class="form-group">
+ <label>邮箱</label>
+ <input type="email" id="login-email" placeholder="your@email.com" required>
+ </div>
+ <div class="form-group">
+ <label>密码</label>
+ <input type="password" id="login-password" placeholder="输入密码" required>
+ </div>
+ <button type="submit" class="btn btn-primary btn-block">登录</button>
+ </form>
+ <form id="register-form" class="auth-form" style="display:none">
+ <div class="form-group">
+ <label>店铺名称</label>
+ <input type="text" id="reg-store-name" placeholder="你的桌游店名">
+ </div>
+ <div class="form-group">
+ <label>邮箱</label>
+ <input type="email" id="reg-email" placeholder="your@email.com" required>
+ </div>
+ <div class="form-group">
+ <label>密码</label>
+ <input type="password" id="reg-password" placeholder="设置密码（至少6位）" required minlength="6">
+ </div>
+ <button type="submit" class="btn btn-primary btn-block">注册</button>
+ </form>
+ </div>
+ </div>
+ </div>
+
+ <!-- ======== 首页/桌游列表 ======== -->
+ <div id="dashboard-page" class="page" style="display:none">
+ <header class="header">
+ <div class="header-left">
+ <span class="logo">🎲</span>
+ <span class="logo-text">BoardGame Hub</span>
+ </div>
+ <div class="header-right">
+ <span id="store-name-display" class="store-name"></span>
+ <button id="logout-btn" class="btn btn-ghost btn-sm">退出</button>
+ </div>
+ </header>
+ <main class="main">
+ <div class="section-header">
+ <h2>我的桌游 <span id="game-count" class="count-badge">0</span></h2>
+ <button id="add-game-btn" class="btn btn-primary">+ 添加桌游</button>
+ </div>
+ <div id="game-grid" class="game-grid"></div>
+ <div id="empty-state" class="empty-state" style="display:none">
+ <div class="empty-icon">📦</div>
+ <h3>还没有桌游</h3>
+ <p>点击上方按钮添加你的第一款桌游吧</p>
+ </div>
+ </main>
+ </div>
+
+ <!-- ======== 桌游详情页 ======== -->
+ <div id="detail-page" class="page" style="display:none">
+ <header class="header">
+ <div class="header-left">
+ <button id="back-btn" class="btn btn-ghost btn-sm">← 返回</button>
+ <span id="detail-header-title" class="logo-text">桌游详情</span>
+ </div>
+ <div class="header-right">
+ <button id="delete-game-btn" class="btn btn-ghost btn-sm text-danger">删除</button>
+ </div>
+ </header>
+ <main class="main">
+ <div class="detail-layout">
+ <div class="detail-left">
+ <div id="detail-cover" class="detail-cover">
+ <span class="cover-placeholder">🎲</span>
+ </div>
+ </div>
+ <div class="detail-right">
+ <div class="detail-info-card">
+ <h2 id="detail-name"></h2>
+ <div class="info-grid">
+ <div class="info-item">
+ <span class="info-icon">👥</span>
+ <div>
+ <span class="info-label">玩家人数</span>
+ <span id="detail-players" class="info-value">-</span>
+ </div>
+ </div>
+ <div class="info-item">
+ <span class="info-icon">⏱️</span>
+ <div>
+ <span class="info-label">游戏时长</span>
+ <span id="detail-duration" class="info-value">-</span>
+ </div>
+ </div>
+ <div class="info-item">
+ <span class="info-icon">📊</span>
+ <div>
+ <span class="info-label">难度等级</span>
+ <span id="detail-difficulty" class="info-value">-</span>
+ </div>
+ </div>
+ </div>
+ <div id="detail-tags" class="tags"></div>
+ </div>
+
+ <div class="detail-section-card">
+ <div class="section-title-row">
+ <h3>📄 规则书</h3>
+ <button id="upload-rulebook-btn" class="btn btn-outline btn-sm">上传</button>
+ </div>
+ <div id="detail-files" class="files-list">
+ <p class="text-muted">暂无规则书文件</p>
+ </div>
+ </div>
+
+ <div class="detail-section-card">
+ <h3>📱 玩家二维码</h3>
+ <div class="qr-section">
+ <div id="qr-code" class="qr-code-box"></div>
+ <p class="text-muted qr-hint">玩家扫码直接查看规则书</p>
+ </div>
+ </div>
+
+ <div class="detail-section-card">
+ <div class="section-title-row">
+ <h3>📸 封面图片</h3>
+ <button id="upload-cover-btn" class="btn btn-outline btn-sm">更换</button>
+ </div>
+ <input type="file" id="cover-file-input" accept="image/*" style="display:none">
+ </div>
+ </div>
+ </div>
+ </main>
+ </div>
+
+ <!-- ======== 弹窗：添加/编辑桌游 ======== -->
+ <div id="game-modal" class="modal-overlay" style="display:none">
+ <div class="modal">
+ <div class="modal-header">
+ <h3 id="modal-title">添加桌游</h3>
+ <button class="modal-close" id="modal-close-btn">&times;</button>
+ </div>
+ <form id="game-form" class="modal-body">
+ <div class="form-group">
+ <label>桌游名称 <span class="required">*</span></label>
+ <input type="text" id="form-game-name" placeholder="例如：卡坦岛" required>
+ </div>
+ <div class="form-row form-row-3">
+ <div class="form-group">
+ <label>最少人数</label>
+ <input type="number" id="form-min-players" min="1" max="99" placeholder="2">
+ </div>
+ <div class="form-group">
+ <label>最多人数</label>
+ <input type="number" id="form-max-players" min="1" max="99" placeholder="4">
+ </div>
+ <div class="form-group">
+ <label>时长(分钟)</label>
+ <input type="number" id="form-duration" min="1" placeholder="60">
+ </div>
+ </div>
+ <div class="form-group">
+ <label>难度等级</label>
+ <div id="difficulty-stars" class="difficulty-stars">
+ <span class="star active" data-value="1">★</span>
+ <span class="star active" data-value="2">★</span>
+ <span class="star active" data-value="3">★</span>
+ <span class="star" data-value="4">★</span>
+ <span class="star" data-value="5">★</span>
+ </div>
+ </div>
+ <div class="form-group">
+ <label>标签</label>
+ <input type="text" id="form-tags" placeholder="策略, 交易, 家庭 (逗号分隔)">
+ </div>
+ <div class="form-group">
+ <label>封面图片</label>
+ <div class="file-input-wrapper">
+ <input type="file" id="form-cover" accept="image/*">
+ <span class="file-hint">支持 JPG、PNG 格式</span>
+ </div>
+ </div>
+ <div class="form-group">
+ <label>规则书</label>
+ <div class="file-input-wrapper">
+ <input type="file" id="form-rulebook" accept=".pdf,.png,.jpg,.jpeg,.webp">
+ <span class="file-hint">支持 PDF、图片格式</span>
+ </div>
+ </div>
+ <div class="modal-footer">
+ <button type="button" class="btn btn-ghost" id="modal-cancel-btn">取消</button>
+ <button type="submit" class="btn btn-primary" id="modal-submit-btn">保存</button>
+ </div>
+ </form>
+ </div>
+ </div>
+
+ <!-- ======== 弹窗：上传规则书 ======== -->
+ <div id="upload-modal" class="modal-overlay" style="display:none">
+ <div class="modal modal-sm">
+ <div class="modal-header">
+ <h3>上传规则书</h3>
+ <button class="modal-close" id="upload-modal-close-btn">&times;</button>
+ </div>
+ <form id="upload-form" class="modal-body">
+ <div class="form-group">
+ <label>选择文件</label>
+ <div class="file-input-wrapper">
+ <input type="file" id="upload-file-input" accept=".pdf,.png,.jpg,.jpeg,.webp" required>
+ <span class="file-hint">支持 PDF、PNG、JPG 格式</span>
+ </div>
+ </div>
+ <div class="modal-footer">
+ <button type="button" class="btn btn-ghost" id="upload-cancel-btn">取消</button>
+ <button type="submit" class="btn btn-primary">上传</button>
+ </div>
+ </form>
+ </div>
+ </div>
+ </div>
+ <script src="/js/app.js"></script>
+</body>
+</html>
