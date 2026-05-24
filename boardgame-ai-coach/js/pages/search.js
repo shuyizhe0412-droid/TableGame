@@ -30,27 +30,53 @@ App.registerPage('library', (function() {
     // ==================== 数据加载 ====================
     async function loadGamesFromDB() {
         console.log('[library.js] 开始加载游戏数据');
+        var apiGames = null;
+        var apiError = null;
+
         try {
             if (typeof window.getGames !== 'function') {
                 throw new Error('API 未加载');
             }
-            var games = await window.getGames({});
-            if (!games || games.length === 0) {
-                throw new Error('数据库返回空');
-            }
-            state.allGames = games;
-            state.isLoading = false;
-            // 解析URL参数
-            parseUrlParams();
-            // 应用筛选
-            applyFilters();
-            window.libraryPageRender();
+            apiGames = await window.getGames({});
+            console.log('[library.js] API返回游戏数量:', apiGames ? apiGames.length : 0);
         } catch (error) {
-            console.error('[library.js] 加载失败:', error);
-            state.loadError = error.message;
-            state.isLoading = false;
-            window.libraryPageRender();
+            apiError = error;
+            console.warn('[library.js] API加载失败:', error.message);
         }
+
+        // Bug 修复：当API数据不足时，合并内置兜底数据（与 home.js 保持一致）
+        var fallback = window._fallbackGames;
+        if ((!apiGames || apiGames.length < 6) && fallback && fallback.length > 0) {
+            console.log('[library.js] API数据不足(' + (apiGames ? apiGames.length : 0) + '款)，合并内置兜底数据(25款)');
+            var mergedMap = {};
+            fallback.forEach(function(g) { if (g.name) mergedMap[g.name] = g; });
+            if (apiGames && apiGames.length > 0) {
+                apiGames.forEach(function(g) {
+                    if (g.name) mergedMap[g.name] = g;
+                });
+            }
+            var merged = [];
+            var keys = Object.keys(mergedMap);
+            for (var i = 0; i < keys.length; i++) {
+                merged.push(mergedMap[keys[i]]);
+            }
+            state.allGames = merged;
+            state.isLoading = false;
+            state.loadError = null;
+        } else if (apiGames && apiGames.length > 0) {
+            state.allGames = apiGames;
+            state.isLoading = false;
+            state.loadError = null;
+        } else {
+            state.loadError = apiError ? apiError.message : '数据库返回空';
+            state.isLoading = false;
+        }
+
+        // 解析URL参数
+        parseUrlParams();
+        // 应用筛选
+        applyFilters();
+        window.libraryPageRender();
     }
 
     // 解析URL参数，返回 true 表示应用了新参数
@@ -269,9 +295,11 @@ App.registerPage('library', (function() {
             'linear-gradient(135deg, #D5C8E8, #BFB0D8)',
             'linear-gradient(135deg, #7B9E87, #5a7e67)'
         ];
-        var bg = gradients[Math.abs((game.id ? game.id.charCodeAt(0) : 0)) % gradients.length];
+        // 防御：确保 game.id 有效，否则用 name 兜底（detail.js 的 getFallbackGame 可匹配 name）
+        var cardId = game.id || game.name || 'unknown';
+        var bg = gradients[Math.abs((cardId ? cardId.charCodeAt(0) : 0)) % gradients.length];
 
-        return '<div class="library-game-card" onclick="libraryPage.goDetail(\'' + game.id + '\')">' +
+        return '<div class="library-game-card" onclick="libraryPage.goDetail(\'' + cardId + '\')">' +
             '<div class="library-game-cover" style="background:' + bg + '">' +
             '<span class="library-game-emoji">🎲</span>' +
             '</div>' +
@@ -424,6 +452,7 @@ App.registerPage('library', (function() {
 
     function goDetail(id) {
         console.log('[library.js] goDetail, ID:', id);
+        sessionStorage.setItem('chatFrom', '/detail?id=' + id);
         window.location.hash = '/detail?id=' + encodeURIComponent(id);
     }
 
