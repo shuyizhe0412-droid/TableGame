@@ -231,6 +231,14 @@ async function getUploads(gameId) {
 // ==================== 玩家端公开 API（不需要认证） ====================
 
 /**
+ * 获取全部默认桌游列表（不需要认证）
+ */
+async function getGlobalGames() {
+    console.log('[getGlobalGames] 获取全局默认桌游');
+    return await apiFetch(API_BASE_URL + '/admin/global-games', { method: 'GET' });
+}
+
+/**
  * 获取某店家的桌游列表（玩家端）
  * @param {string} storeId - 店家ID
  */
@@ -272,21 +280,30 @@ async function getGames(filters, storeId) {
         }
     }
 
-    // 玩家端：需要 storeId
+    // 玩家端：优先用传入的 storeId，其次从 session 取
     if (!storeId) {
         storeId = sessionStorage.getItem('shopId');
     }
-    if (!storeId) {
-        console.warn('[getGames] 无 storeId，返回空列表');
-        return [];
+
+    // 有 storeId → 调用店家公开 API
+    if (storeId) {
+        try {
+            var publicGames = await getPublicGames(storeId);
+            return publicGames || [];
+        } catch (e) {
+            console.error('[getGames] 玩家端获取失败:', e);
+            throw e;
+        }
     }
 
+    // 无 storeId 且未登录 → 调用全局默认桌游 API
+    console.log('[getGames] 未登录且无 storeId，调用全局默认桌游');
     try {
-        var publicGames = await getPublicGames(storeId);
-        return publicGames || [];
+        var globalGames = await getGlobalGames();
+        return globalGames || [];
     } catch (e) {
-        console.error('[getGames] 玩家端获取失败:', e);
-        throw e;
+        console.error('[getGames] 全局桌游获取失败:', e);
+        return [];
     }
 }
 
@@ -583,6 +600,7 @@ window.uploadRules = uploadRules;
 window.getUploads = getUploads;
 
 // 玩家端公开 API
+window.getGlobalGames = getGlobalGames;
 window.getPublicGames = getPublicGames;
 window.getPublicGame = getPublicGame;
 window.getAuthHeaders = getAuthHeaders;
