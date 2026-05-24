@@ -107,6 +107,20 @@ router.get('/global-games', (req, res) => {
   }
 });
 
+// GET /api/admin/global-games/:id - 获取单个全局桌游
+router.get('/global-games/:id', (req, res) => {
+  try {
+    const game = db.prepare('SELECT * FROM global_games WHERE id = ?').get(req.params.id);
+    if (!game) {
+      return res.status(404).json({ error: '桌游不存在' });
+    }
+    res.json(game);
+  } catch (err) {
+    console.error('[ADMIN] 获取桌游详情失败:', err.message);
+    res.status(500).json({ error: '获取失败' });
+  }
+});
+
 // POST /api/admin/global-games - 添加全局默认桌游
 router.post('/global-games', (req, res) => {
   try {

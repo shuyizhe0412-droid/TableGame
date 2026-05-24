@@ -16,6 +16,9 @@ db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
 // ============ 自动建表 ============
+// ⚠️ Render 免费版注意：文件系统是临时的，每次部署 database.db 会被清空。
+// ⚠️ 解决方案：(1) 迁移到 Supabase/外部数据库 (2) 使用 Render Persistent Disk（付费）
+// ⚠️ 本文件仅用 CREATE TABLE IF NOT EXISTS，不会主动删除任何数据。
 
 // 店家表
 db.exec(`
