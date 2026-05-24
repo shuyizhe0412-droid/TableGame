@@ -2,5 +2,6 @@ node_modules/
 database.db
 uploads/
 .env
+test-supabase.js
 *.log
 .DS_Store
