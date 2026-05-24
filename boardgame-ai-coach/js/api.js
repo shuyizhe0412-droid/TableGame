@@ -57,6 +57,49 @@ async function apiFetch(url, options) {
     return data;
 }
 
+// ==================== 字段名归一化 ====================
+// API 返回 game_name/player_min/player_max/duration/tags(字符串)/cover_url
+// 前端期望 name/min_players/max_players/play_time/tags(数组)/cover
+
+function normalizeSingleGame(game) {
+    if (!game) return game;
+    // game_name → name
+    if (game.game_name !== undefined && game.name === undefined) {
+        game.name = game.game_name;
+    }
+    // player_min → min_players, minPlayers
+    if (game.player_min !== undefined) {
+        if (game.min_players === undefined) game.min_players = game.player_min;
+        if (game.minPlayers === undefined) game.minPlayers = game.player_min;
+    }
+    // player_max → max_players, maxPlayers
+    if (game.player_max !== undefined) {
+        if (game.max_players === undefined) game.max_players = game.player_max;
+        if (game.maxPlayers === undefined) game.maxPlayers = game.player_max;
+    }
+    // duration → play_time
+    if (game.duration !== undefined && game.play_time === undefined) {
+        game.play_time = game.duration;
+    }
+    // cover_url → cover
+    if (game.cover_url !== undefined && game.cover === undefined) {
+        game.cover = game.cover_url;
+    }
+    // tags: comma-separated string → array
+    if (typeof game.tags === 'string') {
+        game.tags = game.tags.split(',').map(function(t) { return t.trim(); }).filter(function(t) { return t; });
+    }
+    return game;
+}
+
+function normalizeGameData(data) {
+    if (!data) return data;
+    if (Array.isArray(data)) {
+        return data.map(normalizeSingleGame);
+    }
+    return normalizeSingleGame(data);
+}
+
 // ==================== 店家认证 API ====================
 
 /**
@@ -118,7 +161,8 @@ function authLogout() {
  */
 async function getMyGames() {
     console.log('[getMyGames] 获取我的桌游列表');
-    return await apiFetch(API_BASE_URL + '/games', { method: 'GET' });
+    var data = await apiFetch(API_BASE_URL + '/games', { method: 'GET' });
+    return normalizeGameData(data);
 }
 
 /**
@@ -127,7 +171,8 @@ async function getMyGames() {
  */
 async function getMyGameDetail(id) {
     console.log('[getMyGameDetail] ID:', id);
-    return await apiFetch(API_BASE_URL + '/games/' + encodeURIComponent(id), { method: 'GET' });
+    var data = await apiFetch(API_BASE_URL + '/games/' + encodeURIComponent(id), { method: 'GET' });
+    return normalizeGameData(data);
 }
 
 /**
@@ -235,7 +280,8 @@ async function getUploads(gameId) {
  */
 async function getGlobalGames() {
     console.log('[getGlobalGames] 获取全局默认桌游');
-    return await apiFetch(API_BASE_URL + '/admin/global-games', { method: 'GET' });
+    var data = await apiFetch(API_BASE_URL + '/admin/global-games', { method: 'GET' });
+    return normalizeGameData(data);
 }
 
 /**
@@ -244,7 +290,8 @@ async function getGlobalGames() {
  */
 async function getPublicGames(storeId) {
     console.log('[getPublicGames] storeId:', storeId);
-    return await apiFetch(API_BASE_URL + '/public/games/' + encodeURIComponent(storeId), { method: 'GET' });
+    var data = await apiFetch(API_BASE_URL + '/public/games/' + encodeURIComponent(storeId), { method: 'GET' });
+    return normalizeGameData(data);
 }
 
 /**
@@ -253,7 +300,8 @@ async function getPublicGames(storeId) {
  */
 async function getPublicGame(id) {
     console.log('[getPublicGame] ID:', id);
-    return await apiFetch(API_BASE_URL + '/public/game/' + encodeURIComponent(id), { method: 'GET' });
+    var data = await apiFetch(API_BASE_URL + '/public/game/' + encodeURIComponent(id), { method: 'GET' });
+    return normalizeGameData(data);
 }
 
 // ==================== 兼容旧API的统一入口 ====================
@@ -604,5 +652,7 @@ window.getGlobalGames = getGlobalGames;
 window.getPublicGames = getPublicGames;
 window.getPublicGame = getPublicGame;
 window.getAuthHeaders = getAuthHeaders;
+window.normalizeGameData = normalizeGameData;
+window.normalizeSingleGame = normalizeSingleGame;
 
 console.log('[api.js] 加载完成，已挂载到 window');
