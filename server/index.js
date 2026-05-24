@@ -6,10 +6,20 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 
-// 加载环境变量（如果有 .env 文件）
+// 加载环境变量
+// 本地开发：从 .env 文件读取
+// Render 部署：环境变量由 Render Dashboard 直接注入 process.env
+// dotenv 默认不会覆盖已存在的环境变量，所以 Render 上的设置是安全的
 try {
-  require('dotenv').config();
-} catch {}
+  const result = require('dotenv').config({ quiet: true });
+  if (result.parsed) {
+    console.log('[ENV] 从 .env 文件加载了', Object.keys(result.parsed).length, '个变量');
+  } else {
+    console.log('[ENV] 未找到 .env 文件，将使用系统环境变量（Render 部署正常行为）');
+  }
+} catch {
+  console.log('[ENV] dotenv 未安装或加载失败，将使用系统环境变量');
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
