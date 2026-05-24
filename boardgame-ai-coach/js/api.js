@@ -405,6 +405,14 @@ async function getGames(filters, storeId) {
 }
 
 /**
+ * 验证游戏对象是否有效（至少包含 name 或 game_name）
+ * 防止 API 返回 {} 空对象被当作有效结果
+ */
+function isValidGameObject(g) {
+    return g && typeof g === 'object' && (g.name || g.game_name);
+}
+
+/**
  * 获取游戏详情（统一入口）
  * 优先使用公开接口（不需要登录）
  * @param {string} id
@@ -416,16 +424,26 @@ async function getGameDetail(id) {
     if (isLoggedIn()) {
         try {
             var myGame = await getMyGameDetail(id);
-            if (myGame) return myGame;
+            if (isValidGameObject(myGame)) {
+                console.log('[getGameDetail] 管理端命中:', myGame.name);
+                return myGame;
+            }
+            console.warn('[getGameDetail] 管理端返回无效对象（无name），继续fallback');
         } catch (e) {
             console.warn('[getGameDetail] 管理端获取失败，尝试公开接口:', e.message);
         }
+    } else {
+        console.log('[getGameDetail] 未登录，跳过管理端');
     }
 
-    // Bug 2 修复：公开接口可能返回 null（不是异常），需检查结果
+    // 公开接口
     try {
         var publicGame = await getPublicGame(id);
-        if (publicGame) return publicGame;
+        if (isValidGameObject(publicGame)) {
+            console.log('[getGameDetail] 公开接口命中:', publicGame.name);
+            return publicGame;
+        }
+        console.warn('[getGameDetail] 公开接口返回无效对象（无name），继续fallback');
     } catch (e) {
         console.warn('[getGameDetail] 公开接口获取失败，尝试全局桌游:', e.message);
     }
@@ -433,13 +451,17 @@ async function getGameDetail(id) {
     // 全局默认桌游接口兜底
     try {
         var globalGame = await getGlobalGame(id);
-        if (globalGame) return globalGame;
+        if (isValidGameObject(globalGame)) {
+            console.log('[getGameDetail] 全局桌游命中:', globalGame.name);
+            return globalGame;
+        }
+        console.warn('[getGameDetail] 全局桌游返回无效对象（无name）');
     } catch (e) {
         console.warn('[getGameDetail] 全局桌游接口获取失败:', e.message);
     }
 
     // 所有接口都未返回有效数据
-    console.error('[getGameDetail] 所有接口均未返回数据，ID:', id);
+    console.error('[getGameDetail] 所有接口均未返回有效数据，ID:', id);
     return null;
 }
 

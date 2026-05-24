@@ -645,14 +645,25 @@ App.registerPage('detail', (function() {
             
             console.log('[detail.js] 调用 window.getGameDetail()');
             var game = await window.getGameDetail(id);
-            console.log('[detail.js] getGameDetail 返回:', game ? game.name : 'null');
+            console.log('[detail.js] getGameDetail 返回:', game != null ? (game.name || '(无name)') : 'null');
+            
+            // Bug 2 修复：getGameDetail 可能返回 {} 空对象（truthy 但无有效数据），验证有效性
+            if (game && !game.name && !game.game_name) {
+                console.warn('[detail.js] getGameDetail 返回无效对象（无name），视为null继续fallback');
+                game = null;
+            }
             
             if (!game) {
                 // 尝试全局桌游接口
                 if (typeof window.getGlobalGame === 'function') {
                     console.log('[detail.js] 尝试全局桌游接口');
                     game = await window.getGlobalGame(id);
-                    console.log('[detail.js] getGlobalGame 返回:', game ? game.name : 'null');
+                    console.log('[detail.js] getGlobalGame 返回:', game != null ? (game.name || '(无name)') : 'null');
+                    // 同样检查有效性
+                    if (game && !game.name && !game.game_name) {
+                        console.warn('[detail.js] getGlobalGame 返回无效对象（无name），视为null');
+                        game = null;
+                    }
                 }
             }
             
