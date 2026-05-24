@@ -171,21 +171,28 @@ function authLogout() {
 
 /**
  * 获取我的桌游列表（店家后台）
+ * 后端返回格式: { games: [...] } 或直接返回数组
  */
 async function getMyGames() {
     console.log('[getMyGames] 获取我的桌游列表');
     var data = await apiFetch(API_BASE_URL + '/games', { method: 'GET' });
-    return normalizeGameData(data);
+    // 解包：后端可能返回 { games: [...] } 或直接是数组
+    var games = (data && data.games) ? data.games : data;
+    return normalizeGameData(games);
 }
 
 /**
  * 获取我的桌游详情（店家后台）
+ * 后端返回格式: { game: { name: "卡坦岛", ... }, files: [] }
  * @param {string} id
  */
 async function getMyGameDetail(id) {
     console.log('[getMyGameDetail] ID:', id);
     var data = await apiFetch(API_BASE_URL + '/games/' + encodeURIComponent(id), { method: 'GET' });
-    return normalizeGameData(data);
+    // 解包：后端返回 { game: {...}, files: [] }，取 game 字段
+    var game = (data && data.game) ? data.game : data;
+    console.log('[getMyGameDetail] 解包后 game.name:', game ? game.name : 'null');
+    return normalizeSingleGame(game);
 }
 
 /**
