@@ -25,10 +25,20 @@ App.registerPage('profile', (function() {
         reviewExpanded: {},
         showMyGames: false,
         myGames: [],
-        myGamesLoaded: false
+        myGamesLoaded: false,
+        showStoreSettings: false,
+        storeSettingsName: '',
+        storeSettingsLoading: false,
+        storeSettingsError: '',
+        storeSettingsSuccess: ''
     };
 
     // ==================== 渲染函数 ====================
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
 
     // 1. 标题栏（含登录状态）
     function renderPageTitle() {
@@ -201,6 +211,7 @@ App.registerPage('profile', (function() {
         // 已登录店家模式：显示管理功能
         var loggedIn = window.isLoggedIn && window.isLoggedIn();
         if (loggedIn && window._shopInfo) {
+            html += renderFeatureItem('⚙️', '店铺设置', 'profilePage.showStoreSettings()');
             html += renderFeatureItem('📱', '批量二维码', 'profilePage.showBatchQR()');
             html += renderFeatureItem('🎮', '我的桌游', 'profilePage.showReviewPage()');
         }
@@ -429,6 +440,67 @@ App.registerPage('profile', (function() {
             '</div>';
     }
 
+    // ==================== 店铺设置页面渲染 ====================
+
+    function renderStoreSettingsHeader() {
+        return '<div style="background:#FFFFFF;display:flex;align-items:center;padding:12px 16px;' +
+            'border-bottom:1px solid #E5E0D8;">' +
+            '<span onclick="profilePage.hideStoreSettings()" style="font-size:18px;color:#C4864B;' +
+            'cursor:pointer;margin-right:12px;">←</span>' +
+            '<span style="font-size:17px;font-weight:600;color:#2D2A26;">⚙️ 店铺设置</span>' +
+            '</div>';
+    }
+
+    function renderStoreSettingsForm() {
+        var shopInfo = window._shopInfo;
+        var currentName = state.storeSettingsName || (shopInfo && shopInfo.name) || '';
+        var errorHtml = state.storeSettingsError ?
+            '<div style="background:#FFF0F0;color:#D32F2F;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;">' +
+            state.storeSettingsError + '</div>' : '';
+        var successHtml = state.storeSettingsSuccess ?
+            '<div style="background:#F0FFF0;color:#2E7D32;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;">' +
+            state.storeSettingsSuccess + '</div>' : '';
+
+        return '<div style="margin:12px 16px;">' +
+            '<div style="background:#FFFFFF;border-radius:16px;padding:20px;">' +
+            '<div style="font-size:15px;font-weight:600;color:#2D2A26;margin-bottom:16px;">🏪 修改店铺名称</div>' +
+            errorHtml +
+            successHtml +
+            '<div style="margin-bottom:16px;">' +
+            '<label style="display:block;font-size:13px;color:#4A4540;margin-bottom:6px;font-weight:500;">店铺名称</label>' +
+            '<input type="text" id="store-settings-name" value="' + escapeHtml(currentName) + '" ' +
+            'placeholder="请输入店铺名称" maxlength="50" ' +
+            'style="width:100%;padding:12px 14px;border:1px solid #E5E0D8;border-radius:10px;font-size:14px;' +
+            'color:#2D2A26;background:#F8F6F1;outline:none;box-sizing:border-box;transition:border 0.2s;" ' +
+            'onfocus="this.style.borderColor=\'#C4864B\'" onblur="this.style.borderColor=\'#E5E0D8\'">' +
+            '<div style="font-size:11px;color:#B5AFA6;margin-top:4px;">顾客扫码时将看到此名称</div>' +
+            '</div>' +
+            '<button id="store-settings-save-btn" onclick="profilePage.saveStoreName()" ' +
+            'style="width:100%;padding:12px 0;background:#C4864B;color:#FFFFFF;border:none;border-radius:10px;' +
+            'font-size:15px;font-weight:600;cursor:pointer;transition:background 0.2s;" ' +
+            'onmouseenter="this.style.background=\'#B0763B\'" onmouseleave="this.style.background=\'#C4864B\'"' +
+            (state.storeSettingsLoading ? 'disabled' : '') + '>' +
+            (state.storeSettingsLoading ? '保存中...' : '💾 保存修改') +
+            '</button>' +
+            '</div>' +
+            // 其他信息
+            '<div style="background:#FFFFFF;border-radius:16px;padding:20px;margin-top:12px;">' +
+            '<div style="font-size:15px;font-weight:600;color:#2D2A26;margin-bottom:12px;">ℹ️ 店铺信息</div>' +
+            '<div style="font-size:14px;color:#8C8578;line-height:1.8;">' +
+            '<div>店铺ID：<span style="color:#4A4540;">' + (shopInfo ? shopInfo.id : '—') + '</span></div>' +
+            '<div>当前名称：<span style="color:#4A4540;">' + (shopInfo ? shopInfo.name : '—') + '</span></div>' +
+            '</div>' +
+            '</div>' +
+            '</div>';
+    }
+
+    function renderStoreSettings() {
+        return '<div class="store-settings-page" style="background:#F8F6F1;min-height:100vh;padding-bottom:80px;">' +
+            renderStoreSettingsHeader() +
+            renderStoreSettingsForm() +
+            '</div>';
+    }
+
     // ==================== 主渲染 ====================
     function render() {
         // 批量二维码视图
@@ -439,6 +511,11 @@ App.registerPage('profile', (function() {
         // 规则审核视图
         if (state.showReviewPage) {
             return renderReviewPage();
+        }
+
+        // 店铺设置视图
+        if (state.showStoreSettings) {
+            return renderStoreSettings();
         }
 
         var modalHtml = '';
@@ -977,11 +1054,107 @@ App.registerPage('profile', (function() {
 
     // ==================== 初始化 ====================
     function init() {
-        if (!state.showBatchQR && !state.showReviewPage) {
+        if (!state.showBatchQR && !state.showReviewPage && !state.showStoreSettings) {
+            // 刷新店铺信息（从后端获取真实店名）
+            refreshShopInfo();
             // 加载扫码统计数据
             loadStats();
             // 生成二维码（延迟确保DOM就绪）
             setTimeout(function() { generateQRCodes(); }, 200);
+        }
+    }
+
+    // ==================== 店铺设置事件处理 ====================
+
+    async function refreshShopInfo() {
+        var loggedIn = window.isLoggedIn && window.isLoggedIn();
+        if (!loggedIn) return;
+        if (!window.authGetMe) return;
+        try {
+            var me = await window.authGetMe();
+            if (me) {
+                window._shopInfo = {
+                    id: me.id || me.store_id || (window._shopInfo && window._shopInfo.id) || '',
+                    name: me.store_name || me.name || (window._shopInfo && window._shopInfo.name) || '我的桌游吧',
+                    logo_url: me.logo_url || (window._shopInfo && window._shopInfo.logo_url) || '',
+                    theme_color: me.theme_color || (window._shopInfo && window._shopInfo.theme_color) || '#C4864B'
+                };
+                sessionStorage.setItem('shopId', window._shopInfo.id);
+                console.log('[profile.js] 店铺信息已刷新:', window._shopInfo.name);
+            }
+        } catch (e) {
+            console.error('[profile.js] 刷新店铺信息失败:', e);
+        }
+    }
+
+    function showStoreSettings() {
+        state.showStoreSettings = true;
+        state.storeSettingsName = (window._shopInfo && window._shopInfo.name) || '';
+        state.storeSettingsError = '';
+        state.storeSettingsSuccess = '';
+        state.storeSettingsLoading = false;
+        window.profilePageRender();
+    }
+
+    function hideStoreSettings() {
+        state.showStoreSettings = false;
+        state.storeSettingsError = '';
+        state.storeSettingsSuccess = '';
+        state.storeSettingsLoading = false;
+        window.profilePageRender();
+    }
+
+    async function saveStoreName() {
+        var newName = (document.getElementById('store-settings-name') || {}).value || '';
+        newName = newName.trim();
+
+        if (!newName) {
+            state.storeSettingsError = '店铺名称不能为空';
+            state.storeSettingsSuccess = '';
+            window.profilePageRender();
+            return;
+        }
+
+        if (newName.length > 50) {
+            state.storeSettingsError = '店铺名称不能超过50个字符';
+            state.storeSettingsSuccess = '';
+            window.profilePageRender();
+            return;
+        }
+
+        state.storeSettingsLoading = true;
+        state.storeSettingsError = '';
+        state.storeSettingsSuccess = '';
+        // 更新按钮状态
+        var btn = document.getElementById('store-settings-save-btn');
+        if (btn) { btn.disabled = true; btn.textContent = '保存中...'; }
+
+        try {
+            if (window.updateStoreProfile) {
+                var result = await window.updateStoreProfile({ store_name: newName });
+                console.log('[profile.js] 店铺名称更新成功:', result);
+            }
+
+            // 更新本地缓存
+            if (window._shopInfo) {
+                window._shopInfo.name = newName;
+            }
+            state.storeSettingsName = newName;
+            state.storeSettingsSuccess = '✅ 店铺名称已更新为：' + newName;
+            state.storeSettingsLoading = false;
+            window.profilePageRender();
+
+            // 3秒后清除成功提示
+            setTimeout(function() {
+                state.storeSettingsSuccess = '';
+                window.profilePageRender();
+            }, 3000);
+        } catch (e) {
+            console.error('[profile.js] 更新店铺名称失败:', e);
+            state.storeSettingsError = '更新失败：' + (e.message || '网络错误，请重试');
+            state.storeSettingsSuccess = '';
+            state.storeSettingsLoading = false;
+            window.profilePageRender();
         }
     }
 
@@ -1016,7 +1189,12 @@ App.registerPage('profile', (function() {
         deleteGameById: deleteGameById,
         toggleReviewCard: toggleReviewCard,
         loadReviewStats: loadReviewStats,
-        loadPendingGames: loadPendingGames
+        loadPendingGames: loadPendingGames,
+        // 店铺设置
+        showStoreSettings: showStoreSettings,
+        hideStoreSettings: hideStoreSettings,
+        saveStoreName: saveStoreName,
+        refreshShopInfo: refreshShopInfo
     };
 
     // 全局暴露

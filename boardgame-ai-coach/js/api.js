@@ -146,6 +146,19 @@ async function authGetMe() {
 }
 
 /**
+ * 更新当前登录店家的店铺名称
+ * @param {object} data - { store_name: "新名称" }
+ */
+async function updateStoreProfile(data) {
+    console.log('[updateStoreProfile] 更新店铺信息:', data);
+    var result = await apiFetch(API_BASE_URL + '/auth/update-profile', {
+        method: 'PUT',
+        body: JSON.stringify(data)
+    });
+    return result;
+}
+
+/**
  * 登出
  */
 function authLogout() {
@@ -634,6 +647,7 @@ window.authGetMe = authGetMe;
 window.authLogout = authLogout;
 window.isLoggedIn = isLoggedIn;
 window.getToken = getToken;
+window.updateStoreProfile = updateStoreProfile;
 
 // 管理端 API
 window.getMyGames = getMyGames;
