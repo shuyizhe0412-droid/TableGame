@@ -457,6 +457,10 @@ function initNavigation() {
  });
 
  $('#logout-btn').addEventListener('click', logout);
+
+  $('#view-player-btn').addEventListener('click', () => {
+    window.open('https://boardgame-ai.pages.dev/#/home', '_blank');
+  });
 }
 
 function logout() {
@@ -465,6 +469,52 @@ function logout() {
  localStorage.removeItem('token');
  localStorage.removeItem('user');
  showPage('auth-page');
+}
+
+
+// ===== 规则编辑弹窗 =====
+
+function openRulesModal() {
+  loadExistingRules();
+  $('#rules-modal').style.display = '';
+}
+
+function closeRulesModal() {
+  $('#rules-modal').style.display = 'none';
+}
+
+async function loadExistingRules() {
+  try {
+    const data = await apiFetch(`/games/${currentGameId}/rules`);
+    $('#rules-textarea').value = data.rules_text || '';
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+function initRulesModal() {
+  $('#edit-rules-btn').addEventListener('click', () => {
+    openRulesModal();
+  });
+
+  $('#rules-modal-close-btn').addEventListener('click', closeRulesModal);
+  $('#rules-modal-cancel-btn').addEventListener('click', closeRulesModal);
+  $('#rules-modal').addEventListener('click', (e) => {
+    if (e.target === $('#rules-modal')) closeRulesModal();
+  });
+
+  $('#rules-modal-save-btn').addEventListener('click', async () => {
+    try {
+      await apiFetch(`/games/${currentGameId}/rules`, {
+        method: 'PUT',
+        body: { rules_text: $('#rules-textarea').value }
+      });
+      showToast('规则保存成功');
+      closeRulesModal();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  });
 }
 
 // ============ 初始化 ============

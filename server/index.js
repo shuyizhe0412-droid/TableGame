@@ -51,6 +51,7 @@ app.use('/api/games', require('./routes/games'));
 app.use('/api/upload', require('./routes/upload'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/ai', require('./routes/ai'));
+app.use('/api/public', require('./routes/public'));
 
 // 健康检查
 app.get('/api/health', (req, res) => {
