@@ -13,6 +13,8 @@ const router = express.Router();
 // GET /api/games/:id/rules - 获取桌游规则内容（公开）
 router.get('/:id/rules', async (req, res) => {
   try {
+    console.log('[GAMES] GET rules | id:', req.params.id);
+
     const { data: games, error } = await supabase
       .from('store_games')
       .select('id, name, rules_text, rules_json')
@@ -21,17 +23,20 @@ router.get('/:id/rules', async (req, res) => {
 
     if (error) throw error;
     if (!games || games.length === 0) {
+      console.log('[GAMES] GET rules | 404: 游戏不存在');
       return res.status(404).json({ error: '游戏不存在' });
     }
 
     const g = games[0];
+    console.log('[GAMES] GET rules | name:', g.name, '| rules_text length:', (g.rules_text || '').length);
+
     res.json({
       game_name: g.name,
       rules_text: g.rules_text || '',
       rules_json: g.rules_json || ''
     });
   } catch (err) {
-    console.error('[GAMES] 获取规则失败:', err.message);
+    console.error('[GAMES] GET rules 失败:', err.message);
     res.status(500).json({ error: '获取失败' });
   }
 });
@@ -172,6 +177,48 @@ router.post('/', async (req, res) => {
   }
 });
 
+// PUT /api/games/:id/rules - 更新桌游规则内容（需认证）
+// 放在 PUT /:id 前面，避免被通用更新路由先匹配
+router.put('/:id/rules', async (req, res) => {
+  try {
+    const { rules_text, rules_json } = req.body;
+    console.log('[GAMES] PUT rules | id:', req.params.id, '| body keys:', Object.keys(req.body).join(', '), '| rules_text length:', (rules_text || '').length);
+
+    // 验证所有权
+    const { data: existingArr, error: findErr } = await supabase
+      .from('store_games')
+      .select('id, name, store_id')
+      .eq('id', req.params.id)
+      .eq('store_id', req.store.id)
+      .limit(1);
+
+    if (findErr) throw findErr;
+    if (!existingArr || existingArr.length === 0) {
+      console.log('[GAMES] PUT rules | 404: store_id 不匹配或不存在');
+      return res.status(404).json({ error: '游戏不存在或无权修改' });
+    }
+
+    const updateData = { updated_at: new Date().toISOString() };
+    if (rules_text !== undefined) updateData.rules_text = String(rules_text);
+    if (rules_json !== undefined) updateData.rules_json = String(rules_json);
+
+    console.log('[GAMES] PUT rules | updateData:', Object.keys(updateData).join(', '));
+
+    const { error: updErr } = await supabase
+      .from('store_games')
+      .update(updateData)
+      .eq('id', req.params.id);
+
+    if (updErr) throw updErr;
+
+    console.log('[GAMES] PUT rules ✅ | name:', existingArr[0].name);
+    res.json({ message: '规则更新成功' });
+  } catch (err) {
+    console.error('[GAMES] PUT rules 失败:', err.message);
+    res.status(500).json({ error: '更新失败' });
+  }
+});
+
 // PUT /api/games/:id - 更新游戏
 router.put('/:id', async (req, res) => {
   try {
@@ -220,43 +267,6 @@ router.put('/:id', async (req, res) => {
     res.json({ message: '更新成功', game });
   } catch (err) {
     console.error('[GAMES] 更新失败:', err.message);
-    res.status(500).json({ error: '更新失败' });
-  }
-});
-
-// PUT /api/games/:id/rules - 更新桌游规则内容（需认证）
-router.put('/:id/rules', async (req, res) => {
-  try {
-    const { rules_text, rules_json } = req.body;
-
-    // 验证所有权
-    const { data: existingArr, error: findErr } = await supabase
-      .from('store_games')
-      .select('id, name')
-      .eq('id', req.params.id)
-      .eq('store_id', req.store.id)
-      .limit(1);
-
-    if (findErr) throw findErr;
-    if (!existingArr || existingArr.length === 0) {
-      return res.status(404).json({ error: '游戏不存在或无权修改' });
-    }
-
-    const updateData = { updated_at: new Date().toISOString() };
-    if (rules_text !== undefined) updateData.rules_text = String(rules_text);
-    if (rules_json !== undefined) updateData.rules_json = String(rules_json);
-
-    const { error: updErr } = await supabase
-      .from('store_games')
-      .update(updateData)
-      .eq('id', req.params.id);
-
-    if (updErr) throw updErr;
-
-    console.log('[GAMES] 更新规则:', existingArr[0].name);
-    res.json({ message: '规则更新成功' });
-  } catch (err) {
-    console.error('[GAMES] 更新规则失败:', err.message);
     res.status(500).json({ error: '更新失败' });
   }
 });
