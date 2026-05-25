@@ -343,23 +343,44 @@ async function getGlobalGame(id) {
     return normalizeGameData(data);
 }
 
+// ==================== 公开接口专用 fetch（不带认证） ====================
+
 /**
- * 获取某店家的桌游列表（玩家端）
+ * 公开接口请求封装（不发送 Authorization header）
+ * 用于 /api/public/* 路径，未登录顾客也能访问
+ */
+async function publicApiFetch(url) {
+    var resp = await fetch(url);
+    var data = null;
+    try { data = await resp.json(); } catch (e) { data = null; }
+    if (!resp.ok) {
+        var msg = (data && data.error) || (data && data.message) || ('HTTP ' + resp.status);
+        throw new Error(msg);
+    }
+    return data;
+}
+
+/**
+ * 获取某店家的桌游列表（玩家端，不需要认证）
+ * GET /api/public/games/:storeId
  * @param {string} storeId - 店家ID
  */
 async function getPublicGames(storeId) {
     console.log('[getPublicGames] storeId:', storeId);
-    var data = await apiFetch(API_BASE_URL + '/public/games/' + encodeURIComponent(storeId), { method: 'GET' });
+    var url = API_BASE_URL + '/public/games/' + encodeURIComponent(storeId);
+    var data = await publicApiFetch(url);
     return normalizeGameData(data);
 }
 
 /**
- * 获取某桌游详情（玩家端）
+ * 获取某桌游详情（玩家端，不需要认证）
+ * GET /api/public/game/:id
  * @param {string} id - 游戏ID
  */
 async function getPublicGame(id) {
     console.log('[getPublicGame] ID:', id);
-    var data = await apiFetch(API_BASE_URL + '/public/game/' + encodeURIComponent(id), { method: 'GET' });
+    var url = API_BASE_URL + '/public/game/' + encodeURIComponent(id);
+    var data = await publicApiFetch(url);
     return normalizeGameData(data);
 }
 
@@ -370,7 +391,9 @@ async function getPublicGame(id) {
  *
  * 优先级：
  *   店家已登录 → GET /api/games + GET /api/admin/global-games（合并去重）
- *   未登录 + shopId → GET /api/public/games/:shopId（优先）→ GET /api/admin/global-games（兜底）
+ *   未登录 + shopId → GET /api/public/games/:shopId（优先，不带auth）
+ *                     + GET /api/admin/global-games（合并补充）
+ *                     → GET /api/admin/global-games（公开失败兜底）
  *   未登录 + 无shopId → GET /api/admin/global-games
  *
  * @param {object} filters - 筛选条件（暂未在后端实现，前端自行过滤）
@@ -426,8 +449,27 @@ async function getGames(filters, storeId) {
     if (storeId) {
         try {
             var publicGames = await getPublicGames(storeId);
-            console.log('[getGames] 公开API命中, shopId:', storeId, ', 数量:', (publicGames || []).length);
-            return publicGames || [];
+            publicGames = publicGames || [];
+            console.log('[getGames] 公开API命中, shopId:', storeId, ', 数量:', publicGames.length);
+            
+            // 合并全局桌游作为补充（店家桌游优先，全局补充没有收录的游戏）
+            try {
+                var supplementGlobal = await getGlobalGames();
+                supplementGlobal = supplementGlobal || [];
+                if (supplementGlobal.length > 0) {
+                    var pubMergeMap = {};
+                    supplementGlobal.forEach(function(g) { if (g.name) pubMergeMap[g.name] = g; });
+                    publicGames.forEach(function(g) { if (g.name) pubMergeMap[g.name] = g; });
+                    var pubMerged = [];
+                    var pubKeys = Object.keys(pubMergeMap);
+                    for (var j = 0; j < pubKeys.length; j++) pubMerged.push(pubMergeMap[pubKeys[j]]);
+                    console.log('[getGames] 合并公开+全局, 店家:' + publicGames.length + ', 全局:' + supplementGlobal.length + ', 合计:' + pubMerged.length);
+                    return pubMerged;
+                }
+            } catch (eSupp) {
+                console.warn('[getGames] 全局补充获取失败，仅返回店家桌游:', eSupp.message);
+            }
+            return publicGames;
         } catch (e) {
             console.error('[getGames] 公开API获取失败，降级到全局桌游:', e.message);
             // 降级兜底：使用全局默认桌游
