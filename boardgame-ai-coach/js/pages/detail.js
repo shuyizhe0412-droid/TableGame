@@ -363,7 +363,9 @@ App.registerPage('detail', (function() {
     }
 
     function renderAIButtons() {
-        var guard = 'if(Date.now()-_closeRulesTime<500)return;';
+        // 弹窗全屏遮挡时，不渲染按钮避免触摸穿透
+        if (state.showRuleModal) return '';
+        var guard = 'if(Date.now()-window._closeRulesTime<500)return;';
         return '<div class="detail-ai-buttons">' +
             '<button class="detail-ai-btn" onclick="' + guard + 'detailPage.goChat(\'setup\')">' +
             '<span>🎯</span><span>摆盘引导</span></button>' +
@@ -393,6 +395,8 @@ App.registerPage('detail', (function() {
     }
 
     function renderEditRuleLink() {
+        // 弹窗全屏遮挡时，不渲染链接避免触摸穿透
+        if (state.showRuleModal) return '';
         var isLogin = (typeof window.isLoggedIn === 'function') ? window.isLoggedIn() : false;
         if (!isLogin) return '';
         return '<div class="detail-edit-rule-link" onclick="if(Date.now()-window._closeRulesTime<500)return;detailPage.showRulesEdit()">✏️ 编辑规则</div>';
@@ -807,23 +811,25 @@ App.registerPage('detail', (function() {
 
     function closeRules(event) {
         if (event) { event.stopPropagation(); event.preventDefault(); }
-        // 第一步：立即隐藏弹窗（DOM操作，不重新渲染页面）
-        var overlay = document.querySelector('.rules-fs-overlay');
+        // 第一步：立即隐藏弹窗（CSS 操作，不重建 DOM）
+        var overlay = document.querySelector('.rules-fs-overlay') || document.querySelector('.qr-modal-overlay');
         if (overlay) {
             overlay.style.pointerEvents = 'none';
             overlay.style.opacity = '0';
         }
         // 第二步：记录关闭时间
         window._closeRulesTime = Date.now();
-        // 第三步：延迟 300ms 后再重新渲染页面（此时手指已抬起）
+        // 第三步：延迟重建页面（确保手指已抬起，不会再触发 click）
         setTimeout(function() {
+            // 如果在此期间弹窗被重新打开了，放弃本次关闭（打断穿透循环）
+            if (state.showRuleModal) return;
             state.showRuleModal = false;
             state.isEditingRule = false;
             state.ruleLoading = false;
             state.ruleText = '';
             state.ruleFromServer = '';
             window.detailPageRender();
-        }, 300);
+        }, 500);
     }
 
     async function loadGameRulesFromServer() {
