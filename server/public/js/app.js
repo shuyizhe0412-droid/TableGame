@@ -526,7 +526,9 @@ async function init() {
  initDelete();
  initNavigation();
 
- // 检查已登录状态
+  initRulesModal();
+
+  // 检查已登录状态
  currentToken = localStorage.getItem('token');
  const savedUser = localStorage.getItem('user');
  if (currentToken && savedUser) {
