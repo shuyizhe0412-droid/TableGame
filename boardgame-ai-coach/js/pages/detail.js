@@ -395,7 +395,7 @@ App.registerPage('detail', (function() {
     function renderEditRuleLink() {
         var isLogin = (typeof window.isLoggedIn === 'function') ? window.isLoggedIn() : false;
         if (!isLogin) return '';
-        return '<div class="detail-edit-rule-link" onclick="detailPage.showRulesEdit()">✏️ 编辑规则</div>';
+        return '<div class="detail-edit-rule-link" onclick="if(Date.now()-window._closeRulesTime<500)return;detailPage.showRulesEdit()">✏️ 编辑规则</div>';
     }
 
     function renderComments() {
