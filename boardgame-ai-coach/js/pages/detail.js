@@ -655,12 +655,19 @@ App.registerPage('detail', (function() {
     }
 
     function showRules() {
+        console.log('[detail.js] showRules 被调用, gameId:', state.gameId, 'hash:', window.location.hash);
+        var hashBefore = window.location.hash;
         state.showRuleModal = true;
         state.isEditingRule = false;
         state.ruleLoading = true;
         state.ruleFromServer = '';
         state.ruleText = '';
         window.detailPageRender();
+        // 防御性检查：detailPageRender 不应该改变 hash
+        if (window.location.hash !== hashBefore) {
+            console.warn('[detail.js] showRules 检测到 hash 意外改变:', hashBefore, '→', window.location.hash);
+            window.location.hash = hashBefore;
+        }
         loadGameRulesFromServer();
     }
 
