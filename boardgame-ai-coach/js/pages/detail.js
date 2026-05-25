@@ -215,7 +215,7 @@ App.registerPage('detail', (function() {
     };
 
     // ==================== 状态管理 ====================
-    var _closeRulesTime = 0;
+    window._closeRulesTime = 0;
 
     var state = {
         gameId: '',
@@ -812,7 +812,7 @@ App.registerPage('detail', (function() {
 
     function closeRules(event) {
         if (event && event.target !== event.currentTarget) return;
-        _closeRulesTime = Date.now();
+        window._closeRulesTime = Date.now();
         state.showRuleModal = false;
         state.isEditingRule = false;
         window.detailPageRender();
