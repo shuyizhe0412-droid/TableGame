@@ -647,7 +647,7 @@ App.registerPage('detail', (function() {
             '<div class="rules-modal-body">' +
             editBtn +
             bodyHtml +
-            '<button class="rules-ai-btn" id="rules-ai-btn">🤖 问AI教练</button>' +
+            '<a class="rules-ai-btn" id="rules-ai-btn" href="#/chat?mode=faq&gameId=' + state.gameId + '">🤖 问AI教练</a>' +
             '<button class="rules-back-btn" onclick="detailPage.closeRules()">← 返回详情</button>' +
             '</div>' +
             '</div>' +
@@ -668,14 +668,6 @@ App.registerPage('detail', (function() {
             console.warn('[detail.js] showRules 检测到 hash 意外改变:', hashBefore, '→', window.location.hash);
             window.location.hash = hashBefore;
         }
-        // 防止触摸事件穿透：延迟 600ms 后动态设置 onclick，渲染时无事件
-        console.log('showRules setTimeout 设置');
-        setTimeout(function() {
-            var btn = document.getElementById('rules-ai-btn');
-            if (btn && !btn.getAttribute('onclick')) {
-                btn.setAttribute('onclick', 'detailPage.goAskAI()');
-            }
-        }, 600);
         loadGameRulesFromServer();
     }
 
@@ -768,12 +760,8 @@ App.registerPage('detail', (function() {
         window.detailPageRender();
     }
 
-    var _goAskAIDone = false;
     function goAskAI() {
         console.log('goAskAI 被调用');
-        if (_goAskAIDone) return;
-        _goAskAIDone = true;
-        setTimeout(function() { _goAskAIDone = false; }, 1000);
         // 先关闭规则弹窗，再跳转到聊天页
         state.showRuleModal = false;
         state.isEditingRule = false;
