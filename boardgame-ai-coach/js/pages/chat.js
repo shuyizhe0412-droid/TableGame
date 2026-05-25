@@ -216,39 +216,34 @@ App.registerPage('chat', (function() {
         }
     }
 
-    // 发送消息到 AI 并获取回复
-    function sendToAI(userMessage) {
+    // 发送消息到 AI 并获取回复（调用后端 /api/ai/ask）
+    async function sendToAI(userMessage) {
         var session = state.session;
-        // 构建消息历史（排除欢迎语，只取用户和AI对话）
-        var historyMessages = session.messages
-            .filter(function(msg) { return msg.role !== 'system'; })
-            .map(function(msg) { return { role: msg.role, content: msg.content }; });
 
-        // 调用 DeepSeek API
-        aiChat(historyMessages, session.gameName, session.mode, session.style, session.gameData)
-            .then(function(response) {
-                session.messages.push({
-                    role: 'assistant',
-                    content: response
-                });
-                state.isTyping = false;
-                refreshMessages();
-            })
-            .catch(function(error) {
-                console.error('AI 回复失败:', error);
-                state.isTyping = false;
-                // 显示错误消息
-                var errorEl = document.querySelector('.chat-typing-indicator');
-                if (errorEl) errorEl.remove();
-                var messagesEl = document.querySelector('.chat-messages');
-                if (messagesEl) {
-                    messagesEl.innerHTML += '<div class="chat-message chat-message-ai">' +
-                        '<div class="chat-avatar">🤖</div>' +
-                        '<div class="chat-bubble chat-bubble-ai">抱歉，AI 暂时无法回复，请检查网络后重试。</div>' +
-                        '</div>';
-                    messagesEl.scrollTop = messagesEl.scrollHeight;
-                }
+        try {
+            var answer = await window.askAI(state.gameId, userMessage);
+            session.messages.push({
+                role: 'assistant',
+                content: answer
             });
+            state.isTyping = false;
+            refreshMessages();
+        } catch (error) {
+            console.error('AI 回复失败:', error);
+            state.isTyping = false;
+            // 移除 typing 动画
+            var typingEl = document.getElementById('chat-typing');
+            if (typingEl) typingEl.remove();
+            // 显示错误消息
+            var messagesEl = document.getElementById('chat-messages');
+            if (messagesEl) {
+                messagesEl.innerHTML += '<div class="chat-message chat-message-ai">' +
+                    '<div class="chat-avatar">🤖</div>' +
+                    '<div class="chat-bubble chat-bubble-ai chat-bubble-error">AI暂时无法回答，请稍后再试</div>' +
+                    '</div>';
+                messagesEl.scrollTop = messagesEl.scrollHeight;
+            }
+        }
     }
 
     // ==================== 渲染函数 ====================
@@ -284,6 +279,7 @@ App.registerPage('chat', (function() {
             '<div class="chat-avatar">🤖</div>' +
             '<div class="chat-bubble chat-bubble-ai chat-typing-indicator">' +
             '<span></span><span></span><span></span>' +
+            '<span class="chat-typing-text">AI正在思考...</span>' +
             '</div>' +
             '</div>';
     }

@@ -562,6 +562,29 @@ async function getShopInfo(shopId) {
     };
 }
 
+// ==================== AI 问答 API ====================
+
+/**
+ * 向 AI 提问（玩家端）
+ * @param {string} gameId - 桌游 ID
+ * @param {string} question - 用户问题
+ * @returns {Promise<string>} AI 回答文本
+ */
+async function askAI(gameId, question) {
+    console.log('[askAI] gameId:', gameId, 'question:', question);
+    var data = await apiFetch(API_BASE_URL + '/ai/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ game_id: gameId, question: question })
+    });
+    // 兼容多种返回格式: { answer: "..." } / { reply: "..." } / "..." 直接字符串
+    if (data && typeof data.answer === 'string') return data.answer;
+    if (data && typeof data.reply === 'string') return data.reply;
+    if (typeof data === 'string') return data;
+    // 兜底：把整个 data 对象转为 JSON 字符串（调试用）
+    return JSON.stringify(data);
+}
+
 // ==================== AI 对话（保持使用 Supabase 代理） ====================
 
 function buildShopContext() {
@@ -743,6 +766,7 @@ window.getGames = getGames;
 window.getGameDetail = getGameDetail;
 window.getShopInfo = getShopInfo;
 window.aiChat = aiChat;
+window.askAI = askAI;
 window.saveConversation = saveConversation;
 window.logScan = logScan;
 window.getScanStats = getScanStats;
