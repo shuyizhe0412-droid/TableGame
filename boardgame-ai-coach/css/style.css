@@ -875,7 +875,7 @@ input:focus, textarea:focus {
     padding: 14px 18px;
 }
 
-.chat-typing-indicator span {
+.chat-typing-indicator .chat-dot {
     width: 8px;
     height: 8px;
     background-color: var(--text-secondary);
@@ -883,11 +883,11 @@ input:focus, textarea:focus {
     animation: typingBounce 1.4s infinite ease-in-out both;
 }
 
-.chat-typing-indicator span:nth-child(1) {
+.chat-typing-indicator .chat-dot:nth-child(1) {
     animation-delay: -0.32s;
 }
 
-.chat-typing-indicator span:nth-child(2) {
+.chat-typing-indicator .chat-dot:nth-child(2) {
     animation-delay: -0.16s;
 }
 
@@ -895,6 +895,7 @@ input:focus, textarea:focus {
     font-size: 13px;
     color: var(--text-secondary);
     margin-left: 8px;
+    white-space: nowrap;
     animation: typingFade 1.4s infinite ease-in-out;
 }
 
@@ -1955,12 +1956,17 @@ input:focus, textarea:focus {
 .rules-ai-btn {
     width: 100%;
     padding: 12px;
-    background: #E5E0D8;
-    color: #B5AFA6;
+    background: var(--primary);
+    color: #fff;
     border: none;
     border-radius: 12px;
     font-size: 15px;
-    cursor: not-allowed;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.rules-ai-btn:hover {
+    background: #B0783D;
 }
 
 .rules-back-btn {

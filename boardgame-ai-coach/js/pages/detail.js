@@ -647,7 +647,7 @@ App.registerPage('detail', (function() {
             '<div class="rules-modal-body">' +
             editBtn +
             bodyHtml +
-            '<button class="rules-ai-btn" disabled>🤖 问AI教练（即将上线）</button>' +
+            '<button class="rules-ai-btn" onclick="detailPage.goAskAI()">🤖 问AI教练</button>' +
             '<button class="rules-back-btn" onclick="detailPage.closeRules()">← 返回详情</button>' +
             '</div>' +
             '</div>' +
@@ -751,6 +751,15 @@ App.registerPage('detail', (function() {
             alert('保存失败: ' + (e.message || '未知错误'));
         }
         window.detailPageRender();
+    }
+
+    function goAskAI() {
+        // 先关闭规则弹窗，再跳转到聊天页
+        state.showRuleModal = false;
+        state.isEditingRule = false;
+        // 保存来源标记，使 chat 页返回按钮能回到详情
+        sessionStorage.setItem('chatFrom', '/detail?id=' + state.gameId);
+        window.location.hash = '/chat?mode=faq&gameId=' + state.gameId;
     }
 
     function render(params) {
@@ -952,7 +961,8 @@ App.registerPage('detail', (function() {
         startEditRule: startEditRule,
         cancelEditRule: cancelEditRule,
         onRuleInput: onRuleInput,
-        saveRule: saveRule
+        saveRule: saveRule,
+        goAskAI: goAskAI
     };
 
     // 全局暴露

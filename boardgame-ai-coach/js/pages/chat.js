@@ -278,7 +278,7 @@ App.registerPage('chat', (function() {
         return '<div class="chat-message chat-message-ai" id="chat-typing">' +
             '<div class="chat-avatar">🤖</div>' +
             '<div class="chat-bubble chat-bubble-ai chat-typing-indicator">' +
-            '<span></span><span></span><span></span>' +
+            '<span class="chat-dot"></span><span class="chat-dot"></span><span class="chat-dot"></span>' +
             '<span class="chat-typing-text">AI正在思考...</span>' +
             '</div>' +
             '</div>';
