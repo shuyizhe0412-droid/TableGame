@@ -775,38 +775,29 @@ App.registerPage('detail', (function() {
     }
 
     function showRules() {
-        console.log('[detail.js] showRules 被调用, gameId:', state.gameId, 'hash:', window.location.hash);
-        var hashBefore = window.location.hash;
+        console.log('[detail.js] showRules 被调用, gameId:', state.gameId);
         state.showRuleModal = true;
         state.isEditingRule = false;
         state.ruleLoading = true;
+        state.ruleSaved = false;
         state.ruleFromServer = '';
         state.ruleText = '';
         state.ruleCollapsedSections = {};
-        window.detailPageRender();
-        // 防御性检查：detailPageRender 不应该改变 hash
-        if (window.location.hash !== hashBefore) {
-            console.warn('[detail.js] showRules 检测到 hash 意外改变:', hashBefore, '→', window.location.hash);
-            window.location.hash = hashBefore;
-        }
+        // 不调 detailPageRender()，等 loadGameRulesFromServer 加载完规则后渲染
         loadGameRulesFromServer();
     }
 
     // 直接进入编辑模式（店家管理入口）
     function showRulesEdit() {
         console.log('[detail.js] showRulesEdit 被调用, gameId:', state.gameId);
-        var hashBefore = window.location.hash;
         state.showRuleModal = true;
         state.isEditingRule = true;
         state.ruleLoading = true;
+        state.ruleSaved = false;
         state.ruleFromServer = '';
         state.ruleText = '';
         state.ruleCollapsedSections = {};
-        window.detailPageRender();
-        if (window.location.hash !== hashBefore) {
-            console.warn('[detail.js] showRulesEdit 检测到 hash 意外改变:', hashBefore, '→', window.location.hash);
-            window.location.hash = hashBefore;
-        }
+        // 不调 detailPageRender()，等 loadGameRulesFromServer 加载完规则后渲染
         loadGameRulesFromServer();
     }
 
