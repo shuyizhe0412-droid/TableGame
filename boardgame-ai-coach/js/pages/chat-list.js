@@ -399,6 +399,7 @@ App.registerPage('chat-list', (function() {
     // 全局暴露
     window.chatListPage = page;
     window.chatListPageRender = function() {
+        if (window._activePage !== 'chat-list') return;
         var app = document.getElementById('app');
         if (app) {
             app.innerHTML = (window.renderShopHeader ? window.renderShopHeader() : '') + page.render() + window.getTabBarHtml('chat');

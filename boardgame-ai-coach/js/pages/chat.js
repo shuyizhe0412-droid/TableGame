@@ -628,6 +628,7 @@ App.registerPage('chat', (function() {
     // 全局暴露
     window.chatPage = page;
     window.chatPageRender = function() {
+        if (window._activePage !== 'chat') return;
         var app = document.getElementById('app');
         if (app) {
             app.innerHTML = (window.renderShopHeader ? window.renderShopHeader() : '') + page.render();

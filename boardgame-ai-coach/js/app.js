@@ -3,6 +3,12 @@
  * 负责页面挂载和路由初始化
  */
 
+// 活跃页面守卫：防止快速切换Tab时旧页面异步回调覆盖当前页面
+window._activePage = '';
+
+// Tab 导航冷却：防止疯狂点击导致多次导航
+var _lastNavTime = 0;
+
 /**
  * 获取 TabBar HTML
  * 已登录店家：首页 / 游戏库 / AI / 我的
@@ -36,10 +42,13 @@ function getTabBarHtml(activeTab) {
     return '<nav class="tabbar">' + items + '</nav>';
 }
 
-// 绑定 TabBar 点击事件
+// 绑定 TabBar 点击事件（含300ms冷却）
 function bindTabBarEvents() {
     document.querySelectorAll('.tabbar-item').forEach(function(item) {
         item.addEventListener('click', function() {
+            var now = Date.now();
+            if (now - _lastNavTime < 300) return;
+            _lastNavTime = now;
             navigate('/' + this.dataset.page);
         });
     });
@@ -124,6 +133,9 @@ function renderShopHeader() {
  * @param {string} [activeTab] - TabBar 高亮覆盖名（如 chat-list 页面高亮 chat 标签）
  */
 function renderPageContent(pageName, params, activeTab) {
+    // 活跃页面守卫：标记当前活跃页面，防止旧页面异步回调覆盖
+    window._activePage = pageName;
+
     var app = document.getElementById('app');
     if (!app) return;
 

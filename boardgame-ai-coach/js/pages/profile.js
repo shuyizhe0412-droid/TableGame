@@ -1201,6 +1201,7 @@ App.registerPage('profile', (function() {
     // 全局暴露
     window.profilePage = page;
     window.profilePageRender = function() {
+        if (window._activePage !== 'profile') return;
         var app = document.getElementById('app');
         if (app) {
             app.innerHTML = (window.renderShopHeader ? window.renderShopHeader() : '') + page.render() + window.getTabBarHtml('profile');

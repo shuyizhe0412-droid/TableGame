@@ -190,6 +190,7 @@ App.registerPage('auth', (function() {
 
     window.authPage = page;
     window.authPageRender = function() {
+        if (window._activePage !== 'auth') return;
         var app = document.getElementById('app');
         if (app) {
             app.innerHTML = page.render();

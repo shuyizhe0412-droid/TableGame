@@ -527,6 +527,7 @@ App.registerPage('library', (function() {
     // 全局暴露
     window.libraryPage = page;
     window.libraryPageRender = function() {
+        if (window._activePage !== 'library') return;
         var app = document.getElementById('app');
         if (app) {
             app.innerHTML = (window.renderShopHeader ? window.renderShopHeader() : '') + page.render() + window.getTabBarHtml('library');

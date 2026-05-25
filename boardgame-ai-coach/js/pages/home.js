@@ -494,6 +494,7 @@ App.registerPage('home', (function() {
     // 全局暴露
     window.homePage = page;
     window.homePageRender = function() {
+        if (window._activePage !== 'home') return;
         var app = document.getElementById('app');
         if (app) {
             app.innerHTML = (window.renderShopHeader ? window.renderShopHeader() : '') + page.render() + window.getTabBarHtml('home');

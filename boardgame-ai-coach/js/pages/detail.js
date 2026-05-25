@@ -1032,6 +1032,7 @@ App.registerPage('detail', (function() {
     // 全局暴露
     window.detailPage = page;
     window.detailPageRender = function() {
+        if (window._activePage !== 'detail') return;
         var app = document.getElementById('app');
         if (app) {
             app.innerHTML = (window.renderShopHeader ? window.renderShopHeader() : '') + page.render();
