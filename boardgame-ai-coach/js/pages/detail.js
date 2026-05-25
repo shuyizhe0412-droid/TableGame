@@ -215,6 +215,8 @@ App.registerPage('detail', (function() {
     };
 
     // ==================== 状态管理 ====================
+    var _closeRulesTime = 0;
+
     var state = {
         gameId: '',
         game: null,
@@ -361,12 +363,13 @@ App.registerPage('detail', (function() {
     }
 
     function renderAIButtons() {
+        var guard = 'if(Date.now()-_closeRulesTime<500)return;';
         return '<div class="detail-ai-buttons">' +
-            '<button class="detail-ai-btn" onclick="detailPage.goChat(\'setup\')">' +
+            '<button class="detail-ai-btn" onclick="' + guard + 'detailPage.goChat(\'setup\')">' +
             '<span>🎯</span><span>摆盘引导</span></button>' +
-            '<button class="detail-ai-btn" onclick="detailPage.goChat(\'rules\')">' +
+            '<button class="detail-ai-btn" onclick="' + guard + 'detailPage.goChat(\'rules\')">' +
             '<span>📖</span><span>规则教学</span></button>' +
-            '<button class="detail-ai-btn" onclick="detailPage.showRules()">' +
+            '<button class="detail-ai-btn" onclick="' + guard + 'detailPage.showRules()">' +
             '<span>🔍</span><span>规则速查</span></button>' +
             '</div>';
     }
@@ -809,6 +812,7 @@ App.registerPage('detail', (function() {
 
     function closeRules(event) {
         if (event && event.target !== event.currentTarget) return;
+        _closeRulesTime = Date.now();
         state.showRuleModal = false;
         state.isEditingRule = false;
         window.detailPageRender();
