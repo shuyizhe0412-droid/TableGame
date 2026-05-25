@@ -820,4 +820,152 @@ h1, h2, h3, h4 {
  gap: 12px;
  align-items: flex-start;
  }
+}/* ======== Rules Modal Beautification ======== */
+.rules-label {
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
 }
+
+#rules-textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text);
+  background: var(--bg);
+  resize: vertical;
+  min-height: 240px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  outline: none;
+}
+
+#rules-textarea:focus {
+  border-color: var(--primary-lighter);
+  box-shadow: 0 0 0 3px rgba(45,106,79,0.1);
+}
+
+#rules-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* ======== Search & Filter Bar ======== */
+.search-filter-bar {
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  max-width: 420px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  font-size: 15px;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 38px 10px 40px;
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--surface);
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.search-input:focus {
+  border-color: var(--primary-lighter);
+  box-shadow: 0 0 0 3px rgba(45,106,79,0.1);
+}
+
+.search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.search-clear {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 50%;
+  line-height: 1;
+  transition: all var(--transition);
+}
+
+.search-clear:hover {
+  color: var(--text);
+  background: rgba(0,0,0,0.06);
+}
+
+/* ======== Filter Tags ======== */
+.filter-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-tag {
+  padding: 6px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+
+.filter-tag:hover {
+  border-color: var(--primary-lighter);
+  color: var(--primary);
+  background: rgba(45,106,79,0.04);
+}
+
+.filter-tag.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+/* ======== Responsive: Rules Modal ======== */
+@media (max-width: 768px) {
+  .search-box {
+    max-width: 100%;
+  }
+
+  #rules-modal .modal {
+    width: 92%;
+    max-width: 92%;
+    margin: 0 auto;
+  }
+
+  #rules-textarea {
+    min-height: 180px;
+    font-size: 14px;
+  }
+}
+

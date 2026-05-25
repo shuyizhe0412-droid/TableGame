@@ -3,6 +3,16 @@
 let currentUser = null;
 let currentToken = null;
 let currentGameId = null;
+let currentKeyword = '';
+let currentCategory = '';
+
+function debounce(fn, delay = 300) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
+}
 
 // ============ 工具函数 ============
 
@@ -104,7 +114,12 @@ function enterDashboard() {
 
 async function loadGames() {
  try {
- const games = await apiFetch('/games');
+   let url = '/games';
+  const params = [];
+  if (currentKeyword) params.push('keyword=' + encodeURIComponent(currentKeyword));
+  if (currentCategory) params.push('category=' + encodeURIComponent(currentCategory));
+  if (params.length) url += '?' + params.join('&');
+  const games = await apiFetch(url);
  renderGameGrid(games);
  } catch (err) {
  if (err.message.includes('登录') || err.message.includes('过期')) {
@@ -517,6 +532,43 @@ function initRulesModal() {
   });
 }
 
+// ============ 搜索与筛选 ============
+
+// ============ 搜索与筛选 ============
+function initSearchAndFilter() {
+  const searchInput = document.getElementById('search-input');
+  const searchClear = document.getElementById('search-clear');
+  const filterTags = document.getElementById('filter-tags');
+
+  if (searchInput) {
+    searchInput.addEventListener('input', debounce(() => {
+      currentKeyword = searchInput.value.trim();
+      searchClear.style.display = currentKeyword ? '' : 'none';
+      loadGames();
+    }, 300));
+  }
+
+  if (searchClear) {
+    searchClear.addEventListener('click', () => {
+      searchInput.value = '';
+      currentKeyword = '';
+      searchClear.style.display = 'none';
+      loadGames();
+    });
+  }
+
+  if (filterTags) {
+    filterTags.addEventListener('click', (e) => {
+      const tag = e.target.closest('.filter-tag');
+      if (!tag) return;
+      filterTags.querySelectorAll('.filter-tag').forEach(t => t.classList.remove('active'));
+      tag.classList.add('active');
+      currentCategory = tag.dataset.category || '';
+      loadGames();
+    });
+  }
+}
+
 // ============ 初始化 ============
 
 async function init() {
@@ -527,6 +579,7 @@ async function init() {
  initNavigation();
 
   initRulesModal();
+  initSearchAndFilter();
 
   // 检查已登录状态
  currentToken = localStorage.getItem('token');
