@@ -683,25 +683,48 @@ async function getShopInfo(shopId) {
  * @returns {Promise<string>} AI 回答文本
  */
 async function askAI(gameId, question) {
-    console.log('[askAI] gameId:', gameId, 'question:', question);
+    console.log('[askAI] 开始, gameId:', gameId, 'question:', question);
+
+    var controller = new AbortController();
+    var timeoutId = setTimeout(function() {
+        controller.abort();
+    }, 25000);
 
     try {
-        console.log('[askAI] 调用 apiFetch, URL:', API_BASE_URL + '/ai/ask');
-        console.log('[askAI] 当前登录状态:', window.isLoggedIn ? window.isLoggedIn() : '未知');
-        var data = await apiFetch(API_BASE_URL + '/ai/ask', {
+        var resp = await fetch(API_BASE_URL + '/ai/ask', {
             method: 'POST',
-            body: JSON.stringify({ game_id: gameId, question: question })
+            headers: {
+                'Content-Type': 'application/json'
+                // 不加 Authorization，这是公开接口
+            },
+            body: JSON.stringify({ game_id: gameId, question: question }),
+            signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
+        console.log('[askAI] 响应状态:', resp.status);
+
+        var data = null;
+        try { data = await resp.json(); } catch (e) { data = null; }
+
+        if (!resp.ok) {
+            var msg = (data && data.error) || (data && data.message) || ('HTTP ' + resp.status);
+            throw new Error(msg);
+        }
+
         console.log('[askAI] 返回成功');
-        // 兼容多种返回格式: { answer: "..." } / { reply: "..." } / "..." 直接字符串
         if (data && typeof data.answer === 'string') return data.answer;
         if (data && typeof data.reply === 'string') return data.reply;
         if (typeof data === 'string') return data;
         return JSON.stringify(data);
+
     } catch (error) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+            console.error('[askAI] 请求超时 (25秒)');
+            throw new Error('AI 回答超时，请稍后再试');
+        }
         console.error('[askAI] 请求失败:', error.message);
-        console.error('[askAI] 错误详情:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
-        console.error('[askAI] 错误类型:', error.name);
         throw error;
     }
 }
