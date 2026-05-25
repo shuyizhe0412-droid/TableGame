@@ -69,7 +69,9 @@ function getShopIdFromUrl() {
     // 支持 shop=xxx 和 shopId=xxx 两种参数名
     var match = hash.match(/[?&]shop=([^&]+)/);
     if (!match) match = hash.match(/[?&]shopId=([^&]+)/);
-    return match ? decodeURIComponent(match[1]) : null;
+    var shopId = match ? decodeURIComponent(match[1]) : null;
+    console.log('[getShopIdFromUrl] shopId:', shopId, ', hash:', hash);
+    return shopId;
 }
 
 /**
@@ -89,13 +91,14 @@ async function loadShopInfo() {
     if (window._shopInfo && window._shopInfo.id === shopId) return;
 
     sessionStorage.setItem('shopId', shopId);
-    console.log('[app.js] 加载店家信息, shopId:', shopId);
+    console.log('[app.js] 加载店家信息, shopId:', shopId, ', session已设置');
 
     try {
         var result = await window.getShopInfo(shopId);
         if (result.data) {
             window._shopInfo = result.data;
             console.log('[app.js] 店家信息加载成功:', result.data.name);
+            console.log('[loadShopInfo] 完成, _shopInfo:', JSON.stringify(window._shopInfo));
         } else {
             window._shopInfo = null;
             console.warn('[app.js] 店家信息加载失败:', result.error);

@@ -58,8 +58,8 @@ router.get('/', async (req, res) => {
       .select('*', { count: 'exact' })
       .eq('store_id', req.store.id);
 
-    // 筛选条件
-    if (category) query = query.eq('category', category);
+    // 筛选条件（按 tags 字段模糊匹配，兼容逗号分隔的多标签）
+    if (category) query = query.ilike('tags', `%${category}%`);
     if (difficulty) query = query.eq('difficulty', parseInt(difficulty));
     if (min_players !== undefined && min_players !== '') {
       query = query.gte('max_players', parseInt(min_players));

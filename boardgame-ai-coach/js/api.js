@@ -617,15 +617,19 @@ async function getShopInfo(shopId) {
     }
 
     // 公开模式：优先尝试公开店铺信息接口 GET /api/public/shop/:id
+    // 注意：API 返回字段为 store_name/logo_url，不是 name/logo
     try {
         var shopData = await publicApiFetch(API_BASE_URL + '/public/shop/' + encodeURIComponent(shopId));
-        if (shopData && shopData.name) {
-            console.log('[getShopInfo] 公开接口命中:', shopData.name);
+        console.log('[getShopInfo] 公开接口返回:', JSON.stringify(shopData));
+        // 兼容两种字段名：store_name（公开接口实际返回）和 name（预备）
+        if (shopData && (shopData.store_name || shopData.name)) {
+            var shopName = shopData.store_name || shopData.name || '桌游吧';
+            console.log('[getShopInfo] 公开接口命中:', shopName);
             return {
                 data: {
                     id: shopData.id || shopId,
-                    name: shopData.name || '桌游吧',
-                    logo_url: shopData.logo_url || '',
+                    name: shopName,
+                    logo_url: shopData.logo_url || shopData.avatar || '',
                     theme_color: shopData.theme_color || '#C4864B'
                 },
                 error: null

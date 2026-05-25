@@ -8,12 +8,16 @@ const supabase = require('../config/supabase');
 
 const router = express.Router();
 
-const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || '';
-
-const openai = new OpenAI({
-  baseURL: 'https://api.deepseek.com',
-  apiKey: DEEPSEEK_API_KEY
-});
+// DeepSeek 客户端改为惰性初始化，避免启动时光标为空导致认证失败
+function getOpenAI() {
+  const key = (process.env.DEEPSEEK_API_KEY || '').trim();
+  if (!key) throw new Error('DEEPSEEK_API_KEY 未配置');
+  return new OpenAI({
+    baseURL: 'https://api.deepseek.com',
+    apiKey: key,
+    timeout: 30000,
+  });
+}
 
 /** POST /api/ai/ask — AI 规则问答 */
 router.post('/ask', async (req, res) => {
@@ -52,7 +56,7 @@ router.post('/ask', async (req, res) => {
     console.log('[AI] 提问 | game:', games[0].name, '| question length:', question.length);
 
     // 3. 调用 DeepSeek
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAI().chat.completions.create({
       model: 'deepseek-chat',
       messages: [
         { role: 'system', content: systemPrompt },

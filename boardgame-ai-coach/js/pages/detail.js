@@ -728,7 +728,7 @@ App.registerPage('detail', (function() {
             sectionsHtml +
             '</div>' +
             '<div class="rules-fs-footer">' +
-            '<a class="rules-fs-ai-btn" href="#/chat?mode=faq&gameId=' + state.gameId + '">🤖 还有疑问？问AI教练</a>' +
+            '<a class="rules-fs-ai-btn" href="javascript:void(0)" onclick="event.preventDefault(); event.stopPropagation(); detailPage.goAskAI();">🤖 还有疑问？问AI教练</a>' +
             '<button class="rules-fs-back-btn" onclick="detailPage.closeRules()">← 返回详情</button>' +
             '</div>' +
             '</div>' +
