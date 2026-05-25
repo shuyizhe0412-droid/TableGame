@@ -675,9 +675,8 @@ async function getShopInfo(shopId) {
 /**
  * 向 AI 提问（玩家端）
  *
- * 双路径策略：
- *   路径1（优先）：有 rules_text 时，通过 Supabase Edge Function 直接调 DeepSeek
- *   路径2（兜底）：后端 /api/ai/ask（路径1失败或无 rules_text 时自动降级）
+ * 统一走后端 /api/ai/ask，后端内部调 DeepSeek。去掉 Edge Function 直调路径，
+ * 避免手机端弱网环境下 fetch 挂起导致降级不生效。
  *
  * @param {string} gameId - 桌游 ID
  * @param {string} question - 用户问题
@@ -686,103 +685,20 @@ async function getShopInfo(shopId) {
 async function askAI(gameId, question) {
     console.log('[askAI] gameId:', gameId, 'question:', question);
 
-    // 获取游戏数据（需要 rules_text 以走 Edge Function 路径）
-    var game = null;
     try {
-        game = await getGameDetail(gameId);
-        console.log('[askAI] 游戏数据获取成功, 有 rules_text:', !!(game && game.rules_text));
-    } catch (e) {
-        console.warn('[askAI] 获取游戏失败:', e.message);
-    }
-
-    // 路径1：有规则文本时，先尝试 Supabase Edge Function（手机端可能失败）
-    if (game && game.rules_text) {
-        try {
-            console.log('[askAI] 尝试路径1: Supabase Edge Function');
-            var SUPABASE_FUNCTION_URL = SUPABASE_URL + '/functions/v1/deepseek-proxy';
-            var shopContext = buildShopContext();
-
-            var systemPrompt = '' +
-                '你是一个桌游规则教学AI。请严格遵守以下规则：\n' +
-                '\n' +
-                '1. 你只能讲解当前正在学习的这款游戏的规则，绝对不能引用任何其他桌游。\n' +
-                '\n' +
-                '2. 你的回答必须100%基于下方提供的游戏规则文本。规则文本中没有的内容，你绝对不能编造。\n' +
-                '\n' +
-                '3. 如果规则文本中没有提到某个机制或细节，你必须回答：\n' +
-                '   "这部分规则在数据库中没有记录，建议查阅官方规则书确认。"\n' +
-                '\n' +
-                '4. 宁可少说，也不能说错。不确定的内容必须标注[需确认]。\n' +
-                '\n' +
-                '5. 回答格式：先用一句话概括，再分点详细讲解。\n' +
-                '\n' +
-                '游戏名称：' + (game.name || '') + '\n' +
-                '规则文本：' + game.rules_text + '\n' +
-                shopContext;
-
-            // 手机端弱网/冷启动场景下 fetch 可能无限挂起，加 AbortController 超时
-            var EDGE_TIMEOUT_MS = 10000; // 10 秒
-            var controller = new AbortController();
-            var timeoutId = setTimeout(function() {
-                console.warn('[askAI] Edge Function 超时 (' + EDGE_TIMEOUT_MS + 'ms)，主动中断');
-                controller.abort();
-            }, EDGE_TIMEOUT_MS);
-
-            var edgeResponse = await fetch(SUPABASE_FUNCTION_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
-                },
-                body: JSON.stringify({
-                    messages: [
-                        { role: 'system', content: systemPrompt },
-                        { role: 'user', content: question }
-                    ],
-                    temperature: 0.7,
-                    max_tokens: 1000
-                }),
-                signal: controller.signal
-            });
-
-            clearTimeout(timeoutId);
-            var edgeResult = await edgeResponse.json();
-            if (edgeResult.error) {
-                throw new Error('API 返回错误: ' + (edgeResult.error.message || edgeResult.error));
-            }
-            if (edgeResult.choices && edgeResult.choices[0]) {
-                console.log('[askAI] Edge Function 返回成功');
-                return edgeResult.choices[0].message.content;
-            }
-            throw new Error('Edge Function 返回格式异常');
-        } catch (edgeError) {
-            // AbortError.name === 'AbortError'，超时被中断后会自然走到这里
-            if (edgeError.name === 'AbortError') {
-                console.warn('[askAI] Edge Function 超时中断，降级到后端 /api/ai/ask');
-            } else {
-                console.warn('[askAI] Edge Function 失败，降级到后端 /api/ai/ask:', edgeError.message);
-            }
-            // 降级到路径2，不 throw，继续往下走
-        }
-    }
-
-    // 路径2：后端 API（最终兜底）
-    try {
-        console.log('[askAI] 调用路径2: 后端 /api/ai/ask');
         var data = await apiFetch(API_BASE_URL + '/ai/ask', {
             method: 'POST',
             body: JSON.stringify({ game_id: gameId, question: question })
         });
-        console.log('[askAI] 后端返回成功');
+        console.log('[askAI] 返回成功');
         // 兼容多种返回格式: { answer: "..." } / { reply: "..." } / "..." 直接字符串
         if (data && typeof data.answer === 'string') return data.answer;
         if (data && typeof data.reply === 'string') return data.reply;
         if (typeof data === 'string') return data;
-        // 兜底：把整个 data 对象转为 JSON 字符串（调试用）
         return JSON.stringify(data);
-    } catch (backendError) {
-        console.error('[askAI] 后端也失败:', backendError.message);
-        throw backendError;
+    } catch (error) {
+        console.error('[askAI] 请求失败:', error.message);
+        throw error;
     }
 }
 
