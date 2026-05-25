@@ -5,26 +5,35 @@
 
 /**
  * 获取 TabBar HTML
+ * 已登录店家：首页 / 游戏库 / AI / 我的
+ * 未登录顾客：首页 / 游戏库 / AI / 关于
  * @param {string} activeTab - 当前激活的 Tab
  * @returns {string} TabBar HTML 字符串
  */
 function getTabBarHtml(activeTab) {
-    const tabs = [
+    var loggedIn = window.isLoggedIn && window.isLoggedIn();
+
+    var tabs = [
         { name: 'home', icon: '🏠', text: '首页' },
         { name: 'library', icon: '🎮', text: '游戏库' },
-        { name: 'chat', icon: '🤖', text: 'AI' },
-        { name: 'profile', icon: '👤', text: '我的' }
+        { name: 'chat', icon: '🤖', text: 'AI' }
     ];
 
-    const items = tabs.map(tab => {
-        const isActive = activeTab === tab.name ? 'active' : '';
-        return `<div class="tabbar-item ${isActive}" data-page="${tab.name}">
-            <span class="tabbar-icon">${tab.icon}</span>
-            <span class="tabbar-text">${tab.text}</span>
-        </div>`;
+    if (loggedIn) {
+        tabs.push({ name: 'profile', icon: '👤', text: '我的' });
+    } else {
+        tabs.push({ name: 'about', icon: 'ℹ️', text: '关于' });
+    }
+
+    var items = tabs.map(function(tab) {
+        var isActive = activeTab === tab.name ? 'active' : '';
+        return '<div class="tabbar-item ' + isActive + '" data-page="' + tab.name + '">' +
+            '<span class="tabbar-icon">' + tab.icon + '</span>' +
+            '<span class="tabbar-text">' + tab.text + '</span>' +
+            '</div>';
     }).join('');
 
-    return `<nav class="tabbar">${items}</nav>`;
+    return '<nav class="tabbar">' + items + '</nav>';
 }
 
 // 绑定 TabBar 点击事件
@@ -43,12 +52,14 @@ window.renderShopHeader = renderShopHeader;
 window.getShopAppend = getShopAppend;
 
 /**
- * 从URL中获取 shop 参数
+ * 从URL中获取 shop 参数（支持 shop=xxx 和 shopId=xxx 两种 key）
  * @returns {string|null} shop UUID
  */
 function getShopIdFromUrl() {
     var hash = window.location.hash || '';
-    var match = hash.match(/shop=([^&]+)/);
+    // 支持 shop=xxx 和 shopId=xxx 两种参数名
+    var match = hash.match(/[?&]shop=([^&]+)/);
+    if (!match) match = hash.match(/[?&]shopId=([^&]+)/);
     return match ? decodeURIComponent(match[1]) : null;
 }
 
@@ -147,10 +158,10 @@ function renderPageContent(pageName, params, activeTab) {
 function authGuard(page) {
     var loggedIn = window.isLoggedIn && window.isLoggedIn();
 
-    // profile 页面需要登录
+    // profile 页面需要登录 → 未登录跳转到关于页（而非登录页）
     if (page === 'profile' && !loggedIn) {
-        console.log('[app.js] 未登录，跳转到登录页');
-        window.location.hash = '/auth';
+        console.log('[app.js] 未登录，跳转到关于页面');
+        window.location.hash = '/about';
         return false;
     }
 
@@ -280,6 +291,34 @@ function getShopAppend() {
     if (!shopId) shopId = sessionStorage.getItem('shopId');
     return shopId ? '&shop=' + encodeURIComponent(shopId) : '';
 }
+
+/**
+ * 「关于」页面 - 未登录顾客看到的第4个标签页
+ * 显示 App 简介，底部提供店家登录入口
+ */
+App.registerPage('about', {
+    render: function() {
+        var shopAppend = getShopAppend();
+        return '<div style="min-height:100vh;background:#F8F6F1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;">' +
+            // 图标
+            '<div style="font-size:64px;margin-bottom:20px;">🎲</div>' +
+            // 标题
+            '<div style="font-size:24px;font-weight:700;color:#2D2A26;margin-bottom:8px;">桌游AI教练</div>' +
+            // 副标题
+            '<div style="font-size:15px;color:#C4864B;margin-bottom:24px;">AI驱动的桌游教学助手</div>' +
+            // 简介
+            '<div style="max-width:300px;font-size:14px;color:#6B6258;line-height:1.8;margin-bottom:32px;">' +
+            '扫码学习桌游规则，让桌游入门不再难</div>' +
+            // 版本
+            '<div style="font-size:12px;color:#B5AFA6;margin-bottom:40px;">v1.0</div>' +
+            // 店家入口（一行小字）
+            '<div style="margin-top:auto;padding-bottom:20px;">' +
+            '<a href="#/auth' + shopAppend + '" style="font-size:12px;color:#B5AFA6;text-decoration:none;border-bottom:1px solid #D5D0C8;padding-bottom:2px;">店家入口</a>' +
+            '</div>' +
+            '</div>';
+    },
+    init: function() {}  // 无异步初始化
+});
 
 // 页面加载完成后初始化应用
 document.addEventListener('DOMContentLoaded', initApp);

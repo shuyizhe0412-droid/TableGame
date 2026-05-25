@@ -232,16 +232,44 @@ async function deleteGame(id) {
 }
 
 /**
- * 获取桌游规则摘要（需要认证）
- * @param {string} id
+ * 获取桌游规则摘要
+ * 优先尝试认证接口（带 auth），失败则尝试公开接口
+ * @param {string} id - 游戏ID
+ * @returns {Promise<string>} 规则文本
  */
 async function getGameRules(id) {
     console.log('[getGameRules] ID:', id);
-    var data = await apiFetch(API_BASE_URL + '/games/' + encodeURIComponent(id) + '/rules', { method: 'GET' });
-    // 后端返回 { rules_text: "..." }
-    if (data && typeof data.rules_text === 'string') return data.rules_text;
-    if (typeof data === 'string') return data;
-    return (data && data.rules_text) ? data.rules_text : '';
+
+    // 优先尝试认证接口 GET /api/games/:id/rules
+    try {
+        var data = await apiFetch(API_BASE_URL + '/games/' + encodeURIComponent(id) + '/rules', { method: 'GET' });
+        var text = (data && typeof data.rules_text === 'string') ? data.rules_text :
+                   (typeof data === 'string') ? data :
+                   (data && data.rules_text) ? data.rules_text : '';
+        if (text) {
+            console.log('[getGameRules] 认证接口命中，长度:', text.length);
+            return text;
+        }
+        console.log('[getGameRules] 认证接口返回空，尝试公开接口');
+    } catch (e) {
+        console.warn('[getGameRules] 认证接口失败:', e.message, '，尝试公开接口');
+    }
+
+    // 兜底：尝试公开接口 GET /api/public/game/:id（可能返回的游戏中包含 rules 字段）
+    try {
+        var publicData = await publicApiFetch(API_BASE_URL + '/public/game/' + encodeURIComponent(id));
+        var publicRules = (publicData && publicData.rules_text) ? publicData.rules_text :
+                          (publicData && publicData.rules) ? publicData.rules : '';
+        if (publicRules) {
+            console.log('[getGameRules] 公开接口命中，长度:', publicRules.length);
+            return publicRules;
+        }
+        console.log('[getGameRules] 公开接口也未返回规则');
+    } catch (e2) {
+        console.warn('[getGameRules] 公开接口也失败:', e2.message);
+    }
+
+    return '';
 }
 
 /**
@@ -588,12 +616,29 @@ async function getShopInfo(shopId) {
         }
     }
 
-    // 公开模式：根据 storeId 构建基本信息
-    // 尝试从游戏列表推断店名
+    // 公开模式：优先尝试公开店铺信息接口 GET /api/public/shop/:id
+    try {
+        var shopData = await publicApiFetch(API_BASE_URL + '/public/shop/' + encodeURIComponent(shopId));
+        if (shopData && shopData.name) {
+            console.log('[getShopInfo] 公开接口命中:', shopData.name);
+            return {
+                data: {
+                    id: shopData.id || shopId,
+                    name: shopData.name || '桌游吧',
+                    logo_url: shopData.logo_url || '',
+                    theme_color: shopData.theme_color || '#C4864B'
+                },
+                error: null
+            };
+        }
+    } catch (e) {
+        console.warn('[getShopInfo] 公开店铺接口失败:', e.message);
+    }
+
+    // 兜底 1：尝试从游戏列表推断店名
     try {
         var games = await getPublicGames(shopId);
         if (games && games.length > 0) {
-            // 游戏数据中可能包含 store_name 字段
             var storeName = games[0].store_name || '桌游吧';
             return {
                 data: {
@@ -609,7 +654,7 @@ async function getShopInfo(shopId) {
         console.warn('[getShopInfo] 获取游戏列表失败:', e.message);
     }
 
-    // 兜底：返回基本信息
+    // 兜底 2：返回基本信息
     return {
         data: {
             id: shopId,

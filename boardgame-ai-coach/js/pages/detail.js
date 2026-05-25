@@ -765,22 +765,53 @@ App.registerPage('detail', (function() {
             renderRuleModalToBody();
             return;
         }
-        console.log('[detail.js] 加载规则, gameId:', state.gameId);
+        console.log('[detail.js] 加载规则, gameId:', state.gameId, ', gameName:', (state.game && state.game.name));
         try {
             var rules = await window.getGameRules(state.gameId);
-            console.log('[detail.js] 规则返回:', rules);
+            console.log('[detail.js] getGameRules 返回:', rules ? ('长度=' + rules.length) : '空');
             state.ruleFromServer = rules || '';
             state.ruleText = rules || '';
         } catch (e) {
-            console.warn('[detail.js] 加载规则失败:', e.message);
-            if (state.game && state.game.rules && typeof state.game.rules === 'string') {
-                state.ruleFromServer = state.game.rules;
-                state.ruleText = state.game.rules;
-            } else {
-                state.ruleFromServer = '';
-                state.ruleText = '';
+            console.warn('[detail.js] getGameRules 异常:', e.message);
+            state.ruleFromServer = '';
+            state.ruleText = '';
+        }
+
+        // 兜底 1：getGameRules 返回空，但 game 对象自带 rules 字段
+        if (!state.ruleFromServer && state.game && state.game.rules && typeof state.game.rules === 'string') {
+            console.log('[detail.js] 兜底1: 使用 game 对象自带的 rules');
+            state.ruleFromServer = state.game.rules;
+            state.ruleText = state.game.rules;
+        }
+
+        // 兜底 2：按游戏名称匹配内置兜底数据 (mockGames 或 _fallbackGames)
+        if (!state.ruleFromServer && state.game && state.game.name) {
+            var gameName = state.game.name;
+            console.log('[detail.js] 兜底2: 按名称匹配内置数据, name:', gameName);
+
+            // 先尝试 mockGames（按 name 匹配）
+            var mockKeys = Object.keys(mockGames);
+            for (var mk = 0; mk < mockKeys.length; mk++) {
+                var mg = mockGames[mockKeys[mk]];
+                if (mg.name === gameName && mg.rules) {
+                    console.log('[detail.js] 兜底2-mockGames 命中:', gameName);
+                    state.ruleFromServer = mg.rules;
+                    state.ruleText = mg.rules;
+                    break;
+                }
+            }
+
+            // 再尝试 _fallbackGames（按 name 匹配，fallback 中没有 rules 字段则跳过）
+            if (!state.ruleFromServer && window._fallbackGames) {
+                var fb = window._fallbackGames.find(function(g) { return g.name === gameName; });
+                if (fb && fb.rules) {
+                    console.log('[detail.js] 兜底2-_fallbackGames 命中:', gameName);
+                    state.ruleFromServer = fb.rules;
+                    state.ruleText = fb.rules;
+                }
             }
         }
+
         state.ruleLoading = false;
         renderRuleModalToBody();
     }
