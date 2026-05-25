@@ -294,7 +294,7 @@ function getShopAppend() {
 
 /**
  * 「关于」页面 - 未登录顾客看到的第4个标签页
- * 显示 App 简介，底部提供店家登录入口
+ * 显示 App 简介，底部提供店家登录入口（醒目按钮）
  */
 App.registerPage('about', {
     render: function() {
@@ -307,13 +307,15 @@ App.registerPage('about', {
             // 副标题
             '<div style="font-size:15px;color:#C4864B;margin-bottom:24px;">AI驱动的桌游教学助手</div>' +
             // 简介
-            '<div style="max-width:300px;font-size:14px;color:#6B6258;line-height:1.8;margin-bottom:32px;">' +
+            '<div style="max-width:300px;font-size:14px;color:#6B6258;line-height:1.8;margin-bottom:28px;">' +
             '扫码学习桌游规则，让桌游入门不再难</div>' +
             // 版本
-            '<div style="font-size:12px;color:#B5AFA6;margin-bottom:40px;">v1.0</div>' +
-            // 店家入口（一行小字）
-            '<div style="margin-top:auto;padding-bottom:20px;">' +
-            '<a href="#/auth' + shopAppend + '" style="font-size:12px;color:#B5AFA6;text-decoration:none;border-bottom:1px solid #D5D0C8;padding-bottom:2px;">店家入口</a>' +
+            '<div style="font-size:12px;color:#B5AFA6;margin-bottom:36px;">v1.0</div>' +
+            // 店家管理入口（醒目按钮区域）—— 仅未登录时显示
+            '<div style="background:#FFFFFF;border:1px solid #E5E0D8;border-radius:12px;padding:20px 28px;margin-bottom:24px;max-width:300px;width:100%;box-shadow:0 2px 8px rgba(0,0,0,0.04);">' +
+            '<div style="font-size:15px;font-weight:600;color:#2D2A26;margin-bottom:6px;">店家管理入口</div>' +
+            '<div style="font-size:13px;color:#9B9488;margin-bottom:16px;">登录后管理您的桌游和规则</div>' +
+            '<a href="#/auth' + shopAppend + '" style="display:inline-block;background:#C4864B;color:#FFFFFF;border:none;border-radius:20px;padding:10px 32px;font-size:14px;font-weight:500;text-decoration:none;cursor:pointer;">登录 / 注册</a>' +
             '</div>' +
             '</div>';
     },
