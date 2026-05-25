@@ -668,6 +668,14 @@ App.registerPage('detail', (function() {
             console.warn('[detail.js] showRules 检测到 hash 意外改变:', hashBefore, '→', window.location.hash);
             window.location.hash = hashBefore;
         }
+        // 防止触摸事件穿透：弹窗出现后 400ms 内禁用"问AI教练"按钮点击
+        setTimeout(function() {
+            var btn = document.querySelector('.rules-ai-btn');
+            if (btn) {
+                btn.style.pointerEvents = 'none';
+                setTimeout(function() { btn.style.pointerEvents = 'auto'; }, 400);
+            }
+        }, 50);
         loadGameRulesFromServer();
     }
 
