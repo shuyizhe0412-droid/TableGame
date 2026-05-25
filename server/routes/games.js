@@ -7,6 +7,36 @@ const supabase = require('../config/supabase');
 const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
+
+// ===== 公开接口（无需认证，玩家可访问）=====
+
+// GET /api/games/:id/rules - 获取桌游规则内容（公开）
+router.get('/:id/rules', async (req, res) => {
+  try {
+    const { data: games, error } = await supabase
+      .from('store_games')
+      .select('id, name, rules_text, rules_json')
+      .eq('id', req.params.id)
+      .limit(1);
+
+    if (error) throw error;
+    if (!games || games.length === 0) {
+      return res.status(404).json({ error: '游戏不存在' });
+    }
+
+    const g = games[0];
+    res.json({
+      game_name: g.name,
+      rules_text: g.rules_text || '',
+      rules_json: g.rules_json || ''
+    });
+  } catch (err) {
+    console.error('[GAMES] 获取规则失败:', err.message);
+    res.status(500).json({ error: '获取失败' });
+  }
+});
+
+// ===== 以下接口需要认证 =====
 router.use(authMiddleware);
 
 // GET /api/games - 获取游戏列表
@@ -190,6 +220,43 @@ router.put('/:id', async (req, res) => {
     res.json({ message: '更新成功', game });
   } catch (err) {
     console.error('[GAMES] 更新失败:', err.message);
+    res.status(500).json({ error: '更新失败' });
+  }
+});
+
+// PUT /api/games/:id/rules - 更新桌游规则内容（需认证）
+router.put('/:id/rules', async (req, res) => {
+  try {
+    const { rules_text, rules_json } = req.body;
+
+    // 验证所有权
+    const { data: existingArr, error: findErr } = await supabase
+      .from('store_games')
+      .select('id, name')
+      .eq('id', req.params.id)
+      .eq('store_id', req.store.id)
+      .limit(1);
+
+    if (findErr) throw findErr;
+    if (!existingArr || existingArr.length === 0) {
+      return res.status(404).json({ error: '游戏不存在或无权修改' });
+    }
+
+    const updateData = { updated_at: new Date().toISOString() };
+    if (rules_text !== undefined) updateData.rules_text = String(rules_text);
+    if (rules_json !== undefined) updateData.rules_json = String(rules_json);
+
+    const { error: updErr } = await supabase
+      .from('store_games')
+      .update(updateData)
+      .eq('id', req.params.id);
+
+    if (updErr) throw updErr;
+
+    console.log('[GAMES] 更新规则:', existingArr[0].name);
+    res.json({ message: '规则更新成功' });
+  } catch (err) {
+    console.error('[GAMES] 更新规则失败:', err.message);
     res.status(500).json({ error: '更新失败' });
   }
 });
