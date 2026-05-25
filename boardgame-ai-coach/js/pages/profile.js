@@ -291,6 +291,7 @@ App.registerPage('profile', (function() {
 
     // ==================== 批量二维码页面（保留） ====================
     function renderBatchQRPage() {
+        var shopId = (window._shopInfo && window._shopInfo.id) || sessionStorage.getItem('shopId') || '';
         var games = window.allGames || [];
         if (games.length === 0) {
             return '<div class="batch-qr-page">' +
@@ -304,7 +305,7 @@ App.registerPage('profile', (function() {
                 '</div>';
         }
 
-        var gridHtml = QRUtils.renderBatchQRGrid(games, state.batchQRPage, state.batchQRPerPage);
+        var gridHtml = QRUtils.renderBatchQRGrid(games, state.batchQRPage, state.batchQRPerPage, shopId);
 
         return '<div class="batch-qr-page">' +
             renderBatchQRHeader() +
@@ -854,7 +855,8 @@ App.registerPage('profile', (function() {
             alert('暂无游戏数据');
             return;
         }
-        await QRUtils.downloadAllQRZip(games);
+        var shopId = (window._shopInfo && window._shopInfo.id) || sessionStorage.getItem('shopId') || '';
+        await QRUtils.downloadAllQRZip(games, shopId);
     }
 
     // ==================== 桌游管理 API 操作 ====================

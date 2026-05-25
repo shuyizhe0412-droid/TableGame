@@ -491,7 +491,7 @@ App.registerPage('detail', (function() {
             return;
         }
 
-        QRUtils.generateGameQRCard(state.gameId, game.name || '未知游戏', state.qrMode).then(function(canvas) {
+        QRUtils.generateGameQRCard(state.gameId, game.name || '未知游戏', state.qrMode, window._shopInfo && window._shopInfo.id).then(function(canvas) {
             var isRestricted = QRUtils.isRestrictedBrowser();
             if (isRestricted) {
                 // 微信/QQ：隐藏canvas，只展示img（支持长按保存）
@@ -577,7 +577,7 @@ App.registerPage('detail', (function() {
         var game = state.game;
         if (!game) return;
         try {
-            var canvas = await QRUtils.generateGameQRCard(state.gameId, game.name || '未知游戏', state.qrMode);
+            var canvas = await QRUtils.generateGameQRCard(state.gameId, game.name || '未知游戏', state.qrMode, window._shopInfo && window._shopInfo.id);
             QRUtils.saveQRImage(canvas, (game.name || '游戏') + '-二维码.png');
         } catch (e) {
             console.error('下载失败:', e);

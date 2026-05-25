@@ -38,11 +38,12 @@ var QRUtils = (function() {
 
     // ==================== URL 工具 ====================
 
-    function getGameUrl(gameId, mode) {
+    function getGameUrl(gameId, mode, shopId) {
         mode = mode || '';
-        if (mode === 'setup') return SITE_URL + '/#/chat?id=' + gameId + '&mode=setup';
-        if (mode === 'quick') return SITE_URL + '/#/chat?id=' + gameId + '&mode=quick';
-        return SITE_URL + '/#/chat?id=' + gameId;
+        var shopParam = shopId ? '&shop=' + encodeURIComponent(shopId) : '';
+        if (mode === 'setup') return SITE_URL + '/#/chat?id=' + gameId + '&mode=setup' + shopParam;
+        if (mode === 'quick') return SITE_URL + '/#/chat?id=' + gameId + '&mode=quick' + shopParam;
+        return SITE_URL + '/#/chat?id=' + gameId + shopParam;
     }
 
     // ==================== Canvas 绘制 ====================
@@ -285,11 +286,11 @@ var QRUtils = (function() {
         });
     }
 
-    function generateGameQRCard(gameId, gameName, mode) {
+    function generateGameQRCard(gameId, gameName, mode, shopId) {
         mode = mode || 'rules';
         var modeNames = { setup: '摆盘引导', rules: '规则教学', quick: '规则速查' };
         var modeName = modeNames[mode] || '规则教学';
-        var url = getGameUrl(gameId, mode);
+        var url = getGameUrl(gameId, mode, shopId);
 
         var canvas = document.createElement('canvas');
         return drawQRCard(canvas, url, {
@@ -394,7 +395,7 @@ var QRUtils = (function() {
 
     // ==================== 批量下载 ====================
 
-    async function downloadAllQRZip(games) {
+    async function downloadAllQRZip(games, shopId) {
         if (!games || games.length === 0) {
             alert('暂无游戏数据');
             return;
@@ -424,7 +425,7 @@ var QRUtils = (function() {
 
             try {
                 var canvas = document.createElement('canvas');
-                await drawQRCard(canvas, getGameUrl(game.id), {
+                await drawQRCard(canvas, getGameUrl(game.id, '', shopId), {
                     title: '桌游AI教练',
                     subtitle: gameName,
                     urlText: 'boardgame-ai.pages.dev',
@@ -489,7 +490,7 @@ var QRUtils = (function() {
 
     // ==================== 批量分页预览 ====================
 
-    function renderBatchQRGrid(games, page, perPage) {
+    function renderBatchQRGrid(games, page, perPage, shopId) {
         page = page || 0;
         perPage = perPage || 6;
         var total = games.length;
@@ -503,7 +504,7 @@ var QRUtils = (function() {
             var gameName = game.name || '游戏' + (i + 1);
             var players = (game.min_players || game.minPlayers || '?') + '-' + (game.max_players || game.maxPlayers || '?') + '人';
             var duration = (game.duration || '?') + '分钟';
-            var url = getGameUrl(game.id);
+            var url = getGameUrl(game.id, '', shopId);
             var safeName = escapeHtml(gameName).replace(/'/g, "\\'");
 
             html += '<div class="batch-qr-item" id="batch-qr-item-' + i + '" style="background:#FFFFFF;border:1px solid #E5E0D8;border-radius:12px;padding:16px;display:flex;align-items:center;gap:16px;margin-bottom:12px;">' +
@@ -567,9 +568,10 @@ var QRUtils = (function() {
     return api;
 })();
 
-// 单独下载单个游戏二维码
+// 单独下载单个游戏二维码（从 window._shopInfo 或 sessionStorage 获取 shopId）
 QRUtils.downloadSingleQR = async function(gameId, gameName) {
     try {
+        var shopId = (window._shopInfo && window._shopInfo.id) || sessionStorage.getItem('shopId') || '';
         var games = window.allGames || [];
         var game = null;
         for (var i = 0; i < games.length; i++) {
@@ -577,7 +579,12 @@ QRUtils.downloadSingleQR = async function(gameId, gameName) {
         }
         if (!game) { game = { id: gameId, name: gameName }; }
 
-        var canvas = await QRUtils.generateGameQRCard(game.id, game.name || gameName, 'rules');
+        var canvas = document.createElement('canvas');
+        await QRUtils.drawQRCard(canvas, QRUtils.getGameUrl(game.id, '', shopId), {
+            title: '扫码学习',
+            subtitle: (game.name || gameName) + ' · 规则速查',
+            urlText: 'boardgame-ai.pages.dev'
+        });
         QRUtils.saveQRImage(canvas, (game.name || gameName) + '-二维码.png');
     } catch (e) {
         console.error('下载失败:', e);

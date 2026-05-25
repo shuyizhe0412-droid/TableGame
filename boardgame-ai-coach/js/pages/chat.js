@@ -472,8 +472,13 @@ App.registerPage('chat', (function() {
 
             // 记录扫码（每次进入AI对话页都记录）
             if (gameData && gameData.id) {
-                var shopId = window._shopInfo ? window._shopInfo.id : null;
-                window.logScan(shopId, gameData.id);
+                var shopId = (window._shopInfo && window._shopInfo.id) || sessionStorage.getItem('shopId') || null;
+                console.log('[chat.js] logScan, shopId:', shopId, 'gameId:', gameData.id);
+                if (shopId) {
+                    window.logScan(shopId, gameData.id);
+                } else {
+                    console.warn('[chat.js] logScan 跳过：shopId 为空，无法记录扫码统计');
+                }
             }
 
             // 初始化输入框

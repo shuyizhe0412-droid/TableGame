@@ -803,9 +803,16 @@ function saveConversation(conversation) {
 
 async function logScan(shopId, gameId) {
     console.log('[logScan] 记录扫码, shopId:', shopId, 'gameId:', gameId);
+    if (!shopId) {
+        console.warn('[logScan] 跳过：shopId 为空，避免写入脏数据');
+        return;
+    }
+    if (!gameId) {
+        console.warn('[logScan] 跳过：gameId 为空，避免写入脏数据');
+        return;
+    }
     try {
-        var body = { game_id: gameId };
-        if (shopId) body.shop_id = shopId;
+        var body = { game_id: gameId, shop_id: shopId };
 
         var url = SUPABASE_URL + '/rest/v1/scan_logs';
         var response = await fetch(url, {
