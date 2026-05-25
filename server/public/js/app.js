@@ -490,11 +490,13 @@ function logout() {
 // ===== 规则编辑弹窗 =====
 
 function openRulesModal() {
+  document.body.style.overflow = 'hidden';
   loadExistingRules();
   $('#rules-modal').style.display = '';
 }
 
 function closeRulesModal() {
+  document.body.style.overflow = '';
   $('#rules-modal').style.display = 'none';
 }
 

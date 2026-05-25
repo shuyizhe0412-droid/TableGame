@@ -78,6 +78,24 @@
  <h2>我的桌游 <span id="game-count" class="count-badge">0</span></h2>
  <button id="add-game-btn" class="btn btn-primary">+ 添加桌游</button>
  </div>
+
+  <div class="search-filter-bar">
+   <div class="search-box">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="search-input" class="search-input" placeholder="搜索桌游名称...">
+    <button id="search-clear" class="search-clear" style="display:none">&times;</button>
+   </div>
+   <div class="filter-tags" id="filter-tags">
+    <button class="filter-tag active" data-category="">全部</button>
+    <button class="filter-tag" data-category="策略">策略</button>
+    <button class="filter-tag" data-category="家庭">家庭</button>
+    <button class="filter-tag" data-category="聚会">聚会</button>
+    <button class="filter-tag" data-category="卡牌">卡牌</button>
+    <button class="filter-tag" data-category="推理">推理</button>
+    <button class="filter-tag" data-category="经营">经营</button>
+   </div>
+  </div>
+
  <div id="game-grid" class="game-grid"></div>
  <div id="empty-state" class="empty-state" style="display:none">
  <div class="empty-icon">📦</div>
