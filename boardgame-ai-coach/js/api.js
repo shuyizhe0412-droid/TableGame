@@ -367,8 +367,12 @@ async function getPublicGame(id) {
 
 /**
  * 获取游戏列表（统一入口）
- * 玩家端：调用 getPublicGames(storeId)
- * 店家端（已登录）：调用 getMyGames() + 合并全局默认桌游
+ *
+ * 优先级：
+ *   店家已登录 → GET /api/games + GET /api/admin/global-games（合并去重）
+ *   未登录 + shopId → GET /api/public/games/:shopId（优先）→ GET /api/admin/global-games（兜底）
+ *   未登录 + 无shopId → GET /api/admin/global-games
+ *
  * @param {object} filters - 筛选条件（暂未在后端实现，前端自行过滤）
  * @param {string} [storeId] - 店家ID（玩家端使用）
  */
@@ -413,19 +417,28 @@ async function getGames(filters, storeId) {
         return merged;
     }
 
-    // 玩家端：优先用传入的 storeId，其次从 session 取
+    // 未登录顾客端：优先用传入的 storeId，其次从 session 取
     if (!storeId) {
         storeId = sessionStorage.getItem('shopId');
     }
 
-    // 有 storeId → 调用店家公开 API
+    // 有 storeId → 优先调用店家公开 API GET /api/public/games/:shopId
     if (storeId) {
         try {
             var publicGames = await getPublicGames(storeId);
+            console.log('[getGames] 公开API命中, shopId:', storeId, ', 数量:', (publicGames || []).length);
             return publicGames || [];
         } catch (e) {
-            console.error('[getGames] 玩家端获取失败:', e);
-            throw e;
+            console.error('[getGames] 公开API获取失败，降级到全局桌游:', e.message);
+            // 降级兜底：使用全局默认桌游
+            try {
+                var fallbackGlobal = await getGlobalGames();
+                console.log('[getGames] 降级全局桌游数量:', (fallbackGlobal || []).length);
+                return fallbackGlobal || [];
+            } catch (e2) {
+                console.error('[getGames] 全局桌游获取也失败:', e2.message);
+                return [];
+            }
         }
     }
 
@@ -450,8 +463,12 @@ function isValidGameObject(g) {
 
 /**
  * 获取游戏详情（统一入口）
- * 优先使用公开接口（不需要登录）
- * @param {string} id
+ *
+ * 优先级：
+ *   店家已登录 → GET /api/games/:id（管理端）→ GET /api/public/game/:id（公开）→ GET /api/admin/global-games/:id（兜底）
+ *   未登录     → GET /api/public/game/:id（优先）→ GET /api/admin/global-games/:id（兜底）
+ *
+ * @param {string} id - 游戏ID
  */
 async function getGameDetail(id) {
     console.log('[getGameDetail] ID:', id);
