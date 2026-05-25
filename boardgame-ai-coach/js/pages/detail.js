@@ -361,12 +361,6 @@ App.registerPage('detail', (function() {
     }
 
     function renderAIButtons() {
-        var isLogin = (typeof window.isLoggedIn === 'function') ? window.isLoggedIn() : false;
-        var editBtn = '';
-        if (isLogin) {
-            editBtn = '<button class="detail-edit-rule-btn" onclick="detailPage.showRules()">' +
-                '<span>✏️</span><span>编辑规则</span></button>';
-        }
         return '<div class="detail-ai-buttons">' +
             '<button class="detail-ai-btn" onclick="detailPage.goChat(\'setup\')">' +
             '<span>🎯</span><span>摆盘引导</span></button>' +
@@ -374,7 +368,6 @@ App.registerPage('detail', (function() {
             '<span>📖</span><span>规则教学</span></button>' +
             '<button class="detail-ai-btn" onclick="detailPage.showRules()">' +
             '<span>🔍</span><span>规则速查</span></button>' +
-            editBtn +
             '</div>';
     }
 
@@ -394,6 +387,12 @@ App.registerPage('detail', (function() {
             '<div class="detail-rating-item"><span>上手</span>' + renderRatingBar(ratings.上手 || 0) + '<span>' + (ratings.上手 || 0) + '</span></div>' +
             '<div class="detail-avg-rating"><span>综合</span><span class="detail-avg-num">' + avgRating + '</span></div>' +
             '</div>';
+    }
+
+    function renderEditRuleLink() {
+        var isLogin = (typeof window.isLoggedIn === 'function') ? window.isLoggedIn() : false;
+        if (!isLogin) return '';
+        return '<div class="detail-edit-rule-link" onclick="detailPage.showRulesEdit()">✏️ 编辑规则</div>';
     }
 
     function renderComments() {
@@ -790,6 +789,24 @@ App.registerPage('detail', (function() {
         loadGameRulesFromServer();
     }
 
+    // 直接进入编辑模式（店家管理入口）
+    function showRulesEdit() {
+        console.log('[detail.js] showRulesEdit 被调用, gameId:', state.gameId);
+        var hashBefore = window.location.hash;
+        state.showRuleModal = true;
+        state.isEditingRule = true;
+        state.ruleLoading = true;
+        state.ruleFromServer = '';
+        state.ruleText = '';
+        state.ruleCollapsedSections = {};
+        window.detailPageRender();
+        if (window.location.hash !== hashBefore) {
+            console.warn('[detail.js] showRulesEdit 检测到 hash 意外改变:', hashBefore, '→', window.location.hash);
+            window.location.hash = hashBefore;
+        }
+        loadGameRulesFromServer();
+    }
+
     function closeRules(event) {
         if (event && event.target !== event.currentTarget) return;
         state.showRuleModal = false;
@@ -910,6 +927,7 @@ App.registerPage('detail', (function() {
             renderQREntry() +
             renderAIButtons() +
             renderRatings() +
+            renderEditRuleLink() +
             renderComments() +
             '</div>' +
             renderFavoriteBtn() +
@@ -1084,6 +1102,7 @@ App.registerPage('detail', (function() {
         downloadDetailQR: downloadDetailQR,
         // 规则速查 & 编辑
         showRules: showRules,
+        showRulesEdit: showRulesEdit,
         closeRules: closeRules,
         startEditRule: startEditRule,
         cancelEditRule: cancelEditRule,

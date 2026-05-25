@@ -576,6 +576,20 @@ input:focus, textarea:focus {
     font-size: 20px;
 }
 
+/* 编辑规则链接（底部小字，店家管理入口） */
+.detail-edit-rule-link {
+    text-align: center;
+    padding: 10px 0;
+    font-size: 13px;
+    color: #A0988A;
+    cursor: pointer;
+    transition: color 0.2s;
+    user-select: none;
+}
+.detail-edit-rule-link:hover {
+    color: var(--primary);
+}
+
 /* 评分区 */
 .detail-ratings {
     margin-bottom: 16px;
