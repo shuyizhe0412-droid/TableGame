@@ -273,13 +273,13 @@ App.registerPage('chat', (function() {
         }
     }
 
-    // 渲染加载动画
+    // 渲染加载动画（手机上 Edge Function 可能走超时降级，提示用户稍等）
     function renderTypingIndicator() {
         return '<div class="chat-message chat-message-ai" id="chat-typing">' +
             '<div class="chat-avatar">🤖</div>' +
             '<div class="chat-bubble chat-bubble-ai chat-typing-indicator">' +
             '<span class="chat-dot"></span><span class="chat-dot"></span><span class="chat-dot"></span>' +
-            '<span class="chat-typing-text">AI正在思考...</span>' +
+            '<span class="chat-typing-text">AI正在思考，请稍候...</span>' +
             '</div>' +
             '</div>';
     }

@@ -720,6 +720,14 @@ async function askAI(gameId, question) {
                 '规则文本：' + game.rules_text + '\n' +
                 shopContext;
 
+            // 手机端弱网/冷启动场景下 fetch 可能无限挂起，加 AbortController 超时
+            var EDGE_TIMEOUT_MS = 10000; // 10 秒
+            var controller = new AbortController();
+            var timeoutId = setTimeout(function() {
+                console.warn('[askAI] Edge Function 超时 (' + EDGE_TIMEOUT_MS + 'ms)，主动中断');
+                controller.abort();
+            }, EDGE_TIMEOUT_MS);
+
             var edgeResponse = await fetch(SUPABASE_FUNCTION_URL, {
                 method: 'POST',
                 headers: {
@@ -733,9 +741,11 @@ async function askAI(gameId, question) {
                     ],
                     temperature: 0.7,
                     max_tokens: 1000
-                })
+                }),
+                signal: controller.signal
             });
 
+            clearTimeout(timeoutId);
             var edgeResult = await edgeResponse.json();
             if (edgeResult.error) {
                 throw new Error('API 返回错误: ' + (edgeResult.error.message || edgeResult.error));
@@ -746,7 +756,12 @@ async function askAI(gameId, question) {
             }
             throw new Error('Edge Function 返回格式异常');
         } catch (edgeError) {
-            console.warn('[askAI] Edge Function 失败，降级到后端 /api/ai/ask:', edgeError.message);
+            // AbortError.name === 'AbortError'，超时被中断后会自然走到这里
+            if (edgeError.name === 'AbortError') {
+                console.warn('[askAI] Edge Function 超时中断，降级到后端 /api/ai/ask');
+            } else {
+                console.warn('[askAI] Edge Function 失败，降级到后端 /api/ai/ask:', edgeError.message);
+            }
             // 降级到路径2，不 throw，继续往下走
         }
     }
