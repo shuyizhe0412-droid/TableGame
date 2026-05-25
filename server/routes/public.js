@@ -51,4 +51,29 @@ router.get('/game/:id', async (req, res) => {
   }
 });
 
+
+/**
+ * GET /api/public/shop/:shopId
+ * 获取店家公开信息（无需认证）
+ */
+router.get('/shop/:shopId', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('stores')
+      .select('id, store_name, avatar')
+      .eq('id', req.params.shopId)
+      .limit(1);
+
+    if (error) throw error;
+    if (!data || data.length === 0) {
+      return res.status(404).json({ error: '店铺不存在' });
+    }
+    res.json(data[0]);
+  } catch (err) {
+    console.error('[PUBLIC] 获取店铺信息失败:', err.message);
+    res.status(500).json({ error: '获取失败' });
+  }
+});
+
 module.exports = router;
+
