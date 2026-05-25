@@ -214,6 +214,7 @@ App.registerPage('profile', (function() {
             html += renderFeatureItem('⚙️', '店铺设置', 'profilePage.showStoreSettings()');
             html += renderFeatureItem('📱', '批量二维码', 'profilePage.showBatchQR()');
             html += renderFeatureItem('🎮', '我的桌游', 'profilePage.showReviewPage()');
+            html += renderFeatureItem('🔧', '进入管理后台', "window.open('https://boardgame-hub.onrender.com','_blank')");
         }
 
         html += renderFeatureItem('📖', '使用指南', 'profilePage.showGuide()') +
