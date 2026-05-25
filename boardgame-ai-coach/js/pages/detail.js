@@ -224,13 +224,11 @@ App.registerPage('detail', (function() {
         loadError: null,
         showQRModal: false,
         qrMode: 'rules',  // 'setup' | 'rules' | 'quick'
-        // 规则速查 & 编辑
+        // 规则速查（只读查看）
         showRuleModal: false,
-        isEditingRule: false,
-        ruleText: '',           // 编辑中的规则文本
+        ruleText: '',           // 规则文本
         ruleFromServer: '',     // 服务端保存的规则
         ruleLoading: false,
-        ruleSaving: false,
         ruleCollapsedSections: {}   // { index: true } = 已折叠
     };
 
@@ -387,12 +385,6 @@ App.registerPage('detail', (function() {
             '<div class="detail-rating-item"><span>上手</span>' + renderRatingBar(ratings.上手 || 0) + '<span>' + (ratings.上手 || 0) + '</span></div>' +
             '<div class="detail-avg-rating"><span>综合</span><span class="detail-avg-num">' + avgRating + '</span></div>' +
             '</div>';
-    }
-
-    function renderEditRuleLink() {
-        var isLogin = (typeof window.isLoggedIn === 'function') ? window.isLoggedIn() : false;
-        if (!isLogin) return '';
-        return '<div class="detail-edit-rule-link" onclick="detailPage.showRulesEdit()">✏️ 编辑规则</div>';
     }
 
     function renderComments() {
@@ -689,88 +681,58 @@ App.registerPage('detail', (function() {
 
         var game = state.game;
         var gameName = game ? (game.name || '未知游戏') : '未知游戏';
-        var isLogin = (typeof window.isLoggedIn === 'function') ? window.isLoggedIn() : false;
-        var innerHTML = '';
 
-        // 编辑模式
-        if (state.isEditingRule) {
-            var currentLen = state.ruleText.length;
-            var lenWarn = currentLen > 4800 ? 'style="color:#e74c3c;"' : '';
-            innerHTML = '<div class="qr-modal-overlay" onclick="detailPage.closeRules(event)">' +
-                '<div class="rules-modal" onclick="event.stopPropagation()">' +
-                '<div class="rules-modal-title">编辑规则 · ' + gameName + '</div>' +
-                '<div class="rules-modal-body">' +
-                '<textarea class="rules-edit-area" id="rules-edit-textarea" ' +
-                'placeholder="粘贴或输入规则摘要，最多5000字&#10;&#10;示例：&#10;1. 游戏轮流进行，每回合掷两颗骰子。&#10;2. 拥有与骰子点数对应格子的玩家获得资源。&#10;3. 最先获得10分的玩家获胜。" ' +
-                'maxlength="5000" oninput="detailPage.onRuleInput()">' + state.ruleText + '</textarea>' +
-                '<div class="rules-char-count" ' + lenWarn + '>' +
-                currentLen + ' / 5000</div>' +
-                '<button class="rules-save-btn" onclick="detailPage.saveRule()" ' +
-                (state.ruleSaving ? 'disabled' : '') + '>' +
-                (state.ruleSaving ? '保存中...' : '💾 保存规则') + '</button>' +
-                '<button class="rules-cancel-btn" onclick="detailPage.cancelEditRule()">取消编辑</button>' +
-                '</div>' +
-                '</div>' +
-                '</div>';
-        } else {
-            // 查看模式：全屏结构化规则弹窗
-            var rulesText = '';
-            if (state.ruleFromServer) {
-                rulesText = state.ruleFromServer;
-            } else if (game && game.rules) {
-                rulesText = typeof game.rules === 'string' ? game.rules : '';
-            }
-
-            var sections = parseRuleSections(rulesText);
-            var sectionsHtml = '';
-            if (state.ruleLoading) {
-                sectionsHtml = '<div class="rules-fs-loading">加载中...</div>';
-            } else if (sections.length === 0) {
-                sectionsHtml = '<div class="rules-fs-empty">店家暂未添加规则</div>';
-            } else {
-                for (var i = 0; i < sections.length; i++) {
-                    var s = sections[i];
-                    var isExpanded = !state.ruleCollapsedSections[i];
-                    var sectionClass = isExpanded ? 'rules-section expanded' : 'rules-section collapsed';
-                    var arrowSymbol = isExpanded ? '▾' : '▸';
-                    var contentHtml = '';
-                    if (isTableSection(s)) {
-                        contentHtml = renderTableContent(s.content);
-                    } else {
-                        contentHtml = '<div class="rules-section-text">' + boldNumbers(s.content.replace(/\n/g, '<br>')) + '</div>';
-                    }
-                    sectionsHtml += '<div class="' + sectionClass + '" data-index="' + i + '">' +
-                        '<div class="rules-section-header" onclick="detailPage.toggleRuleSection(' + i + ')">' +
-                        '<span class="rules-section-arrow">' + arrowSymbol + '</span>' +
-                        '<span class="rules-section-name">' + s.title + '</span>' +
-                        '</div>' +
-                        '<div class="rules-section-content">' + contentHtml + '</div>' +
-                        '</div>';
-                }
-            }
-
-            var editBtn = '';
-            if (isLogin && !state.ruleLoading) {
-                editBtn = '<button class="rules-fs-edit-btn" onclick="detailPage.startEditRule()">✏️ 编辑规则</button>';
-            }
-
-            innerHTML = '<div class="rules-fs-overlay" onclick="detailPage.closeRules(event)">' +
-                '<div class="rules-fs-modal" onclick="event.stopPropagation()">' +
-                '<div class="rules-fs-header">' +
-                '<span class="rules-fs-title">规则速查 · ' + gameName + '</span>' +
-                '<span class="rules-fs-close" onclick="detailPage.closeRules()">✕</span>' +
-                '</div>' +
-                '<div class="rules-fs-body">' +
-                editBtn +
-                sectionsHtml +
-                '</div>' +
-                '<div class="rules-fs-footer">' +
-                '<a class="rules-fs-ai-btn" href="#/chat?mode=faq&gameId=' + state.gameId + '">🤖 还有疑问？问AI教练</a>' +
-                '<button class="rules-fs-back-btn" onclick="detailPage.closeRules()">← 返回详情</button>' +
-                '</div>' +
-                '</div>' +
-                '</div>';
+        // 只读模式：全屏结构化规则弹窗
+        var rulesText = '';
+        if (state.ruleFromServer) {
+            rulesText = state.ruleFromServer;
+        } else if (game && game.rules) {
+            rulesText = typeof game.rules === 'string' ? game.rules : '';
         }
+
+        var sections = parseRuleSections(rulesText);
+        var sectionsHtml = '';
+        if (state.ruleLoading) {
+            sectionsHtml = '<div class="rules-fs-loading">加载中...</div>';
+        } else if (sections.length === 0) {
+            sectionsHtml = '<div class="rules-fs-empty">店家暂未添加规则</div>';
+        } else {
+            for (var i = 0; i < sections.length; i++) {
+                var s = sections[i];
+                var isExpanded = !state.ruleCollapsedSections[i];
+                var sectionClass = isExpanded ? 'rules-section expanded' : 'rules-section collapsed';
+                var arrowSymbol = isExpanded ? '▾' : '▸';
+                var contentHtml = '';
+                if (isTableSection(s)) {
+                    contentHtml = renderTableContent(s.content);
+                } else {
+                    contentHtml = '<div class="rules-section-text">' + boldNumbers(s.content.replace(/\n/g, '<br>')) + '</div>';
+                }
+                sectionsHtml += '<div class="' + sectionClass + '" data-index="' + i + '">' +
+                    '<div class="rules-section-header" onclick="detailPage.toggleRuleSection(' + i + ')">' +
+                    '<span class="rules-section-arrow">' + arrowSymbol + '</span>' +
+                    '<span class="rules-section-name">' + s.title + '</span>' +
+                    '</div>' +
+                    '<div class="rules-section-content">' + contentHtml + '</div>' +
+                    '</div>';
+            }
+        }
+
+        var innerHTML = '<div class="rules-fs-overlay" onclick="detailPage.closeRules(event)">' +
+            '<div class="rules-fs-modal" onclick="event.stopPropagation()">' +
+            '<div class="rules-fs-header">' +
+            '<span class="rules-fs-title">规则速查 · ' + gameName + '</span>' +
+            '<span class="rules-fs-close" onclick="detailPage.closeRules()">✕</span>' +
+            '</div>' +
+            '<div class="rules-fs-body">' +
+            sectionsHtml +
+            '</div>' +
+            '<div class="rules-fs-footer">' +
+            '<a class="rules-fs-ai-btn" href="#/chat?mode=faq&gameId=' + state.gameId + '">🤖 还有疑问？问AI教练</a>' +
+            '<button class="rules-fs-back-btn" onclick="detailPage.closeRules()">← 返回详情</button>' +
+            '</div>' +
+            '</div>' +
+            '</div>';
 
         var modal = document.createElement('div');
         modal.id = 'rule-modal';
@@ -781,41 +743,19 @@ App.registerPage('detail', (function() {
     function showRules() {
         console.log('[detail.js] showRules 被调用, gameId:', state.gameId);
         state.showRuleModal = true;
-        state.isEditingRule = false;
         state.ruleLoading = true;
-        state.ruleSaved = false;
         state.ruleFromServer = '';
         state.ruleText = '';
         state.ruleCollapsedSections = {};
-        // 规则加载完成后由 loadGameRulesFromServer 调用 renderRuleModalToBody() 渲染弹窗
-        loadGameRulesFromServer();
-    }
-
-    // 直接进入编辑模式（店家管理入口）
-    function showRulesEdit() {
-        console.log('[detail.js] showRulesEdit 被调用, gameId:', state.gameId);
-        state.showRuleModal = true;
-        state.isEditingRule = true;
-        state.ruleLoading = true;
-        state.ruleSaved = false;
-        state.ruleFromServer = '';
-        state.ruleText = '';
-        state.ruleCollapsedSections = {};
-        // 规则加载完成后由 loadGameRulesFromServer 调用 renderRuleModalToBody() 渲染弹窗
         loadGameRulesFromServer();
     }
 
     function closeRules(event) {
         if (event) { event.stopPropagation(); event.preventDefault(); }
-        // 从 body 移除弹窗，详情页 DOM 完全不动
         var modal = document.getElementById('rule-modal');
         if (modal) modal.remove();
         state.showRuleModal = false;
-        state.isEditingRule = false;
         state.ruleLoading = false;
-        state.ruleText = '';
-        state.ruleFromServer = '';
-        // 不调 detailPageRender()，详情页 DOM 没有变化
     }
 
     async function loadGameRulesFromServer() {
@@ -845,67 +785,11 @@ App.registerPage('detail', (function() {
         renderRuleModalToBody();
     }
 
-    function startEditRule() {
-        state.isEditingRule = true;
-        if (!state.ruleText && state.game && state.game.rules) {
-            state.ruleText = typeof state.game.rules === 'string' ? state.game.rules : '';
-        }
-        renderRuleModalToBody();
-        setTimeout(function() {
-            var ta = document.getElementById('rules-edit-textarea');
-            if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
-        }, 200);
-    }
-
-    function cancelEditRule() {
-        state.isEditingRule = false;
-        state.ruleText = state.ruleFromServer;
-        renderRuleModalToBody();
-    }
-
-    function onRuleInput() {
-        var ta = document.getElementById('rules-edit-textarea');
-        if (ta) {
-            state.ruleText = ta.value;
-            // 更新字数显示
-            var countEl = document.querySelector('.rules-char-count');
-            if (countEl) {
-                countEl.textContent = ta.value.length + ' / 5000';
-                countEl.style.color = ta.value.length > 4800 ? '#e74c3c' : '#8C8578';
-            }
-        }
-    }
-
-    async function saveRule() {
-        if (state.ruleSaving) return;
-        if (state.ruleText.length > 5000) {
-            alert('规则内容超过5000字限制，请删减后保存');
-            return;
-        }
-        state.ruleSaving = true;
-        renderRuleModalToBody();
-        try {
-            await window.saveGameRules(state.gameId, state.ruleText);
-            state.ruleFromServer = state.ruleText;
-            state.isEditingRule = false;
-            state.ruleSaving = false;
-            alert('规则保存成功');
-            closeRules();
-        } catch (e) {
-            console.error('[detail.js] 保存规则失败:', e);
-            state.ruleSaving = false;
-            alert('保存失败: ' + (e.message || '未知错误'));
-            renderRuleModalToBody();
-        }
-    }
-
     function goAskAI() {
         console.log('goAskAI 被调用');
-        // 从 body 移除弹窗，清理状态
         var modal = document.getElementById('rule-modal');
         if (modal) modal.remove();
         state.showRuleModal = false;
-        state.isEditingRule = false;
         sessionStorage.setItem('chatFrom', '/detail?id=' + state.gameId);
         window.location.hash = '/chat?mode=faq&gameId=' + state.gameId;
     }
@@ -931,7 +815,6 @@ App.registerPage('detail', (function() {
             renderQREntry() +
             renderAIButtons() +
             renderRatings() +
-            renderEditRuleLink() +
             renderComments() +
             '</div>' +
             renderFavoriteBtn() +
@@ -946,7 +829,6 @@ App.registerPage('detail', (function() {
         var modal = document.getElementById('rule-modal');
         if (modal) modal.remove();
         state.showRuleModal = false;
-        state.isEditingRule = false;
         state.ruleLoading = false;
         // 优先使用 params 中的 id，其次从 URL hash 解析
         if (params && params.id) {
@@ -1109,14 +991,9 @@ App.registerPage('detail', (function() {
         closeQRModal: closeQRModal,
         switchQRMode: switchQRMode,
         downloadDetailQR: downloadDetailQR,
-        // 规则速查 & 编辑
+        // 规则速查（只读查看）
         showRules: showRules,
-        showRulesEdit: showRulesEdit,
         closeRules: closeRules,
-        startEditRule: startEditRule,
-        cancelEditRule: cancelEditRule,
-        onRuleInput: onRuleInput,
-        saveRule: saveRule,
         goAskAI: goAskAI,
         toggleRuleSection: toggleRuleSection
     };
