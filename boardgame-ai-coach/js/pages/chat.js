@@ -414,17 +414,18 @@ App.registerPage('chat', (function() {
 
     // ==================== 事件处理 ====================
     function init(params) {
-        console.log('[chat.js] init 被调用');
+        console.log('[chat-debug] 1. init 开始, params:', JSON.stringify(params));
 
         var session = state.session;
         if (!session) {
-            console.error('[chat.js] session 不存在');
+            console.error('[chat-debug] 1a. session 不存在，退出');
             return;
         }
+        console.log('[chat-debug] 1b. session 存在, mode:', session.mode, 'gameId:', session.gameId, 'shopId 来源:', (window._shopInfo && window._shopInfo.id) || sessionStorage.getItem('shopId') || null);
 
         // 无 gameId 的模式（推荐/速查）：跳过加载游戏数据
         if (!state.gameId) {
-            console.log('[chat.js] 无 gameId，跳过数据加载，使用模式:', state.mode);
+            console.log('[chat-debug] 2. 无 gameId，跳过数据加载 + logScan，模式:', state.mode);
             session.loaded = true;
 
             // 首次进入该会话，发送欢迎语（店家模式 → 店家欢迎语，否则 → 游戏原有欢迎语）
@@ -450,11 +451,11 @@ App.registerPage('chat', (function() {
             return;
         }
 
+        console.log('[chat-debug] 3. 有 gameId，准备加载游戏数据, gameId:', state.gameId);
+
         // 异步加载游戏数据
         loadGameData(state.gameId).then(function(gameData) {
-            console.log('[chat.js] 游戏数据加载完成, 游戏名称:', session.gameName);
-            console.log('[chat.js] 游戏分类:', session.gameData ? session.gameData.category : '未知');
-            console.log('[chat.js] 游戏标签:', session.gameData ? session.gameData.tags : '未知');
+            console.log('[chat-debug] 4. gameData 加载完成:', gameData ? (gameData.name || 'name为空') : 'null');
 
             // 首次进入该会话，发送欢迎语（店家模式 → 店家欢迎语，否则 → 游戏原有欢迎语）
             if (!session.welcomeSent && session.messages.length === 0) {
@@ -466,20 +467,46 @@ App.registerPage('chat', (function() {
                 });
             }
 
+            console.log('[chat-debug] 5. 欢迎消息已处理, welcomeSent:', session.welcomeSent, '消息数:', session.messages.length);
+
             // 刷新消息显示和快捷问题
-            refreshMessages();
-            refreshQuickQuestions();
+            try {
+                refreshMessages();
+                console.log('[chat-debug] 6a. refreshMessages 完成');
+            } catch(e) {
+                console.error('[chat-debug] 6a. refreshMessages 异常:', e);
+            }
+            try {
+                refreshQuickQuestions();
+                console.log('[chat-debug] 6b. refreshQuickQuestions 完成');
+            } catch(e) {
+                console.error('[chat-debug] 6b. refreshQuickQuestions 异常:', e);
+            }
 
             // 记录扫码（每次进入AI对话页都记录）
+            console.log('[chat-debug] 7. 准备 logScan, gameData存在:', !!gameData, 'gameData.id:', gameData ? gameData.id : 'null');
             if (gameData && gameData.id) {
                 var shopId = (window._shopInfo && window._shopInfo.id) || sessionStorage.getItem('shopId') || null;
-                console.log('[chat.js] logScan, shopId:', shopId, 'gameId:', gameData.id);
+                console.log('[chat-debug] 8. logScan 参数, shopId:', shopId, 'gameId:', gameData.id);
                 if (shopId) {
-                    window.logScan(shopId, gameData.id);
+                    try {
+                        if (typeof window.logScan === 'function') {
+                            window.logScan(shopId, gameData.id);
+                            console.log('[chat-debug] 9. logScan 已调用');
+                        } else {
+                            console.error('[chat-debug] 9. window.logScan 不是一个函数, typeof:', typeof window.logScan);
+                        }
+                    } catch(e) {
+                        console.error('[chat-debug] 9. logScan 调用异常:', e);
+                    }
                 } else {
-                    console.warn('[chat.js] logScan 跳过：shopId 为空，无法记录扫码统计');
+                    console.warn('[chat-debug] 9. shopId 为空，跳过 logScan');
                 }
+            } else {
+                console.warn('[chat-debug] 8. gameData 为空或无 id，跳过 logScan');
             }
+
+            console.log('[chat-debug] 10. init 完成');
 
             // 初始化输入框
             setTimeout(function() {
@@ -491,6 +518,8 @@ App.registerPage('chat', (function() {
                 }
                 scrollToBottom();
             }, 100);
+        }).catch(function(err) {
+            console.error('[chat-debug] 4. loadGameData promise 被拒绝:', err);
         });
     }
 
