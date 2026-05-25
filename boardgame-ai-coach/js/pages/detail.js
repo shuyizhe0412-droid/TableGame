@@ -216,6 +216,7 @@ App.registerPage('detail', (function() {
 
     // ==================== 状态管理 ====================
     window._closeRulesTime = 0;
+    var _closeGeneration = 0;
 
     var state = {
         gameId: '',
@@ -781,6 +782,7 @@ App.registerPage('detail', (function() {
     function showRules() {
         // 防止重复调用：弹窗已在查看模式，不再重复
         if (state.showRuleModal && !state.isEditingRule) return;
+        _closeGeneration++;
         console.log('[detail.js] showRules 被调用, gameId:', state.gameId);
         state.showRuleModal = true;
         state.isEditingRule = false;
@@ -797,6 +799,7 @@ App.registerPage('detail', (function() {
     function showRulesEdit() {
         // 防止重复调用：弹窗已在编辑模式，不再重复
         if (state.showRuleModal && state.isEditingRule) return;
+        _closeGeneration++;
         console.log('[detail.js] showRulesEdit 被调用, gameId:', state.gameId);
         state.showRuleModal = true;
         state.isEditingRule = true;
@@ -817,12 +820,14 @@ App.registerPage('detail', (function() {
             overlay.style.pointerEvents = 'none';
             overlay.style.opacity = '0';
         }
-        // 第二步：记录关闭时间
+        // 第二步：递增计数器 + 记录关闭时间
+        _closeGeneration++;
+        var myGen = _closeGeneration;
         window._closeRulesTime = Date.now();
         // 第三步：延迟重建页面（确保手指已抬起，不会再触发 click）
         setTimeout(function() {
-            // 如果在此期间弹窗被重新打开了，放弃本次关闭（打断穿透循环）
-            if (state.showRuleModal) return;
+            // 如果计数器变了（被新的 showRules/showRulesEdit 覆盖），放弃本次关闭
+            if (_closeGeneration !== myGen) return;
             state.showRuleModal = false;
             state.isEditingRule = false;
             state.ruleLoading = false;
@@ -957,6 +962,11 @@ App.registerPage('detail', (function() {
     // ==================== 事件处理 ====================
     function init(params) {
         console.log('[detail.js] init 被调用');
+        // 重置弹窗状态，防止上次 closeRules 未正确重置导致打开页面即弹窗
+        state.showRuleModal = false;
+        state.isEditingRule = false;
+        state.ruleLoading = false;
+        _closeGeneration++;
         // 优先使用 params 中的 id，其次从 URL hash 解析
         if (params && params.id) {
             state.gameId = params.id;
