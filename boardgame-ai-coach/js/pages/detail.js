@@ -811,11 +811,24 @@ App.registerPage('detail', (function() {
     }
 
     function closeRules(event) {
-        if (event && event.target !== event.currentTarget) return;
+        if (event) { event.stopPropagation(); event.preventDefault(); }
+        // 第一步：立即隐藏弹窗（DOM操作，不重新渲染页面）
+        var overlay = document.querySelector('.rules-fs-overlay');
+        if (overlay) {
+            overlay.style.pointerEvents = 'none';
+            overlay.style.opacity = '0';
+        }
+        // 第二步：记录关闭时间
         window._closeRulesTime = Date.now();
-        state.showRuleModal = false;
-        state.isEditingRule = false;
-        window.detailPageRender();
+        // 第三步：延迟 300ms 后再重新渲染页面（此时手指已抬起）
+        setTimeout(function() {
+            state.showRuleModal = false;
+            state.isEditingRule = false;
+            state.ruleLoading = false;
+            state.ruleText = '';
+            state.ruleFromServer = '';
+            window.detailPageRender();
+        }, 300);
     }
 
     async function loadGameRulesFromServer() {
