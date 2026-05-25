@@ -775,6 +775,8 @@ App.registerPage('detail', (function() {
     }
 
     function showRules() {
+        // 防止重复调用：弹窗已在查看模式，不再重复
+        if (state.showRuleModal && !state.isEditingRule) return;
         console.log('[detail.js] showRules 被调用, gameId:', state.gameId);
         state.showRuleModal = true;
         state.isEditingRule = false;
@@ -789,6 +791,8 @@ App.registerPage('detail', (function() {
 
     // 直接进入编辑模式（店家管理入口）
     function showRulesEdit() {
+        // 防止重复调用：弹窗已在编辑模式，不再重复
+        if (state.showRuleModal && state.isEditingRule) return;
         console.log('[detail.js] showRulesEdit 被调用, gameId:', state.gameId);
         state.showRuleModal = true;
         state.isEditingRule = true;
