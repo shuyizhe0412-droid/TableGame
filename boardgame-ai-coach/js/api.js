@@ -686,6 +686,8 @@ async function askAI(gameId, question) {
     console.log('[askAI] gameId:', gameId, 'question:', question);
 
     try {
+        console.log('[askAI] 调用 apiFetch, URL:', API_BASE_URL + '/ai/ask');
+        console.log('[askAI] 当前登录状态:', window.isLoggedIn ? window.isLoggedIn() : '未知');
         var data = await apiFetch(API_BASE_URL + '/ai/ask', {
             method: 'POST',
             body: JSON.stringify({ game_id: gameId, question: question })
@@ -698,6 +700,8 @@ async function askAI(gameId, question) {
         return JSON.stringify(data);
     } catch (error) {
         console.error('[askAI] 请求失败:', error.message);
+        console.error('[askAI] 错误详情:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+        console.error('[askAI] 错误类型:', error.name);
         throw error;
     }
 }
