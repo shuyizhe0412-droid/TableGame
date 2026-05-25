@@ -16,7 +16,7 @@ App.registerPage('detail', (function() {
             category: '德式',
             tags: ['策略', '资源管理', '交易'],
             description: '卡坦岛是一款经典的德式桌游，玩家扮演殖民者，在卡坦岛上建立殖民地、收集资源、与其他玩家交易，最终成为最富有的殖民者。游戏融合了策略思考与社交互动，每一次开局都是全新的挑战。',
-            rules: '1. 游戏轮流进行，每回合掷两颗骰子确定公共资源。2. 拥有与骰子点数对应格子的玩家获得资源。3. 玩家可用资源建造道路、 settlements、城市或购买开发卡。4. 最先获得10分的玩家获胜。',
+            rules: '【游戏目标】率先获得10个胜利点数。玩家通过建造定居点、城市和发展道路来获取分数。\n【建筑成本】道路：1木材+1砖块\n殖民地：1木材+1砖块+1羊毛+1麦子\n城市：2麦子+3矿石\n开发卡：1羊毛+1麦子+1矿石\n【资源获取】每回合掷两颗骰子，骰子点数对应的格子产出资源。所有在该格子有定居点或城市的玩家均可获得对应资源。\n【强盗机制】掷出7点时，强盗移动。手牌超过7张的玩家弃掉一半。强盗所在的格子不再产出资源。\n【特殊规则】最长道路（至少5条连续道路）获得2分。最大军队（至少3张骑士卡）获得2分。港口可用2:1或3:1比例兑换资源。\n【胜利点数】定居点1分、城市2分、最长道路2分、最大军队2分、开发卡隐藏1分。率先获得10分者获胜。',
             setupSteps: ['1. 将六边形地形板块洗匀，排列成六边形', '2. 将数字标记随机放在每个板块上', '3. 将港口标记放在岛屿边缘', '4. 每位玩家选择颜色，获得2个定居点、2条道路', '5. 将起始定居点放在板块角落，获得相应资源'],
             faq: [
                 { q: '如果没有对应资源怎么办？', a: '可以与拥有该资源的玩家交易，或使用港口以2:1比例兑换。' },
@@ -230,7 +230,8 @@ App.registerPage('detail', (function() {
         ruleText: '',           // 编辑中的规则文本
         ruleFromServer: '',     // 服务端保存的规则
         ruleLoading: false,
-        ruleSaving: false
+        ruleSaving: false,
+        ruleCollapsedSections: {}   // { index: true } = 已折叠
     };
 
     // ==================== 工具函数 ====================
@@ -594,6 +595,92 @@ App.registerPage('detail', (function() {
     }
 
     // ==================== 规则速查 & 编辑 ====================
+
+    // 解析规则文本为章节数组（按【】分隔）
+    function parseRuleSections(rulesText) {
+        if (!rulesText) return [];
+        // 检查是否含【】标记
+        if (rulesText.indexOf('【') !== -1) {
+            var sections = [];
+            var regex = /【([^】]+)】([^【]*)/g;
+            var match;
+            while ((match = regex.exec(rulesText)) !== null) {
+                sections.push({
+                    title: match[1].trim(),
+                    content: match[2].trim()
+                });
+            }
+            return sections;
+        }
+        // 无【】标记时，按换行拆分，每行一个章节
+        var lines = rulesText.split(/\n/).filter(function(l) { return l.trim(); });
+        if (lines.length <= 1) {
+            return [{ title: '规则说明', content: rulesText }];
+        }
+        var items = [];
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i].trim();
+            var numMatch = line.match(/^(\d+)[\.、．]\s*/);
+            var title = numMatch ? '规则 ' + numMatch[1] : '规则 ' + (i + 1);
+            var content = numMatch ? line.replace(/^\d+[\.、．]\s*/, '') : line;
+            items.push({ title: title, content: content });
+        }
+        return items;
+    }
+
+    // 检测是否为表格型章节（建筑成本等）
+    function isTableSection(section) {
+        var title = section.title;
+        if (title.indexOf('建筑') !== -1 || title.indexOf('成本') !== -1 ||
+            title.indexOf('表格') !== -1) {
+            return section.content.indexOf('：') !== -1 || section.content.indexOf(':') !== -1;
+        }
+        return false;
+    }
+
+    // 加粗数字
+    function boldNumbers(text) {
+        return text.replace(/(\d+)/g, '<b class="rules-num">$1</b>');
+    }
+
+    // 渲染表格型章节内容
+    function renderTableContent(content) {
+        var rows = content.split(/\n/).filter(function(l) { return l.trim(); });
+        var html = '<div class="rules-section-table">' +
+            '<div class="rules-table-row rules-table-head">' +
+            '<span class="rules-table-cell">项目</span>' +
+            '<span class="rules-table-cell">详情</span>' +
+            '</div>';
+        for (var i = 0; i < rows.length; i++) {
+            var parts = rows[i].split(/[：:]/);
+            var key = (parts[0] || '').trim();
+            var val = (parts.slice(1).join(':') || '').trim();
+            html += '<div class="rules-table-row">' +
+                '<span class="rules-table-cell">' + boldNumbers(key) + '</span>' +
+                '<span class="rules-table-cell">' + boldNumbers(val) + '</span>' +
+                '</div>';
+        }
+        html += '</div>';
+        return html;
+    }
+
+    // 切换章节折叠状态
+    function toggleRuleSection(index) {
+        state.ruleCollapsedSections[index] = !state.ruleCollapsedSections[index];
+        var section = document.querySelector('.rules-section[data-index="' + index + '"]');
+        if (!section) return;
+        var arrow = section.querySelector('.rules-section-arrow');
+        if (state.ruleCollapsedSections[index]) {
+            section.classList.remove('expanded');
+            section.classList.add('collapsed');
+            if (arrow) arrow.textContent = '▸';
+        } else {
+            section.classList.remove('collapsed');
+            section.classList.add('expanded');
+            if (arrow) arrow.textContent = '▾';
+        }
+    }
+
     function renderRuleModal() {
         if (!state.showRuleModal) return '';
 
@@ -623,32 +710,63 @@ App.registerPage('detail', (function() {
                 '</div>';
         }
 
-        // 查看模式
-        var bodyHtml = '';
-        if (state.ruleLoading) {
-            bodyHtml = '<div class="rules-body-loading">加载中...</div>';
-        } else if (state.ruleFromServer) {
-            bodyHtml = '<div class="rules-body-text">' + state.ruleFromServer.replace(/\n/g, '<br>') + '</div>';
+        // 查看模式：全屏结构化规则弹窗
+        var rulesText = '';
+        if (state.ruleFromServer) {
+            rulesText = state.ruleFromServer;
         } else if (game && game.rules) {
-            // 兜底：如果 game 对象自带 rules 字段（mock数据等）
-            bodyHtml = '<div class="rules-body-text">' + (typeof game.rules === 'string' ? game.rules.replace(/\n/g, '<br>') : game.rules) + '</div>';
+            rulesText = typeof game.rules === 'string' ? game.rules : '';
+        }
+
+        var sections = parseRuleSections(rulesText);
+        var sectionsHtml = '';
+        if (state.ruleLoading) {
+            sectionsHtml = '<div class="rules-fs-loading">加载中...</div>';
+        } else if (sections.length === 0) {
+            sectionsHtml = '<div class="rules-fs-empty">店家暂未添加规则</div>';
         } else {
-            bodyHtml = '<div class="rules-body-empty">店家暂未添加规则</div>';
+            for (var i = 0; i < sections.length; i++) {
+                var s = sections[i];
+                var isExpanded = !state.ruleCollapsedSections[i];
+                var sectionClass = isExpanded ? 'rules-section expanded' : 'rules-section collapsed';
+                var arrowSymbol = isExpanded ? '▾' : '▸';
+                var contentHtml = '';
+                if (isTableSection(s)) {
+                    contentHtml = renderTableContent(s.content);
+                } else {
+                    contentHtml = '<div class="rules-section-text">' + boldNumbers(s.content.replace(/\n/g, '<br>')) + '</div>';
+                }
+                sectionsHtml += '<div class="' + sectionClass + '" data-index="' + i + '">' +
+                    '<div class="rules-section-header" onclick="detailPage.toggleRuleSection(' + i + ')">' +
+                    '<span class="rules-section-arrow">' + arrowSymbol + '</span>' +
+                    '<span class="rules-section-name">' + s.title + '</span>' +
+                    '</div>' +
+                    '<div class="rules-section-content">' + contentHtml + '</div>' +
+                    '</div>';
+            }
         }
 
         var editBtn = '';
-        if (isLogin) {
-            editBtn = '<button class="rules-edit-btn" onclick="detailPage.startEditRule()">✏️ 编辑规则</button>';
+        if (isLogin && !state.ruleLoading) {
+            editBtn = '<button class="rules-fs-edit-btn" onclick="detailPage.startEditRule()">✏️ 编辑规则</button>';
         }
 
-        return '<div class="qr-modal-overlay" onclick="detailPage.closeRules(event)">' +
-            '<div class="rules-modal" onclick="event.stopPropagation()">' +
-            '<div class="rules-modal-title">规则速查 · ' + gameName + '</div>' +
-            '<div class="rules-modal-body">' +
+        return '<div class="rules-fs-overlay" onclick="detailPage.closeRules(event)">' +
+            '<div class="rules-fs-modal" onclick="event.stopPropagation()">' +
+            // 顶部固定标题栏
+            '<div class="rules-fs-header">' +
+            '<span class="rules-fs-title">规则速查 · ' + gameName + '</span>' +
+            '<span class="rules-fs-close" onclick="detailPage.closeRules()">✕</span>' +
+            '</div>' +
+            // 可滚动内容区
+            '<div class="rules-fs-body">' +
             editBtn +
-            bodyHtml +
-            '<a class="rules-ai-btn" id="rules-ai-btn" href="#/chat?mode=faq&gameId=' + state.gameId + '">🤖 问AI教练</a>' +
-            '<button class="rules-back-btn" onclick="detailPage.closeRules()">← 返回详情</button>' +
+            sectionsHtml +
+            '</div>' +
+            // 底部固定按钮
+            '<div class="rules-fs-footer">' +
+            '<a class="rules-fs-ai-btn" href="#/chat?mode=faq&gameId=' + state.gameId + '">🤖 还有疑问？问AI教练</a>' +
+            '<button class="rules-fs-back-btn" onclick="detailPage.closeRules()">← 返回详情</button>' +
             '</div>' +
             '</div>' +
             '</div>';
@@ -662,6 +780,7 @@ App.registerPage('detail', (function() {
         state.ruleLoading = true;
         state.ruleFromServer = '';
         state.ruleText = '';
+        state.ruleCollapsedSections = {};
         window.detailPageRender();
         // 防御性检查：detailPageRender 不应该改变 hash
         if (window.location.hash !== hashBefore) {
@@ -970,7 +1089,8 @@ App.registerPage('detail', (function() {
         cancelEditRule: cancelEditRule,
         onRuleInput: onRuleInput,
         saveRule: saveRule,
-        goAskAI: goAskAI
+        goAskAI: goAskAI,
+        toggleRuleSection: toggleRuleSection
     };
 
     // 全局暴露
