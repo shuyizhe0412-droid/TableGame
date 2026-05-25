@@ -238,10 +238,10 @@ async function deleteGame(id) {
 async function getGameRules(id) {
     console.log('[getGameRules] ID:', id);
     var data = await apiFetch(API_BASE_URL + '/games/' + encodeURIComponent(id) + '/rules', { method: 'GET' });
-    // 后端可能返回 { rules: "..." } 或直接返回字符串
-    if (data && typeof data.rules === 'string') return data.rules;
+    // 后端返回 { rules_text: "..." }
+    if (data && typeof data.rules_text === 'string') return data.rules_text;
     if (typeof data === 'string') return data;
-    return (data && data.rules) ? data.rules : '';
+    return (data && data.rules_text) ? data.rules_text : '';
 }
 
 /**
@@ -256,7 +256,7 @@ async function saveGameRules(id, rulesContent) {
     }
     return await apiFetch(API_BASE_URL + '/games/' + encodeURIComponent(id) + '/rules', {
         method: 'PUT',
-        body: JSON.stringify({ rules: rulesContent })
+        body: JSON.stringify({ rules_text: rulesContent })
     });
 }
 
