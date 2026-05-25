@@ -668,17 +668,14 @@ App.registerPage('detail', (function() {
             console.warn('[detail.js] showRules 检测到 hash 意外改变:', hashBefore, '→', window.location.hash);
             window.location.hash = hashBefore;
         }
-        // 防止触摸事件穿透：延迟 500ms 绑定 click，DOM 插入时不会触发任何事件
+        // 防止触摸事件穿透：延迟 600ms 后动态设置 onclick，渲染时无事件
+        console.log('showRules setTimeout 设置');
         setTimeout(function() {
             var btn = document.getElementById('rules-ai-btn');
-            if (btn) {
-                btn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    detailPage.goAskAI();
-                });
+            if (btn && !btn.getAttribute('onclick')) {
+                btn.setAttribute('onclick', 'detailPage.goAskAI()');
             }
-        }, 500);
+        }, 600);
         loadGameRulesFromServer();
     }
 
@@ -773,6 +770,7 @@ App.registerPage('detail', (function() {
 
     var _goAskAIDone = false;
     function goAskAI() {
+        console.log('goAskAI 被调用');
         if (_goAskAIDone) return;
         _goAskAIDone = true;
         setTimeout(function() { _goAskAIDone = false; }, 1000);
