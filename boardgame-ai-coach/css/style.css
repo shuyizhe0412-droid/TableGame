@@ -1767,3 +1767,196 @@ input:focus, textarea:focus {
 .detail-qr-entry:active {
     transform: scale(0.98);
 }
+
+/* ===================================
+   规则速查弹窗
+   =================================== */
+.rules-modal {
+    background: #FFFFFF;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 400px;
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    animation: slideUp 0.3s ease;
+}
+
+.rules-modal-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.rules-modal-body {
+    padding: 16px;
+    overflow-y: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.rules-body-text {
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--text);
+    padding: 12px 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.rules-body-loading {
+    text-align: center;
+    padding: 30px 0;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.rules-body-empty {
+    text-align: center;
+    padding: 30px 0;
+    color: var(--text-subtle);
+    font-size: 14px;
+}
+
+/* 编辑规则按钮（详情页内） */
+.detail-edit-rule-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 8px;
+    background: var(--card);
+    border-radius: 12px;
+    font-size: 12px;
+    color: var(--text);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    cursor: pointer;
+    transition: border 0.2s;
+    border: 2px solid transparent;
+    white-space: nowrap;
+}
+
+.detail-edit-rule-btn:hover {
+    border-color: var(--primary);
+}
+
+.detail-edit-rule-btn span:first-child {
+    font-size: 20px;
+}
+
+/* 规则弹窗内编辑按钮 */
+.rules-edit-btn {
+    padding: 8px 16px;
+    background: transparent;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    align-self: flex-end;
+    transition: all 0.2s;
+}
+
+.rules-edit-btn:hover {
+    background: #FDF5EC;
+}
+
+/* 规则编辑区域 */
+.rules-edit-area {
+    width: 100%;
+    min-height: 200px;
+    max-height: 300px;
+    padding: 12px;
+    font-size: 14px;
+    line-height: 1.6;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    resize: vertical;
+    font-family: inherit;
+    color: var(--text);
+    background: var(--card);
+}
+
+.rules-edit-area:focus {
+    outline: 2px solid var(--primary);
+    outline-offset: 0;
+    border-color: var(--primary);
+}
+
+.rules-char-count {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: right;
+}
+
+/* 规则弹窗按钮 */
+.rules-save-btn {
+    width: 100%;
+    padding: 12px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.rules-save-btn:hover {
+    background: #B0783D;
+}
+
+.rules-save-btn:disabled {
+    background: #D5D0C8;
+    cursor: not-allowed;
+}
+
+.rules-cancel-btn {
+    width: 100%;
+    padding: 10px;
+    background: transparent;
+    color: var(--text-secondary);
+    border: none;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.rules-cancel-btn:hover {
+    color: var(--text);
+}
+
+.rules-ai-btn {
+    width: 100%;
+    padding: 12px;
+    background: #E5E0D8;
+    color: #B5AFA6;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    cursor: not-allowed;
+}
+
+.rules-back-btn {
+    width: 100%;
+    padding: 10px;
+    background: transparent;
+    color: var(--text-secondary);
+    border: none;
+    border-top: 1px solid var(--border);
+    font-size: 14px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.rules-back-btn:hover {
+    color: var(--text);
+}

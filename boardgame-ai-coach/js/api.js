@@ -231,6 +231,35 @@ async function deleteGame(id) {
     });
 }
 
+/**
+ * 获取桌游规则摘要（需要认证）
+ * @param {string} id
+ */
+async function getGameRules(id) {
+    console.log('[getGameRules] ID:', id);
+    var data = await apiFetch(API_BASE_URL + '/games/' + encodeURIComponent(id) + '/rules', { method: 'GET' });
+    // 后端可能返回 { rules: "..." } 或直接返回字符串
+    if (data && typeof data.rules === 'string') return data.rules;
+    if (typeof data === 'string') return data;
+    return (data && data.rules) ? data.rules : '';
+}
+
+/**
+ * 保存桌游规则摘要（需要认证，最多5000字）
+ * @param {string} id
+ * @param {string} rulesContent
+ */
+async function saveGameRules(id, rulesContent) {
+    console.log('[saveGameRules] ID:', id, '长度:', rulesContent.length);
+    if (rulesContent.length > 5000) {
+        throw new Error('规则内容超过5000字限制');
+    }
+    return await apiFetch(API_BASE_URL + '/games/' + encodeURIComponent(id) + '/rules', {
+        method: 'PUT',
+        body: JSON.stringify({ rules: rulesContent })
+    });
+}
+
 // ==================== 文件上传 API（需要认证） ====================
 
 /**
@@ -733,6 +762,8 @@ window.getMyGameDetail = getMyGameDetail;
 window.createGame = createGame;
 window.updateGame = updateGame;
 window.deleteGame = deleteGame;
+window.getGameRules = getGameRules;
+window.saveGameRules = saveGameRules;
 
 // 上传 API
 window.uploadCover = uploadCover;
