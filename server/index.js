@@ -45,7 +45,15 @@ app.use((req, res, next) => {
   next();
 });
 
+// ============ 速率限制 ============
+const { aiLimiter, registerLimiter, loginLimiter, generalLimiter } = require('./middleware/rateLimit');
+
 // ============ 路由 ============
+app.use('/api/auth/register', registerLimiter);
+app.use('/api/auth/login', loginLimiter);
+app.use('/api/ai/ask', aiLimiter);
+app.use('/api/', generalLimiter); // 兜底：所有 API 30次/分钟
+
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/games', require('./routes/games'));
 app.use('/api/upload', require('./routes/upload'));
