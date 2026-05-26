@@ -28,10 +28,10 @@ router.post('/ask', async (req, res) => {
       return res.status(400).json({ error: '请提供 game_id 和 question' });
     }
 
-    // 1. 读取规则内容
+    // 1. 读取游戏信息
     const { data: games, error: dbErr } = await supabase
       .from('store_games')
-      .select('name, rules_text')
+      .select('name, rules_text, category')
       .eq('id', game_id)
       .limit(1);
 
@@ -40,20 +40,36 @@ router.post('/ask', async (req, res) => {
       return res.status(404).json({ error: '游戏不存在' });
     }
 
-    const rules_text = games[0].rules_text;
+    const game = games[0];
+    const gameName = game.name || '该游戏';
+    const gameCategory = game.category || '桌游';
+    const rules_text = game.rules_text;
 
-    if (!rules_text || rules_text.trim() === '') {
-      return res.json({ answer: '该游戏暂未添加规则，请联系店家添加。' });
+    // 2. 构建 system prompt（根据是否有规则文本分别处理）
+    let systemPrompt;
+    
+    if (rules_text && rules_text.trim() !== '') {
+      // 有规则文本：严格基于规则回答
+      systemPrompt =
+        '你是一个专业的桌游规则教练。严格基于以下规则内容回答玩家的问题。\n' +
+        '如果规则中没有提到相关内容，请回答"这部分规则中没有记录，建议查阅官方规则书"。\n' +
+        '回答要简洁明了，适合桌游场景。\n\n' +
+        '游戏名称：' + gameName + '\n' +
+        '规则内容：\n' + rules_text;
+      console.log('[AI] 提问（有规则）| game:', gameName, '| question length:', question.length);
+    } else {
+      // 无规则文本：基于通用知识回答，必须加声明
+      systemPrompt =
+        '你是一个专业的桌游规则教练。该游戏名称是「' + gameName + '」，分类是「' + gameCategory + '」。\n' +
+        '请基于你的通用知识回答玩家关于这款游戏的问题。\n\n' +
+        '重要提醒：你没有该游戏的官方规则文本，所以：\n' +
+        '1. 尽量基于你的通用知识回答问题\n' +
+        '2. 在每个回答的末尾必须加上以下声明（单独一行）：\n' +
+        '   ⚠️ 以上为AI通用回答，未参考店家上传的官方规则，实际规则请以官方说明书为准。\n' +
+        '3. 如果你不确定答案，请坦诚告知玩家\n\n' +
+        '回答要简洁明了，适合桌游场景。';
+      console.log('[AI] 提问（无规则，使用通用知识）| game:', gameName, '| question length:', question.length);
     }
-
-    // 2. 构建 system prompt
-    const systemPrompt =
-      '你是一个专业的桌游规则教练。基于以下规则内容回答玩家的问题。\n' +
-      '如果问题超出规则范围，礼貌地告知你只能回答规则相关问题。\n' +
-      '回答要简洁明了，适合桌游场景。\n\n' +
-      '规则内容：\n' + rules_text;
-
-    console.log('[AI] 提问 | game:', games[0].name, '| question length:', question.length);
 
     // 3. 调用 DeepSeek
     const completion = await getOpenAI().chat.completions.create({
