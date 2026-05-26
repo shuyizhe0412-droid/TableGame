@@ -152,8 +152,8 @@ function renderGameGrid(games) {
  return `
  <div class="game-card" data-id="${g.id}">
  <div class="card-cover">
- ${g.cover_url
- ? `<img src="${g.cover_url}" alt="${g.name}">`
+ ${g.cover_image
+ ? `<img src="${g.cover_image}" alt="${g.name}">`
  : '🎲'}
  </div>
  <div class="card-body">
@@ -199,8 +199,8 @@ function renderGameDetail(game) {
 
  // 封面
  const cover = $('#detail-cover');
- if (game.cover_url) {
- cover.innerHTML = `<img src="${game.cover_url}" alt="${game.name}">`;
+ if (game.cover_image) {
+ cover.innerHTML = `<img src="${game.cover_image}" alt="${game.name}">`;
  } else {
  cover.innerHTML = '<span class="cover-placeholder">🎲</span>';
  }
@@ -246,11 +246,26 @@ async function loadGameFiles(gameId) {
  <div class="file-item">
  <span>${f.file_type === 'pdf' ? '📄' : '🖼️'} ${f.file_type.toUpperCase()} 文件</span>
  <a href="${f.file_url}" target="_blank">查看</a>
+ <button class="btn btn-sm btn-danger" onclick="deleteFile('${f.id}')">删除</button>
  </div>
  `).join('');
  } catch {
  filesEl.innerHTML = '<p class="text-muted">暂无规则书文件</p>';
  }
+}
+
+
+// ============ 删除规则书文件 ============
+
+async function deleteFile(fileId) {
+  if (!confirm('确定要删除这个文件吗？此操作不可撤销。')) return;
+  try {
+    await apiFetch(`/upload/${fileId}`, { method: 'DELETE' });
+    showToast('删除成功');
+    loadGameFiles(currentGameId);
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
 }
 
 // ============ 添加/编辑桌游弹窗 ============
