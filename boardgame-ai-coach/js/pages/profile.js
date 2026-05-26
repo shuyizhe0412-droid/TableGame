@@ -8,10 +8,6 @@ App.registerPage('profile', (function() {
     var state = {
         isLoggedIn: false,
         user: null,
-        showBatchQR: false,
-        batchQRPage: 0,
-        batchQRPerPage: 6,
-        allGamesLoaded: false,
         stats: { total: 0, today: 0, week: 0 },
         statsLoaded: false,
         qrLoaded: false,
@@ -203,7 +199,6 @@ App.registerPage('profile', (function() {
         var loggedIn = window.isLoggedIn && window.isLoggedIn();
         if (loggedIn && window._shopInfo) {
             html += renderFeatureItem('⚙️', '店铺设置', 'profilePage.showStoreSettings()');
-            html += renderFeatureItem('📱', '批量二维码', 'profilePage.showBatchQR()');
             html += renderFeatureItem('🔧', '进入管理后台', "window.open('https://boardgame-hub.onrender.com','_blank')");
         }
 
@@ -279,40 +274,6 @@ App.registerPage('profile', (function() {
             'boardgame-ai.pages.dev';
     }
 
-    // ==================== 批量二维码页面（保留） ====================
-    function renderBatchQRPage() {
-        var shopId = (window._shopInfo && window._shopInfo.id) || sessionStorage.getItem('shopId') || '';
-        var games = window.allGames || [];
-        if (games.length === 0) {
-            return '<div class="batch-qr-page">' +
-                renderBatchQRHeader() +
-                '<div style="text-align:center;padding:60px 20px;color:#8C8578;">' +
-                '<div style="font-size:48px;margin-bottom:16px;">📦</div>' +
-                '<div>游戏数据加载中，请稍后重试...</div>' +
-                '<button onclick="profilePage.loadAllGames()" style="margin-top:16px;padding:10px 20px;' +
-                'background:#C4864B;color:#fff;border:none;border-radius:8px;cursor:pointer;">重新加载</button>' +
-                '</div>' +
-                '</div>';
-        }
-
-        var gridHtml = QRUtils.renderBatchQRGrid(games, state.batchQRPage, state.batchQRPerPage, shopId);
-
-        return '<div class="batch-qr-page">' +
-            renderBatchQRHeader() +
-            '<div id="batch-qr-progress" style="display:none;text-align:center;padding:16px;' +
-            'color:#C4864B;font-size:14px;font-weight:500;"></div>' +
-            gridHtml +
-            '</div>';
-    }
-
-    function renderBatchQRHeader() {
-        return '<div class="batch-qr-header">' +
-            '<span class="batch-qr-back" onclick="profilePage.hideBatchQR()">← 返回</span>' +
-            '<span class="batch-qr-header-title">批量二维码</span>' +
-            '<button class="batch-qr-header-btn" onclick="profilePage.downloadAllQRZip()">下载全部</button>' +
-            '</div>';
-    }
-
     // ==================== 店铺设置页面渲染 ====================
 
     function renderStoreSettingsHeader() {
@@ -376,11 +337,6 @@ App.registerPage('profile', (function() {
 
     // ==================== 主渲染 ====================
     function render() {
-        // 批量二维码视图
-        if (state.showBatchQR) {
-            return renderBatchQRPage();
-        }
-
         // 店铺设置视图
         if (state.showStoreSettings) {
             return renderStoreSettings();
@@ -577,154 +533,6 @@ App.registerPage('profile', (function() {
         window.profilePageRender();
     }
 
-    // ==================== 批量二维码功能（保留） ====================
-
-    /** 加载所有游戏数据 */
-    async function loadAllGames() {
-        if (state.allGamesLoaded && window.allGames && window.allGames.length > 0) {
-            return;
-        }
-        try {
-            if (typeof window.getGames === 'function') {
-                var games = await window.getGames();
-                window.allGames = games || [];
-                state.allGamesLoaded = true;
-                window.profilePageRender();
-                setTimeout(function() { loadBatchQRImages(); }, 500);
-            }
-        } catch (e) {
-            console.error('加载游戏列表失败:', e);
-            if (!window.allGames) {
-                window.allGames = [];
-            }
-        }
-    }
-
-    /** 显示批量二维码页面 */
-    async function showBatchQR() {
-        state.showBatchQR = true;
-        state.batchQRPage = 0;
-        window.profilePageRender();
-
-        await loadAllGames();
-        setTimeout(function() { loadBatchQRImages(); }, 600);
-    }
-
-    /** 隐藏批量二维码页面 */
-    function hideBatchQR() {
-        state.showBatchQR = false;
-        window.profilePageRender();
-    }
-
-    /** 在批量视图中渲染所有可见的二维码 */
-    async function loadBatchQRImages() {
-        var games = window.allGames || [];
-        var start = state.batchQRPage * state.batchQRPerPage;
-        var end = Math.min(start + state.batchQRPerPage, games.length);
-
-        for (var i = start; i < end; i++) {
-            var game = games[i];
-            var imgContainer = document.getElementById('batch-qr-img-' + i);
-            if (!imgContainer) continue;
-
-            try {
-                if (QRUtils.isQRCodeAvailable()) {
-                    var tempDiv = document.createElement('div');
-                    tempDiv.style.position = 'absolute';
-                    tempDiv.style.left = '-9999px';
-                    tempDiv.style.top = '-9999px';
-                    document.body.appendChild(tempDiv);
-
-                    (function(container, div, url, idx) {
-                        try {
-                            new QRCode(div, {
-                                text: url,
-                                width: 80,
-                                height: 80,
-                                colorDark: '#2D2A26',
-                                colorLight: '#FFFFFF',
-                                correctLevel: QRCode.CorrectLevel.L
-                            });
-
-                            setTimeout(function() {
-                                try {
-                                    var qrImg = div.querySelector('img');
-                                    var qrCanvas = div.querySelector('canvas');
-                                    if (qrImg && qrImg.src) {
-                                        container.innerHTML = '<img src="' + qrImg.src +
-                                            '" style="width:80px;height:80px;border-radius:4px;">';
-                                    } else if (qrCanvas) {
-                                        var cloned = qrCanvas.cloneNode(true);
-                                        cloned.style.width = '80px';
-                                        cloned.style.height = '80px';
-                                        container.innerHTML = '';
-                                        container.appendChild(cloned);
-                                    } else {
-                                        loadBatchQRFallback(container, url);
-                                    }
-                                } catch (e) {
-                                    loadBatchQRFallback(container, url);
-                                }
-                                if (div.parentNode) div.parentNode.removeChild(div);
-                            }, 300);
-                        } catch (e) {
-                            if (div.parentNode) div.parentNode.removeChild(div);
-                            loadBatchQRFallback(container, url);
-                        }
-                    })(imgContainer, tempDiv, QRUtils.getGameUrl(game.id), i);
-                } else {
-                    loadBatchQRFallback(imgContainer, QRUtils.getGameUrl(game.id));
-                }
-            } catch (e) {
-                console.error('生成小二维码失败:', game.name, e);
-                imgContainer.innerHTML = '<span style="font-size:32px;">🎲</span>';
-            }
-        }
-    }
-
-    /** 批量二维码在线API兜底 */
-    function loadBatchQRFallback(container, url) {
-        var onlineUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=80x80&color=2D2A26&bgcolor=FFFFFF&data=' +
-            encodeURIComponent(url);
-        container.innerHTML = '<img src="' + onlineUrl +
-            '" style="width:80px;height:80px;border-radius:4px;">';
-    }
-
-    /** 上一页 */
-    function batchQRPrevPage() {
-        if (state.batchQRPage > 0) {
-            state.batchQRPage--;
-            window.profilePageRender();
-            setTimeout(function() { loadBatchQRImages(); }, 500);
-        }
-    }
-
-    /** 下一页 */
-    function batchQRNextPage() {
-        var games = window.allGames || [];
-        var totalPages = Math.ceil(games.length / state.batchQRPerPage);
-        if (state.batchQRPage < totalPages - 1) {
-            state.batchQRPage++;
-            window.profilePageRender();
-            setTimeout(function() { loadBatchQRImages(); }, 500);
-        }
-    }
-
-    /** 下载全部ZIP */
-    async function downloadAllQRZip() {
-        var games = window.allGames || [];
-        if (games.length === 0) {
-            await loadAllGames();
-            games = window.allGames || [];
-        }
-        if (games.length === 0) {
-            alert('暂无游戏数据');
-            return;
-        }
-        var shopId = (window._shopInfo && window._shopInfo.id) || sessionStorage.getItem('shopId') || '';
-        await QRUtils.downloadAllQRZip(games, shopId);
-    }
-
     function logout() {
         if (window.authLogout) {
             window.authLogout();
@@ -735,7 +543,7 @@ App.registerPage('profile', (function() {
 
     // ==================== 初始化 ====================
     async function init() {
-        if (!state.showBatchQR && !state.showStoreSettings) {
+        if (!state.showStoreSettings) {
             // 刷新店铺信息（从后端获取真实店名）
             await refreshShopInfo();
             // 加载扫码统计数据
@@ -853,14 +661,6 @@ App.registerPage('profile', (function() {
         showGuide: showGuide,
         showAbout: showAbout,
         closeModal: closeModal,
-        loadAllGames: loadAllGames,
-        showBatchQR: showBatchQR,
-        hideBatchQR: hideBatchQR,
-        batchQRPrevPage: batchQRPrevPage,
-        batchQRNextPage: batchQRNextPage,
-        downloadAllQRZip: downloadAllQRZip,
-        loadBatchQRImages: loadBatchQRImages,
-        loadBatchQRFallback: loadBatchQRFallback,
         // 店铺设置
         showStoreSettings: showStoreSettings,
         hideStoreSettings: hideStoreSettings,
