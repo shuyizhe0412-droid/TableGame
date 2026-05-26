@@ -198,14 +198,16 @@ function renderGameDetail(game) {
  $('#detail-name').textContent = game.name;
 
  // 封面
- const cover = $('#detail-cover');
- if (game.cover_image) {
- cover.innerHTML = `<img src="${game.cover_image}" alt="${game.name}">`;
- } else {
- cover.innerHTML = '<span class="cover-placeholder">🎲</span>';
- }
+  const cover = $('#detail-cover');
+  if (game.cover_image) {
+    cover.innerHTML = `<img src="${game.cover_image}" alt="${game.name}">`;
+    $('#restore-cover-btn').style.display = '';
+  } else {
+    cover.innerHTML = '<span class="cover-placeholder">🎲</span>';
+    $('#restore-cover-btn').style.display = 'none';
+  }
 
- // 基本信息
+// 基本信息
  const players = game.min_players && game.max_players
  ? `${game.min_players}-${game.max_players} 人` : '未设置';
  const duration = game.duration ? `${game.duration} 分钟` : '未设置';
@@ -473,6 +475,26 @@ function initUploadModal() {
  // 清空 input，允许重新选择同一文件
  e.target.value = '';
  });
+
+  // 还原默认封面按钮
+  $('#restore-cover-btn').addEventListener('click', restoreCover);
+}
+
+
+// ============ 还原默认封面 ============
+
+async function restoreCover() {
+  if (!confirm('确定要还原为默认封面吗？')) return;
+  try {
+    await apiFetch(`/games/${currentGameId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ cover_image: '' })
+    });
+    showToast('已还原为默认封面');
+    openGameDetail(currentGameId);
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
 }
 
 // ============ 删除桌游 ============

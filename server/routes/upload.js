@@ -77,7 +77,8 @@ router.post('/cover', (req, res) => {
         }
       }
 
-      const relativePath = path.relative(path.join(__dirname, '..'), req.file.path).replace(/\\/g, '/');
+      const uploadsDir = path.join(__dirname, '..', 'uploads');
+      const relativePath = path.relative(uploadsDir, req.file.path).replace(/\\/g, '/');
       const fileUrl = '/uploads/' + relativePath;
 
       console.log('[UPLOAD] 封面图上传:', req.file.originalname, '|', (req.file.size / 1024).toFixed(1) + 'KB');
@@ -129,7 +130,8 @@ router.post('/', (req, res) => {
       else if (req.file.mimetype.startsWith('image/')) fileType = 'image';
 
       const id = uuidv4();
-      const relativePath = path.relative(path.join(__dirname, '..'), req.file.path).replace(/\\/g, '/');
+      const uploadsDir = path.join(__dirname, '..', 'uploads');
+      const relativePath = path.relative(uploadsDir, req.file.path).replace(/\\/g, '/');
 
       const { error: insErr } = await supabase.from('game_files').insert([{
         id,
