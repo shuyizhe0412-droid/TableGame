@@ -1886,6 +1886,51 @@ input:focus, textarea:focus {
     font-size: 15px;
 }
 
+/* 无规则引导 */
+.rules-fs-no-rules-guide {
+    text-align: center;
+    padding: 40px 24px;
+    background: var(--bg-card);
+    border-radius: 12px;
+    margin: 16px 0;
+}
+.rules-fs-no-rules-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+.rules-fs-no-rules-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 8px;
+}
+.rules-fs-no-rules-desc {
+    font-size: 14px;
+    color: var(--text-subtle);
+    margin-bottom: 20px;
+    padding: 0 8px;
+    line-height: 1.6;
+}
+.rules-fs-no-rules-btn {
+    display: inline-block;
+    padding: 10px 32px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    cursor: pointer;
+    margin-bottom: 16px;
+}
+.rules-fs-no-rules-btn:active {
+    opacity: 0.8;
+}
+.rules-fs-no-rules-bottom {
+    font-size: 12px;
+    color: var(--text-subtle);
+    opacity: 0.7;
+}
+
 /* 编辑按钮 */
 .rules-fs-edit-btn {
     display: inline-block;

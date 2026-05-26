@@ -695,7 +695,13 @@ App.registerPage('detail', (function() {
         if (state.ruleLoading) {
             sectionsHtml = '<div class="rules-fs-loading">加载中...</div>';
         } else if (sections.length === 0) {
-            sectionsHtml = '<div class="rules-fs-empty">店家暂未添加规则</div>';
+            sectionsHtml = '<div class="rules-fs-no-rules-guide">' +
+                '<div class="rules-fs-no-rules-icon">📝</div>' +
+                '<div class="rules-fs-no-rules-title">该游戏暂未上传规则摘要</div>' +
+                '<div class="rules-fs-no-rules-desc">你可以通过 AI 对话了解基础规则（AI回答仅供参考，请以官方说明书为准）</div>' +
+                '<button class="rules-fs-no-rules-btn" onclick="window.location.hash=\'/chat?gameId=' + (game ? game.id : '') + '&mode=rules\'">去问AI教练</button>' +
+                '<div class="rules-fs-no-rules-bottom">或者联系店家上传规则</div>' +
+                '</div>';
         } else {
             for (var i = 0; i < sections.length; i++) {
                 var s = sections[i];

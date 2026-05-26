@@ -222,6 +222,13 @@ App.registerPage('chat', (function() {
 
         try {
             var answer = await window.askAI(state.gameId, userMessage);
+
+            // 有规则文本且回答不含声明时，追加免责声明
+            var hasRules = session && session.gameData && session.gameData.rules_text;
+            if (hasRules && answer.indexOf('⚠️') === -1) {
+                answer += '\n\n💡 以上回答基于店家上传的规则';
+            }
+
             session.messages.push({
                 role: 'assistant',
                 content: answer
