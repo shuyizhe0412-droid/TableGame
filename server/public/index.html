@@ -76,7 +76,10 @@
  <main class="main">
  <div class="section-header">
  <h2>我的桌游 <span id="game-count" class="count-badge">0</span></h2>
+ <div class="header-buttons">
+ <button id="batch-qr-btn" class="btn btn-outline">📱 批量二维码</button>
  <button id="add-game-btn" class="btn btn-primary">+ 添加桌游</button>
+ </div>
  </div>
 
   <div class="search-filter-bar">
@@ -289,6 +292,25 @@
  </div>
  </div>
 
+
+ <!-- ======== 弹窗：批量二维码 ======== -->
+ <div id="batch-qr-modal" class="modal-overlay" style="display:none">
+ <div class="modal modal-lg">
+ <div class="modal-header">
+ <h3>批量二维码</h3>
+ <button class="modal-close" id="batch-qr-close-btn">&times;</button>
+ </div>
+ <div class="modal-body">
+ <div class="batch-qr-actions">
+ <button id="batch-qr-download-all" class="btn btn-primary btn-sm">⬇️ 下载全部</button>
+ </div>
+ <div id="batch-qr-grid" class="batch-qr-grid"></div>
+ <div id="batch-qr-pagination" class="batch-qr-pagination"></div>
+ </div>
+ </div>
+ </div>
+
  <script src="/js/app.js"></script>
+ <script src="/js/batch-qr.js"></script>
 </body>
 </html>
