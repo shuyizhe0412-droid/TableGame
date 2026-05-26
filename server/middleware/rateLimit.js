@@ -7,10 +7,10 @@ const rateLimit = require('express-rate-limit');
  * 以后扩到多实例时需要改用 Redis 存储
  */
 
-// AI 接口严格限制（5次/分钟）— 成本最高，风险最大
+// AI 接口限制（30次/分钟，测试期放宽）— 成本最高，风险最大
 const aiLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 5,
+  max: 30,
   message: { error: 'AI 请求太频繁，请稍后再试' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -34,10 +34,10 @@ const loginLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// 通用限制（30次/分钟）— 兜底保护
+// 通用限制（100次/分钟，测试期放宽）— 兜底保护
 const generalLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 30,
+  max: 100,
   message: { error: '请求太频繁，请稍后再试' },
   standardHeaders: true,
   legacyHeaders: false,
