@@ -28,7 +28,7 @@ function showToast(msg, type = 'success') {
 
 async function apiFetch(path, options = {}) {
  const headers = { ...options.headers };
- const token = currentToken || localStorage.getItem('token');
+ const token = currentToken || localStorage.getItem('admin_token');
  if (token) headers['Authorization'] = `Bearer ${token}`;
  if (!(options.body instanceof FormData)) {
  headers['Content-Type'] = 'application/json';
@@ -72,7 +72,7 @@ function initAuth() {
  });
  currentToken = data.token;
  currentUser = data.store;
- localStorage.setItem('token', currentToken);
+ localStorage.setItem('admin_token', currentToken);
  localStorage.setItem('user', JSON.stringify(currentUser));
  showToast('登录成功');
  enterDashboard();
@@ -94,7 +94,7 @@ function initAuth() {
  });
  currentToken = data.token;
  currentUser = data.store;
- localStorage.setItem('token', currentToken);
+ localStorage.setItem('admin_token', currentToken);
  localStorage.setItem('user', JSON.stringify(currentUser));
  showToast('注册成功');
  enterDashboard();
@@ -531,7 +531,7 @@ function initNavigation() {
 function logout() {
  currentToken = null;
  currentUser = null;
- localStorage.removeItem('token');
+ localStorage.removeItem('admin_token');
  localStorage.removeItem('user');
  showPage('auth-page');
 }
@@ -634,7 +634,7 @@ async function init() {
   initSearchAndFilter();
 
   // 检查已登录状态
- currentToken = localStorage.getItem('token');
+ currentToken = localStorage.getItem('admin_token');
  const savedUser = localStorage.getItem('user');
  if (currentToken && savedUser) {
  try {
