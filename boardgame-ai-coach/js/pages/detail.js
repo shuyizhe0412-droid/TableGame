@@ -222,8 +222,6 @@ App.registerPage('detail', (function() {
         descExpanded: false,
         isLoading: true,
         loadError: null,
-        showQRModal: false,
-        qrMode: 'rules',  // 'setup' | 'rules' | 'quick'
         // 规则速查（只读查看）
         showRuleModal: false,
         ruleText: '',           // 规则文本
@@ -296,7 +294,6 @@ App.registerPage('detail', (function() {
     function renderHeader() {
         return '<div class="detail-header">' +
             '<span class="detail-back" onclick="detailPage.goBack()">← 返回</span>' +
-            '<span class="detail-share" onclick="detailPage.share()">📤</span>' +
             '</div>';
     }
 
@@ -426,165 +423,6 @@ App.registerPage('detail', (function() {
         return '<div class="detail-favorite-btn" onclick="detailPage.toggleFavorite()">' + icon + '</div>';
     }
 
-    // ==================== 二维码相关 ====================
-    function renderQREntry() {
-        return '<button class="detail-qr-entry" onclick="detailPage.showQRModal()">📱 生成分享二维码</button>';
-    }
-
-    function renderQRModal() {
-        if (!state.showQRModal) return '';
-
-        var game = state.game;
-        var gameName = game ? (game.name || '未知游戏') : '未知游戏';
-        var modes = [
-            { id: 'setup', label: '摆盘引导' },
-            { id: 'rules', label: '规则教学' },
-            { id: 'quick', label: '规则速查' }
-        ];
-
-        var tabsHtml = modes.map(function(m) {
-            return '<div class="qr-modal-tab' + (state.qrMode === m.id ? ' active' : '') +
-                '" onclick="detailPage.switchQRMode(\'' + m.id + '\')">' + m.label + '</div>';
-        }).join('');
-
-        var modeNames = { setup: '摆盘引导', rules: '规则教学', quick: '规则速查' };
-        var modeName = modeNames[state.qrMode] || '规则教学';
-
-        // 微信/QQ中显示长按提示
-        var isRestricted = QRUtils.isRestrictedBrowser();
-        var saveTip = isRestricted ? '<div style="font-size:11px;color:#B5AFA6;margin:8px 0;text-align:center;">💡 微信中请<b>长按二维码</b>保存图片</div>' : '';
-        var saveBtnText = '\u{1F4BE} 保存二维码图片';
-
-        return '<div class="qr-modal-overlay" onclick="detailPage.closeQRModal(event)">' +
-            '<div class="qr-modal" onclick="event.stopPropagation()">' +
-            '<div class="qr-modal-title">生成分享二维码</div>' +
-            '<div class="qr-modal-tabs">' + tabsHtml + '</div>' +
-            '<div class="qr-modal-body">' +
-            '<div class="qr-modal-canvas-wrap" id="detail-qr-canvas-wrap">' +
-            '<div style="width:220px;height:293px;background:#F0EDE6;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#B5AFA6;font-size:14px;">加载中...</div>' +
-            '</div>' +
-            '<div id="detail-qr-img-wrap" style="display:none;margin-bottom:12px;text-align:center;"></div>' +
-            saveTip +
-            '<div class="qr-modal-desc">扫码学习 · ' + gameName + ' · ' + modeName + '</div>' +
-            '<button class="qr-modal-btn" onclick="detailPage.downloadDetailQR()">' + saveBtnText + '</button>' +
-            '</div>' +
-            '<button class="qr-modal-close" onclick="detailPage.closeQRModal()">关闭</button>' +
-            '</div>' +
-            '</div>';
-    }
-
-    function loadDetailQR() {
-        var wrap = document.getElementById('detail-qr-canvas-wrap');
-        if (!wrap || !state.game) return;
-
-        var game = state.game;
-        var scale = 220 / QRUtils.CARD_W;
-        var displayH = Math.round(QRUtils.CARD_H * scale);
-
-        // 显示加载状态
-        wrap.innerHTML = '<div style="width:220px;height:' + displayH + 'px;background:#F0EDE6;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#B5AFA6;font-size:14px;">生成中...</div>';
-
-        // 检查QRCode库是否可用
-        if (!QRUtils.isQRCodeAvailable()) {
-            // 库不可用，直接用在线API兜底
-            loadDetailQRFallback(game);
-            return;
-        }
-
-        QRUtils.generateGameQRCard(state.gameId, game.name || '未知游戏', state.qrMode, window._shopInfo && window._shopInfo.id).then(function(canvas) {
-            var isRestricted = QRUtils.isRestrictedBrowser();
-            if (isRestricted) {
-                // 微信/QQ：隐藏canvas，只展示img（支持长按保存）
-                canvas.style.display = 'none';
-                wrap.innerHTML = '';
-                wrap.appendChild(canvas);
-                showQRFallbackImg(canvas);
-            } else {
-                // 普通浏览器：展示canvas
-                canvas.style.width = '220px';
-                canvas.style.height = displayH + 'px';
-                wrap.innerHTML = '';
-                wrap.appendChild(canvas);
-            }
-        }).catch(function(e) {
-            console.error('生成详情二维码失败:', e);
-            loadDetailQRFallback(game);
-        });
-    }
-
-    /** 二维码库不可用或用在线API兜底 */
-    function loadDetailQRFallback(game) {
-        var wrap = document.getElementById('detail-qr-canvas-wrap');
-        if (!wrap) return;
-        var gameName = game ? (game.name || '未知游戏') : '未知游戏';
-
-        var url = QRUtils.getGameUrl(state.gameId, state.qrMode);
-        var onlineUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&color=2D2A26&bgcolor=FFFFFF&data=' +
-            encodeURIComponent(url);
-
-        var imgHtml = '<img src="' + onlineUrl + '" style="width:220px;height:220px;border-radius:12px;display:block;">';
-
-        if (QRUtils.isRestrictedBrowser()) {
-            // 微信/QQ：隐藏wrap内容，只在img-wrap展示（可长按保存）
-            wrap.innerHTML = '';
-            var imgWrap = document.getElementById('detail-qr-img-wrap');
-            if (imgWrap) {
-                imgWrap.style.display = 'block';
-                imgWrap.innerHTML = imgHtml +
-                    '<div style="font-size:11px;color:#B5AFA6;margin-top:6px;">👆 长按二维码保存</div>';
-            }
-        } else {
-            // 普通浏览器：直接在wrap中展示
-            wrap.innerHTML = imgHtml;
-        }
-    }
-
-    /** 在微信中额外展示img标签供长按保存 */
-    function showQRFallbackImg(canvas) {
-        var imgWrap = document.getElementById('detail-qr-img-wrap');
-        if (!imgWrap) return;
-        try {
-            var dataUrl = canvas.toDataURL('image/png');
-            imgWrap.style.display = 'block';
-            imgWrap.innerHTML = '<img src="' + dataUrl +
-                '" style="width:220px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);" />' +
-                '<div style="font-size:11px;color:#B5AFA6;margin-top:6px;">👆 长按上方二维码保存</div>';
-        } catch (e) {
-            console.error('生成img失败:', e);
-        }
-    }
-
-    function showQRModal() {
-        state.showQRModal = true;
-        state.qrMode = 'rules';
-        window.detailPageRender();
-        setTimeout(function() { loadDetailQR(); }, 200);
-    }
-
-    function closeQRModal(event) {
-        if (event && event.target !== event.currentTarget) return;
-        state.showQRModal = false;
-        window.detailPageRender();
-    }
-
-    function switchQRMode(mode) {
-        state.qrMode = mode;
-        window.detailPageRender();
-        setTimeout(function() { loadDetailQR(); }, 200);
-    }
-
-    async function downloadDetailQR() {
-        var game = state.game;
-        if (!game) return;
-        try {
-            var canvas = await QRUtils.generateGameQRCard(state.gameId, game.name || '未知游戏', state.qrMode, window._shopInfo && window._shopInfo.id);
-            QRUtils.saveQRImage(canvas, (game.name || '游戏') + '-二维码.png');
-        } catch (e) {
-            console.error('下载失败:', e);
-            alert('保存失败: ' + (e.message || '请尝试截图保存'));
-        }
-    }
-
     // ==================== 规则速查 & 编辑 ====================
 
     // 解析规则文本为章节数组（按【】分隔）
@@ -699,7 +537,7 @@ App.registerPage('detail', (function() {
                 '<div class="rules-fs-no-rules-icon">📝</div>' +
                 '<div class="rules-fs-no-rules-title">该游戏暂未上传规则摘要</div>' +
                 '<div class="rules-fs-no-rules-desc">你可以通过 AI 对话了解基础规则（AI回答仅供参考，请以官方说明书为准）</div>' +
-                '<button class="rules-fs-no-rules-btn" onclick="window.location.hash=\'/chat?gameId=' + (game ? game.id : '') + '&mode=rules\'">去问AI教练</button>' +
+                '<button class="rules-fs-no-rules-btn" onclick="event.preventDefault(); event.stopPropagation(); detailPage.goAskAI();">去问AI教练</button>' +
                 '<div class="rules-fs-no-rules-bottom">或者联系店家上传规则</div>' +
                 '</div>';
         } else {
@@ -849,13 +687,11 @@ App.registerPage('detail', (function() {
             renderCover() +
             '<div class="detail-content">' +
             renderInfo() +
-            renderQREntry() +
             renderAIButtons() +
             renderRatings() +
             renderComments() +
             '</div>' +
             renderFavoriteBtn() +
-            renderQRModal() +
             '</div>';
     }
 
@@ -991,10 +827,6 @@ App.registerPage('detail', (function() {
         }
     }
 
-    function share() {
-        showQRModal();
-    }
-
     function toggleDesc() {
         state.descExpanded = !state.descExpanded;
         window.detailPageRender();
@@ -1019,15 +851,10 @@ App.registerPage('detail', (function() {
         render: render,
         init: init,
         goBack: goBack,
-        share: share,
         toggleDesc: toggleDesc,
         goChat: goChat,
         toggleFavorite: toggleFavorite,
         writeComment: writeComment,
-        showQRModal: showQRModal,
-        closeQRModal: closeQRModal,
-        switchQRMode: switchQRMode,
-        downloadDetailQR: downloadDetailQR,
         // 规则速查（只读查看）
         showRules: showRules,
         closeRules: closeRules,
