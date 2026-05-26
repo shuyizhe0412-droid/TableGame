@@ -28,21 +28,49 @@ router.post('/ask', async (req, res) => {
       return res.status(400).json({ error: '请提供 game_id 和 question' });
     }
 
-    // 1. 读取游戏信息
-    const { data: games, error: dbErr } = await supabase
+    // 1. 读取游戏信息（先查 store_games，再查 global_games）
+    let game;
+
+    const { data: storeGames, error: storeErr } = await supabase
       .from('store_games')
       .select('name, rules_text, category')
       .eq('id', game_id)
       .limit(1);
 
-    if (dbErr) throw dbErr;
-    if (!games || games.length === 0) {
-      return res.status(404).json({ error: '游戏不存在' });
+    if (storeErr) throw storeErr;
+
+    if (storeGames && storeGames.length > 0) {
+      game = {
+        name: storeGames[0].name || '该游戏',
+        category: storeGames[0].category || '桌游',
+        rules_text: storeGames[0].rules_text,
+      };
+      console.log('[AI] 游戏来自 store_games:', game.name);
+    } else {
+      // store_games 没找到，尝试 global_games
+      const { data: globalGames, error: globalErr } = await supabase
+        .from('global_games')
+        .select('game_name, tags, description')
+        .eq('id', game_id)
+        .limit(1);
+
+      if (globalErr) throw globalErr;
+
+      if (!globalGames || globalGames.length === 0) {
+        return res.status(404).json({ error: '游戏不存在' });
+      }
+
+      const gg = globalGames[0];
+      game = {
+        name: gg.game_name || '该游戏',
+        category: Array.isArray(gg.tags) ? gg.tags.join('、') : (gg.tags || '桌游'),
+        rules_text: '', // global_games 没有规则文本
+      };
+      console.log('[AI] 游戏来自 global_games:', game.name);
     }
 
-    const game = games[0];
-    const gameName = game.name || '该游戏';
-    const gameCategory = game.category || '桌游';
+    const gameName = game.name;
+    const gameCategory = game.category;
     const rules_text = game.rules_text;
 
     // 2. 构建 system prompt（根据是否有规则文本分别处理）
