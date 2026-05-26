@@ -418,11 +418,9 @@ async function getPublicGame(id) {
  * 获取游戏列表（统一入口）
  *
  * 优先级：
- *   店家已登录 → GET /api/games + GET /api/admin/global-games（合并去重）
- *   未登录 + shopId → GET /api/public/games/:shopId（优先，不带auth）
- *                     + GET /api/admin/global-games（合并补充）
- *                     → GET /api/admin/global-games（公开失败兜底）
- *   未登录 + 无shopId → GET /api/admin/global-games
+ *   店家已登录 → GET /api/games（直接返回 myGames，不合并全局桌游）
+ *   未登录 + shopId → GET /api/public/games/:shopId（仅返回店家公开桌游）
+ *   未登录 + 无shopId → 返回空数组
  *
  * @param {object} filters - 筛选条件（暂未在后端实现，前端自行过滤）
  * @param {string} [storeId] - 店家ID（玩家端使用）
@@ -430,42 +428,18 @@ async function getPublicGame(id) {
 async function getGames(filters, storeId) {
     console.log('[getGames] 开始, storeId:', storeId, ', loggedIn:', isLoggedIn());
 
-    // Bug 3 修复：店家已登录时，合并店家自己的桌游 + 全局默认桌游（去重）
+    // 店家已登录 → 直接返回我的桌游（不合并全局桌游）
     if (isLoggedIn()) {
-        console.log('[getGames] 店家模式，合并我的桌游和全局桌游');
-        var myGames = [];
-        var globalGames = [];
+        console.log('[getGames] 店家模式，直接返回我的桌游');
         try {
-            myGames = await getMyGames();
+            var myGames = await getMyGames();
             myGames = myGames || [];
+            console.log('[getGames] 返回我的桌游数量:', myGames.length);
+            return myGames;
         } catch (e) {
             console.warn('[getGames] getMyGames 失败:', e.message);
+            return [];
         }
-        try {
-            globalGames = await getGlobalGames();
-            globalGames = globalGames || [];
-        } catch (e) {
-            console.warn('[getGames] getGlobalGames 失败:', e.message);
-        }
-        // 合并去重：按 name 去重，优先保留 myGames 中的数据
-        var mergedMap = {};
-        if (globalGames.length > 0) {
-            globalGames.forEach(function(g) {
-                if (g.name) mergedMap[g.name] = g;
-            });
-        }
-        if (myGames.length > 0) {
-            myGames.forEach(function(g) {
-                if (g.name) mergedMap[g.name] = g;  // 店家自己的覆盖全局
-            });
-        }
-        var merged = [];
-        var keys = Object.keys(mergedMap);
-        for (var i = 0; i < keys.length; i++) {
-            merged.push(mergedMap[keys[i]]);
-        }
-        console.log('[getGames] 合并后桌游数量:', merged.length, '(我的:' + myGames.length + ', 全局:' + globalGames.length + ')');
-        return merged;
     }
 
     // 未登录顾客端：优先用传入的 storeId，其次从 session 取
@@ -473,54 +447,22 @@ async function getGames(filters, storeId) {
         storeId = sessionStorage.getItem('shopId');
     }
 
-    // 有 storeId → 优先调用店家公开 API GET /api/public/games/:shopId
+    // 有 storeId → 调用店家公开 API GET /api/public/games/:shopId
     if (storeId) {
         try {
             var publicGames = await getPublicGames(storeId);
             publicGames = publicGames || [];
             console.log('[getGames] 公开API命中, shopId:', storeId, ', 数量:', publicGames.length);
-            
-            // 合并全局桌游作为补充（店家桌游优先，全局补充没有收录的游戏）
-            try {
-                var supplementGlobal = await getGlobalGames();
-                supplementGlobal = supplementGlobal || [];
-                if (supplementGlobal.length > 0) {
-                    var pubMergeMap = {};
-                    supplementGlobal.forEach(function(g) { if (g.name) pubMergeMap[g.name] = g; });
-                    publicGames.forEach(function(g) { if (g.name) pubMergeMap[g.name] = g; });
-                    var pubMerged = [];
-                    var pubKeys = Object.keys(pubMergeMap);
-                    for (var j = 0; j < pubKeys.length; j++) pubMerged.push(pubMergeMap[pubKeys[j]]);
-                    console.log('[getGames] 合并公开+全局, 店家:' + publicGames.length + ', 全局:' + supplementGlobal.length + ', 合计:' + pubMerged.length);
-                    return pubMerged;
-                }
-            } catch (eSupp) {
-                console.warn('[getGames] 全局补充获取失败，仅返回店家桌游:', eSupp.message);
-            }
             return publicGames;
         } catch (e) {
-            console.error('[getGames] 公开API获取失败，降级到全局桌游:', e.message);
-            // 降级兜底：使用全局默认桌游
-            try {
-                var fallbackGlobal = await getGlobalGames();
-                console.log('[getGames] 降级全局桌游数量:', (fallbackGlobal || []).length);
-                return fallbackGlobal || [];
-            } catch (e2) {
-                console.error('[getGames] 全局桌游获取也失败:', e2.message);
-                return [];
-            }
+            console.error('[getGames] 公开API获取失败:', e.message);
+            return [];
         }
     }
 
-    // 无 storeId 且未登录 → 调用全局默认桌游 API
-    console.log('[getGames] 未登录且无 storeId，调用全局默认桌游');
-    try {
-        var globalGamesOnly = await getGlobalGames();
-        return globalGamesOnly || [];
-    } catch (e) {
-        console.error('[getGames] 全局桌游获取失败:', e);
-        return [];
-    }
+    // 无 storeId 且未登录 → 返回空数组
+    console.log('[getGames] 未登录且无 storeId，返回空数组');
+    return [];
 }
 
 /**
