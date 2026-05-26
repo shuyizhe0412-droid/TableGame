@@ -230,8 +230,10 @@ function renderGameDetail(game) {
  // 规则书文件
  loadGameFiles(game.id);
 
- // 二维码
- const playUrl = `${window.location.origin}/index.html#/play/${game.store_id || currentUser.id}/${game.id}`;
+ // 二维码 — 指向玩家端 AI 教学页
+ const playerBase = 'https://boardgame-ai.pages.dev';
+ const shopId = game.store_id || currentUser.id;
+ const playUrl = `${playerBase}/#/chat?gameId=${game.id}&shop=${shopId}`;
  const qrApi = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(playUrl)}`;
  $('#qr-code').innerHTML = `<img src="${qrApi}" alt="QR Code">`;
 }
