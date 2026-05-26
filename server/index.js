@@ -25,7 +25,25 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ============ 中间件 ============
-app.use(cors()); // 允许跨域
+// ============ CORS 配置 ============
+const corsOptions = {
+  origin: function(origin, callback) {
+    // 允许的域名
+    const allowedOrigins = [
+      'https://boardgame-ai.pages.dev',
+      'https://boardgame-hub.onrender.com',
+      'http://localhost:3000',
+      'http://localhost:8080'
+    ];
+    // 无 origin header (如 curl/ Postman) 也允许
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('不允许的来源: ' + origin));
+    }
+  }
+};
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -78,8 +96,9 @@ app.use((req, res) => {
 
 // 全局错误处理
 app.use((err, req, res, next) => {
-  console.error('[ERROR]', err.stack);
-  res.status(500).json({ error: err.message || '服务器内部错误' });
+  // 生产环境只记录简略信息，不输出完整堆栈
+  console.error('[ERROR]', err.message);
+  res.status(500).json({ error: '服务器内部错误' });
 });
 
 // ============ 启动服务 ============
