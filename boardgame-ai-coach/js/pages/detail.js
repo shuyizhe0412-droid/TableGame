@@ -315,9 +315,38 @@ App.registerPage('detail', (function() {
             '</div>';
     }
 
+    function renderDefaultCover() {
+        var emoji = (state.game && state.game.emoji) || '🎲';
+        return '<span class="detail-cover-text">' + emoji + '</span>';
+    }
+
     function renderCover() {
+        var game = state.game;
+        var coverUrl = '';
+        if (game) {
+            coverUrl = game.cover_image || game.cover_url || game.cover || '';
+        }
+
+        if (coverUrl) {
+            // 处理相对路径：不是 http/https 开头则拼接后端域名
+            if (coverUrl.indexOf('http://') !== 0 && coverUrl.indexOf('https://') !== 0) {
+                if (coverUrl.charAt(0) !== '/') {
+                    coverUrl = '/' + coverUrl;
+                }
+                coverUrl = 'https://boardgame-hub.onrender.com' + coverUrl;
+            }
+            return '<div class="detail-cover">' +
+                '<img class="detail-cover-img" src="' + coverUrl + '" alt="' + (game ? (game.name || '') : '') + '" ' +
+                'onerror="this.onerror=null;var p=this.parentElement;' +
+                'p.innerHTML=detailPage.renderDefaultCover();' +
+                'p.style.background=\'linear-gradient(135deg, #C4864B, #7B9E87)\';' +
+                'p.style.display=\'flex\';p.style.alignItems=\'center\';p.style.justifyContent=\'center\';" ' +
+                'style="width:100%;height:100%;object-fit:cover;">' +
+                '</div>';
+        }
+
         return '<div class="detail-cover" style="background: linear-gradient(135deg, #C4864B, #7B9E87);">' +
-            '<span class="detail-cover-text">🎲</span>' +
+            renderDefaultCover() +
             '</div>';
     }
 
@@ -859,7 +888,8 @@ App.registerPage('detail', (function() {
         showRules: showRules,
         closeRules: closeRules,
         goAskAI: goAskAI,
-        toggleRuleSection: toggleRuleSection
+        toggleRuleSection: toggleRuleSection,
+        renderDefaultCover: renderDefaultCover
     };
 
     // 全局暴露
