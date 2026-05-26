@@ -301,8 +301,18 @@
  <button class="modal-close" id="batch-qr-close-btn">&times;</button>
  </div>
  <div class="modal-body">
- <div class="batch-qr-actions">
+ <div class="batch-qr-toolbar">
+ <div class="batch-qr-toolbar-left">
+ <label>
+ <input type="checkbox" id="batch-qr-select-all">
+ <span>全选</span>
+ </label>
+ <button id="batch-qr-deselect-all" class="btn btn-ghost btn-xs">取消全选</button>
+ </div>
+ <div class="batch-qr-toolbar-right">
+ <button id="batch-qr-download-selected" class="btn btn-outline btn-sm" disabled>⬇️ 下载选中 (0)</button>
  <button id="batch-qr-download-all" class="btn btn-primary btn-sm">⬇️ 下载全部</button>
+ </div>
  </div>
  <div id="batch-qr-grid" class="batch-qr-grid"></div>
  <div id="batch-qr-pagination" class="batch-qr-pagination"></div>

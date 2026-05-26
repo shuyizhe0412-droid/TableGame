@@ -1058,3 +1058,383 @@ h1, h2, h3, h4 {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* ======== 批量二维码工具栏 ======== */
+.batch-qr-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 1rem;
+  padding: 8px 12px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.batch-qr-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text);
+  user-select: none;
+}
+
+.batch-qr-toolbar-left label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.batch-qr-toolbar-left input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.btn-xs {
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: var(--radius-xs);
+}
+
+.batch-qr-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 隐藏原来的 actions */
+.batch-qr-actions {
+  display: none;
+}
+
+/* ======== 批量二维码复选框卡片 ======== */
+.batch-qr-card {
+  position: relative;
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 1rem;
+  text-align: center;
+  border: 2px solid var(--border);
+  transition: box-shadow var(--transition), border-color var(--transition);
+}
+
+.batch-qr-card:hover {
+  box-shadow: var(--shadow);
+}
+
+.batch-qr-card.selected {
+  border-color: var(--primary);
+  background: var(--primary-lighter);
+  background: rgba(27, 67, 50, 0.04);
+}
+
+.batch-qr-check-label {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  cursor: pointer;
+}
+
+.batch-qr-check-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+/* ======== 批量二维码 - 手机端适配 ======== */
+@media (max-width: 768px) {
+  .batch-qr-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .batch-qr-toolbar-right {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  #batch-qr-download-selected,
+  #batch-qr-download-all {
+    flex: 1;
+    font-size: 13px;
+    padding: 6px 12px;
+  }
+}
+
+/* ======== 手机端 - 列表页 ======== */
+@media (max-width: 768px) {
+  .section-header h2 {
+    font-size: 18px;
+  }
+
+  .header-buttons {
+    width: 100%;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .header-buttons .btn {
+    width: 100%;
+    justify-content: center;
+    font-size: 14px;
+    padding: 10px 16px;
+  }
+
+  .search-filter-bar {
+    gap: 10px;
+  }
+
+  .search-box {
+    width: 100%;
+  }
+
+  .filter-tags {
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
+    gap: 6px;
+  }
+
+  .filter-tag {
+    flex-shrink: 0;
+    padding: 5px 12px;
+    font-size: 13px;
+  }
+
+  .game-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .card-cover {
+    height: 100px;
+  }
+
+  .card-body {
+    padding: 8px;
+  }
+
+  .card-name {
+    font-size: 13px;
+  }
+
+  .card-meta {
+    font-size: 11px;
+  }
+
+  .header {
+    padding: 10px 12px;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .header-left {
+    gap: 8px;
+  }
+
+  .header-right .btn {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+
+  .store-name {
+    font-size: 12px;
+  }
+}
+
+/* ======== 手机端 - 详情页 ======== */
+@media (max-width: 768px) {
+  .detail-layout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .detail-left {
+    display: flex;
+    justify-content: center;
+  }
+
+  .detail-cover {
+    width: 180px;
+    height: 180px;
+    border-radius: var(--radius-sm);
+    font-size: 60px;
+    max-width: 100%;
+  }
+
+  .detail-right {
+    width: 100%;
+  }
+
+  .detail-info-card {
+    padding: 14px;
+  }
+
+  .detail-info-card h2 {
+    font-size: 20px;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-section-card {
+    padding: 14px;
+  }
+
+  .detail-header-right {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  #edit-rules-btn,
+  #delete-game-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .qr-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .qr-code-box {
+    margin: 0 auto;
+  }
+}
+
+/* ======== 手机端 - 弹窗 ======== */
+@media (max-width: 768px) {
+  .modal {
+    width: 94%;
+    max-width: 94%;
+    margin: 0 auto;
+  }
+
+  .modal.modal-sm {
+    width: 90%;
+  }
+
+  #rules-modal .modal,
+  #rules-textarea {
+    width: 94%;
+  }
+
+  #rules-textarea {
+    min-height: 200px;
+    font-size: 15px;
+  }
+
+  #game-modal .modal {
+    width: 94%;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .form-row-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-footer {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .modal-footer .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ======== 手机端 - 批量二维码弹窗 ======== */
+@media (max-width: 768px) {
+  .modal-lg {
+    width: 96%;
+    max-width: 96%;
+  }
+
+  .batch-qr-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .batch-qr-card {
+    padding: 8px;
+  }
+
+  .batch-qr-card img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    margin-bottom: 6px;
+  }
+
+  .batch-qr-card .game-name {
+    font-size: 12px;
+  }
+
+  .batch-qr-card .game-meta {
+    font-size: 10px;
+  }
+
+  .batch-qr-card .btn-download-single {
+    width: 100%;
+    font-size: 11px;
+    padding: 4px 6px;
+  }
+
+  .batch-qr-pagination {
+    gap: 8px;
+  }
+
+  .batch-qr-pagination .page-info {
+    font-size: 12px;
+  }
+
+  .batch-qr-pagination .btn {
+    min-width: 60px;
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+}
+
+/* ======== 手机端 - 登录页 ======== */
+@media (max-width: 480px) {
+  .auth-container {
+    padding: 20px 16px;
+    min-height: 100vh;
+    justify-content: center;
+  }
+
+  .auth-card {
+    padding: 24px 16px;
+    border-radius: var(--radius);
+  }
+
+  .auth-brand h1 {
+    font-size: 22px;
+  }
+
+  .auth-brand p {
+    font-size: 14px;
+  }
+
+  .form-group input {
+    font-size: 15px;
+    padding: 10px 12px;
+  }
+}
