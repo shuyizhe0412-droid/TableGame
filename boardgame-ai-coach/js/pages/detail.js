@@ -339,13 +339,11 @@ App.registerPage('detail', (function() {
                 '<img class="detail-cover-img" src="' + coverUrl + '" alt="' + (game ? (game.name || '') : '') + '" ' +
                 'onerror="this.onerror=null;var p=this.parentElement;' +
                 'p.innerHTML=detailPage.renderDefaultCover();' +
-                'p.style.background=\'linear-gradient(135deg, #C4864B, #7B9E87)\';' +
-                'p.style.display=\'flex\';p.style.alignItems=\'center\';p.style.justifyContent=\'center\';" ' +
-                'style="width:100%;height:100%;object-fit:cover;">' +
+                'p.style.display=\'flex\';p.style.alignItems=\'center\';p.style.justifyContent=\'center\';p.style.minHeight=\'180px\';">' +
                 '</div>';
         }
 
-        return '<div class="detail-cover" style="background: linear-gradient(135deg, #C4864B, #7B9E87);">' +
+        return '<div class="detail-cover">' +
             renderDefaultCover() +
             '</div>';
     }

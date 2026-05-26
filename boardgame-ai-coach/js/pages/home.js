@@ -247,10 +247,26 @@ App.registerPage('home', (function() {
         var gradients = ['linear-gradient(135deg, #F5D5B0, #E8C08A)', 'linear-gradient(135deg, #C5D5E8, #A8BED8)',
             'linear-gradient(135deg, #D5C8E8, #BFB0D8)', 'linear-gradient(135deg, #7B9E87, #5a7e67)'];
         var bg = gradients[Math.abs(game.id ? game.id.charCodeAt(0) : 0) % gradients.length];
+        var emoji = game.emoji || '🎲';
+
+        // 封面内容：有图片则显示图片，否则显示渐变色 + emoji
+        var coverUrl = (game && (game.cover_image || game.cover_url || game.cover)) || '';
+        if (coverUrl) {
+            if (coverUrl.indexOf('http://') !== 0 && coverUrl.indexOf('https://') !== 0) {
+                if (coverUrl.charAt(0) !== '/') {
+                    coverUrl = '/' + coverUrl;
+                }
+                coverUrl = 'https://boardgame-hub.onrender.com' + coverUrl;
+            }
+        }
+        var coverHtml = coverUrl
+            ? '<img class="game-card-cover-img" src="' + coverUrl + '" alt="' + (game.name || '') + '" ' +
+              'onerror="this.onerror=null;this.parentElement.innerHTML=\'<span class=&quot;game-card-emoji&quot;>' + emoji + '</span>\';">'
+            : '<span class="game-card-emoji">' + emoji + '</span>';
 
         return '<div class="game-card-small" onclick="homePage.goDetail(\'' + game.id + '\', \'' + (game.category || '') + '\')">' +
             '<div class="game-card-cover" style="background:' + bg + '">' +
-            '<span class="game-card-emoji">🎲</span>' +
+            coverHtml +
             '</div>' +
             '<div class="game-card-info">' +
             '<div class="game-card-name">' + (game.name || '未知游戏') + '</div>' +
