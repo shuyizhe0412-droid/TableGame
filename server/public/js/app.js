@@ -434,7 +434,7 @@ function initUploadModal() {
  const fd = new FormData();
  fd.append('file', file);
  fd.append('game_id', currentGameId);
- const res = await fetch(`${API}/upload`, {
+ const res = await fetch(`${API}/upload/cover`, {
  method: 'POST',
  headers: { 'Authorization': `Bearer ${currentToken}` },
  body: fd

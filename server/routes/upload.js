@@ -52,6 +52,54 @@ const upload = multer({
 router.use(authMiddleware);
 
 // POST /api/upload - 上传文件
+
+// POST /api/upload/cover - 上传封面图（不写入 game_files 表）
+router.post('/cover', (req, res) => {
+  upload.single('file')(req, res, async (err) => {
+    if (err) {
+      const msg = err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE'
+        ? '文件过大，超过20MB限制' : err.message;
+      return res.status(400).json({ error: msg });
+    }
+    if (!req.file) return res.status(400).json({ error: '请选择要上传的文件' });
+
+    try {
+      const { game_id } = req.body;
+
+      // 验证 game_id 归属
+      if (game_id) {
+        const { data: game, error: gErr } = await supabase
+          .from('store_games').select('id').eq('id', game_id).eq('store_id', req.store.id).limit(1);
+        if (gErr) throw gErr;
+        if (!game || game.length === 0) {
+          fs.unlinkSync(req.file.path);
+          return res.status(404).json({ error: '游戏不存在或无权限' });
+        }
+      }
+
+      const relativePath = path.relative(path.join(__dirname, '..'), req.file.path).replace(/\\/g, '/');
+      const fileUrl = '/uploads/' + relativePath;
+
+      console.log('[UPLOAD] 封面图上传:', req.file.originalname, '|', (req.file.size / 1024).toFixed(1) + 'KB');
+
+      res.status(201).json({
+        message: '上传成功',
+        file: {
+          filename: req.file.filename,
+          original_name: req.file.originalname,
+          file_type: 'image',
+          file_size: req.file.size,
+          url: fileUrl
+        }
+      });
+    } catch (err) {
+      console.error('[UPLOAD] 封面图上传失败:', err.message);
+      if (req.file && req.file.path) fs.unlinkSync(req.file.path);
+      res.status(500).json({ error: '上传失败' });
+    }
+  });
+});
+
 router.post('/', (req, res) => {
   upload.single('file')(req, res, async (err) => {
     if (err) {
