@@ -434,16 +434,29 @@ function initUploadModal() {
  const fd = new FormData();
  fd.append('file', file);
  fd.append('game_id', currentGameId);
- await fetch(`${API}/upload/cover`, {
+ const res = await fetch(`${API}/upload`, {
  method: 'POST',
  headers: { 'Authorization': `Bearer ${currentToken}` },
  body: fd
- }).then(r => r.json());
+ });
+ if (!res.ok) { throw new Error((await res.json()).error); }
+ const data = await res.json();
+ const coverUrl = data.file && data.file.url ? data.file.url : null;
+ if (coverUrl) {
+ // 用相对路径时拼接 origin
+ const finalUrl = coverUrl.startsWith('http') ? coverUrl : window.location.origin + coverUrl;
+ await apiFetch(`/games/${currentGameId}`, {
+ method: 'PUT',
+ body: JSON.stringify({ cover_image: finalUrl })
+ });
+ }
  showToast('封面更新成功');
  openGameDetail(currentGameId);
- } catch {
- showToast('封面上传失败', 'error');
+ } catch (err) {
+ showToast(err.message || '封面上传失败', 'error');
  }
+ // 清空 input，允许重新选择同一文件
+ e.target.value = '';
  });
 }
 
