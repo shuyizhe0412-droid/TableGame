@@ -15,7 +15,8 @@ function getOpenAI() {
   return new OpenAI({
     baseURL: 'https://api.deepseek.com',
     apiKey: key,
-    timeout: 30000,
+    timeout: 20000,
+    maxRetries: 0, // 禁止自动重试，避免超时叠加
   });
 }
 
@@ -115,9 +116,15 @@ router.post('/ask', async (req, res) => {
 
     res.json({ answer });
   } catch (err) {
-    console.error('[AI] 调用失败:', err.message);
+    console.error('[AI] 调用失败:', err.message, '| code:', err.code);
 
-    // 区分 API 认证错误
+    // 超时
+    if (err.code === 'ETIMEDOUT' || err.code === 'ECONNRESET' ||
+        err.message?.includes('timeout') || err.message?.includes('ETIMEDOUT')) {
+      return res.json({ answer: 'AI 回答超时，请稍后再试。' });
+    }
+
+    // 认证错误
     if (err.status === 401 || err.message?.includes('Authentication')) {
       return res.json({ answer: 'AI 服务配置异常，请联系管理员。' });
     }

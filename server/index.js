@@ -114,6 +114,23 @@ const server = app.listen(PORT, () => {
   console.log('');
 });
 
+// ============ Render 保活（防止免费版闲置休眠）============
+if (process.env.RENDER || process.env.NODE_ENV === 'production') {
+  const KEEP_ALIVE_MS = 10 * 60 * 1000; // 每10分钟 ping 自己
+  setInterval(() => {
+    // 使用 http.get 避免额外依赖
+    const http = require('http');
+    const options = { hostname: 'localhost', port: PORT, path: '/api/health', method: 'GET', timeout: 10000 };
+    const req = http.get(options, (res) => {
+      console.log('[保活] ping 成功', res.statusCode);
+      res.resume();
+    });
+    req.on('error', (e) => console.warn('[保活] ping 失败:', e.message));
+    req.on('timeout', () => { req.destroy(); console.warn('[保活] ping 超时'); });
+  }, KEEP_ALIVE_MS);
+  console.log('[保活] 已启用，每', KEEP_ALIVE_MS / 60000, '分钟 ping 一次');
+}
+
 // 优雅退出
 process.on('SIGINT', () => {
   console.log('\n正在关闭服务器...');
