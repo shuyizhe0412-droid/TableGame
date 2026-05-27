@@ -630,7 +630,7 @@ async function askAI(gameId, question) {
     var controller = new AbortController();
     var timeoutId = setTimeout(function() {
         controller.abort();
-    }, 25000);
+    }, 30000);
 
     try {
         var resp = await fetch(API_BASE_URL + '/ai/ask', {
