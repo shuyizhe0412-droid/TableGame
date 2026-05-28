@@ -13,6 +13,7 @@ App.registerPage('home', (function() {
         bannerTimer: null,
         guessGames: []
     };
+    window.homeState = state;
 
     // 分类配置
     var categories = [

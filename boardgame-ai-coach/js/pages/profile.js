@@ -537,6 +537,8 @@ App.registerPage('profile', (function() {
         if (window.authLogout) {
             window.authLogout();
         }
+        // 重置首页加载状态，确保重新登录时能正常加载
+        if (window.homeState) window.homeState._initLoaded = false;
         window.location.hash = '/home';
         location.reload();
     }
