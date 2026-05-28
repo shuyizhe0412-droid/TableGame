@@ -44,33 +44,9 @@ App.registerPage('library', (function() {
             console.warn('[library.js] API加载失败:', error.message);
         }
 
-        // Bug 修复：当API数据不足时，合并内置兜底数据（与 home.js 保持一致）
-        var fallback = window._fallbackGames;
-        if ((!apiGames || apiGames.length < 6) && fallback && fallback.length > 0) {
-            console.log('[library.js] API数据不足(' + (apiGames ? apiGames.length : 0) + '款)，合并内置兜底数据(25款)');
-            var mergedMap = {};
-            fallback.forEach(function(g) { if (g.name) mergedMap[g.name] = g; });
-            if (apiGames && apiGames.length > 0) {
-                apiGames.forEach(function(g) {
-                    if (g.name) mergedMap[g.name] = g;
-                });
-            }
-            var merged = [];
-            var keys = Object.keys(mergedMap);
-            for (var i = 0; i < keys.length; i++) {
-                merged.push(mergedMap[keys[i]]);
-            }
-            state.allGames = merged;
-            state.isLoading = false;
-            state.loadError = null;
-        } else if (apiGames && apiGames.length > 0) {
-            state.allGames = apiGames;
-            state.isLoading = false;
-            state.loadError = null;
-        } else {
-            state.loadError = apiError ? apiError.message : '数据库返回空';
-            state.isLoading = false;
-        }
+        state.allGames = apiGames || [];
+        state.isLoading = false;
+        state.loadError = null;
 
         // 解析URL参数
         parseUrlParams();
