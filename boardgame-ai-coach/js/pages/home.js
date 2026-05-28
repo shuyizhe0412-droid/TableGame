@@ -474,7 +474,6 @@ App.registerPage('home', (function() {
         if (app) {
             app.innerHTML = (window.renderShopHeader ? window.renderShopHeader() : '') + page.render() + window.getTabBarHtml('home');
             window.bindTabBarEvents();
-            page.init();
         }
     };
 
