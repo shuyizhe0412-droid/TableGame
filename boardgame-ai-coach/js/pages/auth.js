@@ -157,9 +157,10 @@ App.registerPage('auth', (function() {
 
             console.log('[auth.js] 认证成功:', result);
 
-            // 登录成功后重置首页数据，确保切回首页时重新加载
+            // 登录成功后重置首页，确保切回首页时重新加载
             if (window.homeState) {
                 window.homeState.allGames = [];
+                window.homeState._loading = false;
             }
 
             // 获取店家信息并缓存

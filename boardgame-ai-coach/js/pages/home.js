@@ -97,18 +97,14 @@ App.registerPage('home', (function() {
 
     // ==================== 数据加载 ====================
     async function loadGamesFromDB() {
-        var currentLoggedIn = !!(localStorage.getItem('auth_token'));
+        // 防止重复加载
+        if (state._loading) return;
+        state._loading = true;
 
-        // 状态没变化且已有数据 → 不重新加载
-        if (currentLoggedIn === state._lastLoggedIn && state.allGames.length > 0) {
-            console.log('[home.js] 状态未变化且有数据，跳过加载');
-            return;
-        }
-
-        console.log('[home.js] 开始加载游戏数据, loggedIn:', currentLoggedIn, ', lastLoggedIn:', state._lastLoggedIn);
-        state._lastLoggedIn = currentLoggedIn;
+        console.log('[home.js] 开始加载游戏数据');
         state.isLoading = true;
         state.loadError = null;
+
         window.homePageRender();
 
         var apiGames = null;
@@ -138,6 +134,7 @@ App.registerPage('home', (function() {
         state.isLoading = false;
         state.loadError = null;
         state.guessGames = getGuessGames();
+        state._loading = false;
         window.homePageRender();
     }
 
@@ -371,7 +368,7 @@ App.registerPage('home', (function() {
 
     function reload() {
         state.allGames = [];
-        state._lastLoggedIn = undefined;
+        state._loading = false;
         state.isLoading = true;
         state.loadError = null;
         window.homePageRender();
@@ -452,9 +449,8 @@ App.registerPage('home', (function() {
 
     // ==================== 初始化 ====================
     function init() {
-        // 始终尝试加载，loadGamesFromDB 内部会根据登录状态变化判断是否需要重新加载
+        if (state._loading) return;
         loadGamesFromDB();
-        // 绑定Banner事件
         setTimeout(bindBannerEvents, 100);
     }
 
