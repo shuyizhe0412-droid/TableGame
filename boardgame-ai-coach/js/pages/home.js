@@ -97,7 +97,20 @@ App.registerPage('home', (function() {
 
     // ==================== 数据加载 ====================
     async function loadGamesFromDB() {
-        console.log('[home.js] 开始加载游戏数据');
+        var currentLoggedIn = !!(localStorage.getItem('auth_token'));
+
+        // 状态没变化且已有数据 → 不重新加载
+        if (currentLoggedIn === state._lastLoggedIn && state.allGames.length > 0) {
+            console.log('[home.js] 状态未变化且有数据，跳过加载');
+            return;
+        }
+
+        console.log('[home.js] 开始加载游戏数据, loggedIn:', currentLoggedIn, ', lastLoggedIn:', state._lastLoggedIn);
+        state._lastLoggedIn = currentLoggedIn;
+        state.isLoading = true;
+        state.loadError = null;
+        window.homePageRender();
+
         var apiGames = null;
         var apiError = null;
 
@@ -357,7 +370,8 @@ App.registerPage('home', (function() {
     }
 
     function reload() {
-        state._initLoaded = false;  // 手动重试时重置加载标记
+        state.allGames = [];
+        state._lastLoggedIn = undefined;
         state.isLoading = true;
         state.loadError = null;
         window.homePageRender();
@@ -438,11 +452,8 @@ App.registerPage('home', (function() {
 
     // ==================== 初始化 ====================
     function init() {
-        // 只加载一次，不重试
-        if (!state._initLoaded) {
-            state._initLoaded = true;
-            loadGamesFromDB();
-        }
+        // 始终尝试加载，loadGamesFromDB 内部会根据登录状态变化判断是否需要重新加载
+        loadGamesFromDB();
         // 绑定Banner事件
         setTimeout(bindBannerEvents, 100);
     }
