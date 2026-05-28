@@ -271,7 +271,6 @@ App.registerPage('library', (function() {
             'linear-gradient(135deg, #D5C8E8, #BFB0D8)',
             'linear-gradient(135deg, #7B9E87, #5a7e67)'
         ];
-        // 防御：确保 game.id 有效，否则用 name 兜底（detail.js 的 getFallbackGame 可匹配 name）
         var cardId = game.id || game.name || 'unknown';
         var bg = gradients[Math.abs((cardId ? cardId.charCodeAt(0) : 0)) % gradients.length];
 
