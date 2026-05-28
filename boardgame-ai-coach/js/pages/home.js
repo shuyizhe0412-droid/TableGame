@@ -147,33 +147,7 @@ App.registerPage('home', (function() {
             console.warn('[home.js] API加载失败:', error.message);
         }
 
-        // 如果API返回数据不足，合并内置兜底数据
-        if (!apiGames || apiGames.length < 6) {
-            console.log('[home.js] API数据不足(' + (apiGames ? apiGames.length : 0) + '款)，合并内置兜底数据(25款)');
-            // 用API数据覆盖同名兜底数据
-            var mergedMap = {};
-            fallbackGames.forEach(function(g) { mergedMap[g.name] = g; });
-            if (apiGames && apiGames.length > 0) {
-                apiGames.forEach(function(g) {
-                    if (g.name) mergedMap[g.name] = g;
-                });
-            }
-            var merged = [];
-            var keys = Object.keys(mergedMap);
-            for (var i = 0; i < keys.length; i++) {
-                merged.push(mergedMap[keys[i]]);
-            }
-            state.allGames = merged;
-            state.isLoading = false;
-            state.loadError = null;
-            _loadRetryCount = 0;
-            state.guessGames = getGuessGames();
-            window.homePageRender();
-            return;
-        }
-
-        // API返回足够数据
-        state.allGames = apiGames;
+        state.allGames = apiGames || [];
         state.isLoading = false;
         state.loadError = null;
         _loadRetryCount = 0;
@@ -363,6 +337,16 @@ App.registerPage('home', (function() {
         }
         if (state.loadError) {
             return '<div class="home-page" style="background:#F8F6F1;min-height:100vh;">' + renderError() + '</div>';
+        }
+
+        // 数据为空时显示提示
+        if (!state.allGames || state.allGames.length === 0) {
+            return '<div class="home-page" style="background:#F8F6F1;min-height:100vh;">' +
+                renderSearchBar() +
+                '<div style="text-align:center;padding:80px 20px;color:#8C8578;">' +
+                '<div style="font-size:48px;margin-bottom:16px;">🎲</div>' +
+                '<div style="font-size:16px;">桌游库正在完善中，请稍后再来</div>' +
+                '</div></div>';
         }
 
         return '<div class="home-page" style="background:#F8F6F1;min-height:100vh;">' +
