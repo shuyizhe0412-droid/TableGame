@@ -126,13 +126,12 @@ App.registerPage('home', (function() {
         localStorage.setItem('recentCategories', cats.slice(0, 5).join(','));
     }
 
-    // 重试计数（模块级，避免因重新初始化而丢失）
-    var _loadRetryCount = 0;
-    var _maxLoadRetries = 3;
+    // 标记是否已完成数据加载（避免空结果触发无限重试）
+    var _dataLoaded = false;
 
     // ==================== 数据加载 ====================
     async function loadGamesFromDB() {
-        console.log('[home.js] 开始加载游戏数据 (第' + (_loadRetryCount + 1) + '次尝试)');
+        console.log('[home.js] 开始加载游戏数据');
         var apiGames = null;
         var apiError = null;
 
@@ -147,10 +146,19 @@ App.registerPage('home', (function() {
             console.warn('[home.js] API加载失败:', error.message);
         }
 
-        state.allGames = apiGames || [];
+        // 只有真正的网络/API 报错才标记为错误状态
+        // API 正常返回了数组（哪怕 0 款）就说明加载成功
+        if (apiGames === null || apiGames === undefined) {
+            state.loadError = apiError ? apiError.message : '数据加载失败';
+            state.isLoading = false;
+            window.homePageRender();
+            return;
+        }
+
+        state.allGames = apiGames;
         state.isLoading = false;
         state.loadError = null;
-        _loadRetryCount = 0;
+        _dataLoaded = true;
         state.guessGames = getGuessGames();
         window.homePageRender();
     }
@@ -384,7 +392,7 @@ App.registerPage('home', (function() {
     }
 
     function reload() {
-        _loadRetryCount = 0;  // 手动重试时重置计数
+        _dataLoaded = false;  // 手动重试时重置加载标记
         state.isLoading = true;
         state.loadError = null;
         window.homePageRender();
@@ -465,14 +473,8 @@ App.registerPage('home', (function() {
 
     // ==================== 初始化 ====================
     function init() {
-        // 已超过最大重试次数，不再自动加载
-        if (state.loadError && _loadRetryCount >= _maxLoadRetries) {
-            // 仅绑Banner，不重试加载
-            setTimeout(bindBannerEvents, 100);
-            return;
-        }
-        // 加载数据（仅当列表为空且无错误时自动加载）
-        if (state.allGames.length === 0 && !state.loadError) {
+        // 加载数据（仅当从未加载过且当前无错误时自动加载）
+        if (!_dataLoaded && !state.loadError) {
             loadGamesFromDB();
         }
         // 绑定Banner事件
