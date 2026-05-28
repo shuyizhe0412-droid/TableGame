@@ -107,7 +107,7 @@ router.post('/ask', async (req, res) => {
         { role: 'system', content: systemPrompt },
         { role: 'user', content: question }
       ],
-      max_tokens: 1000,
+      max_tokens: 500,
       temperature: 0.7
     });
 
@@ -121,7 +121,7 @@ router.post('/ask', async (req, res) => {
     // 超时
     if (err.code === 'ETIMEDOUT' || err.code === 'ECONNRESET' ||
         err.message?.includes('timeout') || err.message?.includes('ETIMEDOUT')) {
-      return res.json({ answer: 'AI 回答超时，请稍后再试。' });
+      return res.json({ answer: '抱歉，AI 回答超时，请稍后再试' });
     }
 
     // 认证错误

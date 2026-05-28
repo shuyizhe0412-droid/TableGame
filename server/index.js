@@ -118,10 +118,10 @@ const server = app.listen(PORT, () => {
 if (process.env.RENDER || process.env.NODE_ENV === 'production') {
   const KEEP_ALIVE_MS = 10 * 60 * 1000; // 每10分钟 ping 自己
   setInterval(() => {
-    // 使用 http.get 避免额外依赖
-    const http = require('http');
-    const options = { hostname: 'localhost', port: PORT, path: '/api/health', method: 'GET', timeout: 10000 };
-    const req = http.get(options, (res) => {
+    // 使用 https.get 避免额外依赖
+    const https = require('https');
+    const options = { hostname: 'boardgame-hub.onrender.com', port: 443, path: '/api/health', method: 'GET', timeout: 10000 };
+    const req = https.get(options, (res) => {
       console.log('[保活] ping 成功', res.statusCode);
       res.resume();
     });
