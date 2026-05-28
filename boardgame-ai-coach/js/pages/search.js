@@ -28,7 +28,13 @@ App.registerPage('library', (function() {
     var searchTimer = null;
 
     // ==================== 数据加载 ====================
+    var _loading = false;
+
     async function loadGamesFromDB() {
+        // 防止重复加载
+        if (_loading) return;
+        _loading = true;
+
         console.log('[library.js] 开始加载游戏数据');
         var apiGames = null;
         var apiError = null;
@@ -52,6 +58,7 @@ App.registerPage('library', (function() {
         parseUrlParams();
         // 应用筛选
         applyFilters();
+        _loading = false;
         window.libraryPageRender();
     }
 
@@ -507,7 +514,6 @@ App.registerPage('library', (function() {
         if (app) {
             app.innerHTML = (window.renderShopHeader ? window.renderShopHeader() : '') + page.render() + window.getTabBarHtml('library');
             window.bindTabBarEvents();
-            page.init();
         }
     };
 
