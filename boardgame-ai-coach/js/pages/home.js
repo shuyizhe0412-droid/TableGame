@@ -126,9 +126,6 @@ App.registerPage('home', (function() {
         localStorage.setItem('recentCategories', cats.slice(0, 5).join(','));
     }
 
-    // 标记是否已完成数据加载（避免空结果触发无限重试）
-    var _dataLoaded = false;
-
     // ==================== 数据加载 ====================
     async function loadGamesFromDB() {
         console.log('[home.js] 开始加载游戏数据');
@@ -158,7 +155,6 @@ App.registerPage('home', (function() {
         state.allGames = apiGames;
         state.isLoading = false;
         state.loadError = null;
-        _dataLoaded = true;
         state.guessGames = getGuessGames();
         window.homePageRender();
     }
@@ -392,7 +388,7 @@ App.registerPage('home', (function() {
     }
 
     function reload() {
-        _dataLoaded = false;  // 手动重试时重置加载标记
+        state._initLoaded = false;  // 手动重试时重置加载标记
         state.isLoading = true;
         state.loadError = null;
         window.homePageRender();
@@ -473,8 +469,9 @@ App.registerPage('home', (function() {
 
     // ==================== 初始化 ====================
     function init() {
-        // 加载数据（仅当从未加载过且当前无错误时自动加载）
-        if (!_dataLoaded && !state.loadError) {
+        // 只加载一次，不重试
+        if (!state._initLoaded) {
+            state._initLoaded = true;
             loadGamesFromDB();
         }
         // 绑定Banner事件
