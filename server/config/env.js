@@ -29,11 +29,15 @@ const env = {
   corsOrigins: {
     production: [
       `https://boardgame-ai.pages.dev`,
+      `https://boardgame-hub.pages.dev`,
       `https://boardgame-hub.onrender.com`
     ],
     staging: [
       `https://boardgame-ai-staging.pages.dev`,
-      `https://boardgame-hub-staging.onrender.com`
+      `https://boardgame-hub-staging.onrender.com`,
+      // Cloudflare Pages staging 部署（含所有子域名，如 f0d57769.boardgame-hub-deploy.pages.dev）
+      // 子域名通配匹配逻辑在 index.js 的 origin 回调中实现
+      `https://boardgame-hub-deploy.pages.dev`
     ]
   }
 };

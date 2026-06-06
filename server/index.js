@@ -34,16 +34,40 @@ const corsOptions = {
     // 允许的域名（按环境合并）
     const allowedOrigins = [
       ...env.corsOrigins.production,
-      ...(env.isStaging ? env.corsOrigins.staging : []),
-      `http://localhost:3000`,
-      `http://localhost:8080`
+      ...(env.isStaging ? env.corsOrigins.staging : [])
     ];
-    // 无 origin header (如 curl/ Postman) 也允许
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error(`不允许的来源: ` + origin));
+
+    // 无 origin header（curl/Postman/同源请求）直接放行
+    if (!origin) {
+      return callback(null, true);
     }
+
+    // 精确匹配
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      return callback(null, true);
+    }
+
+    // 解析 origin 做 hostname 级别的宽松匹配
+    try {
+      const { hostname } = new URL(origin);
+
+      // localhost / 127.0.0.1 任意端口
+      if (hostname === `localhost` || hostname === `127.0.0.1`) {
+        return callback(null, true);
+      }
+
+      // staging: 允许 boardgame-hub-deploy.pages.dev 的所有 Cloudflare Pages 子域名
+      if (env.isStaging && (hostname === `boardgame-hub-deploy.pages.dev` || hostname.endsWith(`.boardgame-hub-deploy.pages.dev`))) {
+        return callback(null, true);
+      }
+    } catch (_) {
+      // URL 解析失败，继续走拒绝逻辑
+    }
+
+    // 不匹配的来源：返回 false 拒绝（CORS 库不会设置 Allow-Origin 头），
+    // 而不是 callback(new Error(...)) 导致 500。
+    console.log(`[CORS] 拒绝来源: ${origin}`);
+    callback(null, false);
   }
 };
 app.use(cors(corsOptions));
