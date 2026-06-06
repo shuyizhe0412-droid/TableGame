@@ -2,7 +2,7 @@
  * 公开接口路由 - 消费者端（玩家端）调用，无需认证
  */
 const express = require('express');
-const supabase = require('../config/supabase');
+const supabase = require('../config/database');
 
 const router = express.Router();
 

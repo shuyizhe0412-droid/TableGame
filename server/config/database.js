@@ -1,13 +1,17 @@
-/**
- * 数据库配置 - Supabase（原 SQLite 已迁移）
+﻿/**
+ * 数据库配置 - 多环境适配
+ * local/development: SQLite
+ * staging/production:  Supabase
  */
 
-const supabase = require('./supabase');
+const env = require(`./env`);
 
-// 不再需要本地 SQLite 初始化
-// Supabase 表结构通过 SQL 在 Supabase Dashboard 执行
-// 默认数据（global_games 的 25 款桌游）也通过 SQL 初始化
-
-console.log('[DB] 使用 Supabase 数据库');
-
-module.exports = supabase;
+if (env.db.useSQLite) {
+  // ============ 本地环境：SQLite ============
+  console.log(`[DB] 使用 SQLite 数据库: ${env.db.sqlitePath}`);
+  module.exports = require(`./sqlite`);
+} else {
+  // ============ 云端环境：Supabase ============
+  console.log(`[DB] 使用 Supabase 数据库`);
+  module.exports = require(`./supabase`);
+}

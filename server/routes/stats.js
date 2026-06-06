@@ -2,7 +2,7 @@
  * 统计路由 - 热度排行等统计数据
  */
 const express = require('express');
-const supabase = require('../config/supabase');
+const supabase = require('../config/database');
 
 const router = express.Router();
 

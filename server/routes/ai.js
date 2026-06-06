@@ -4,7 +4,7 @@
  */
 const express = require('express');
 const OpenAI = require('openai');
-const supabase = require('../config/supabase');
+const supabase = require('../config/database');
 
 const router = express.Router();
 
