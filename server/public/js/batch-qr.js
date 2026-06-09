@@ -198,7 +198,7 @@ function renderBatchQrPage() {
   const shopId = currentUser && currentUser.id ? currentUser.id : '';
 
   grid.innerHTML = pageGames.map(g => {
-    const gameUrl = 'https://boardgame-ai.pages.dev/#/chat?id=' + g.id + '&shop=' + shopId;
+    const gameUrl = 'https://boardgame-hub-deploy.pages.dev/player.html?storeId=' + shopId + '&gameId=' + g.id;
     const qrApi = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(gameUrl);
     const players = (g.min_players && g.max_players) ? g.min_players + '-' + g.max_players + '人' : '';
     const duration = g.duration ? g.duration + '分钟' : '';
@@ -365,7 +365,7 @@ async function downloadSingleQr(gameId, gameName) {
 // 7. 辅助函数
 // ================================================
 async function fetchCardBlob(g, shopId) {
-  const gameUrl = 'https://boardgame-ai.pages.dev/#/chat?id=' + g.id + '&shop=' + shopId;
+  const gameUrl = 'https://boardgame-hub-deploy.pages.dev/player.html?storeId=' + shopId + '&gameId=' + g.id;
   const qrApi = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(gameUrl);
   const qrDataUrl = await fetchAsDataUrl(qrApi);
   const players = (g.min_players && g.max_players) ? g.min_players + '-' + g.max_players + '人' : '';
