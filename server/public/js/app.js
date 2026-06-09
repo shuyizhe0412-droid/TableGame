@@ -882,6 +882,60 @@ function initBatchLibraryModal() {
   $('#batch-library-confirm-btn').addEventListener('click', submitBatchLibrary);
 }
 
+// ============ 店铺入口二维码 ============
+
+function openStoreQrModal() {
+  var storeName = currentUser ? currentUser.store_name : '桌游吧';
+  var storeId = currentUser ? currentUser.id : '';
+  var url = 'https://boardgame-hub-deploy.pages.dev/player.html?storeId=' + storeId;
+  var qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(url);
+
+  $('#store-qr-img').src = qrSrc;
+  $('#store-qr-name').textContent = '扫描二维码进入「' + storeName + '」的桌游列表';
+  $('#store-qr-modal').style.display = '';
+}
+
+function closeStoreQrModal() {
+  $('#store-qr-modal').style.display = 'none';
+}
+
+async function downloadStoreQr() {
+  var qrSrc = $('#store-qr-img').src;
+  if (!qrSrc) {
+    showToast('二维码尚未生成', 'error');
+    return;
+  }
+
+  var storeName = currentUser ? currentUser.store_name : '桌游吧';
+  var downloadBtn = $('#store-qr-download-btn');
+  downloadBtn.disabled = true;
+  downloadBtn.textContent = '下载中...';
+
+  try {
+    var resp = await fetch(qrSrc);
+    var blob = await resp.blob();
+    saveAs(blob, storeName + '_店铺入口码.png');
+    showToast('下载完成');
+  } catch (err) {
+    showToast('下载失败: ' + err.message, 'error');
+  } finally {
+    downloadBtn.disabled = false;
+    downloadBtn.textContent = '📥 下载二维码';
+  }
+}
+
+function initStoreQrModal() {
+  $('#store-qr-btn').addEventListener('click', openStoreQrModal);
+
+  $('#store-qr-close-btn').addEventListener('click', closeStoreQrModal);
+  $('#store-qr-cancel-btn').addEventListener('click', closeStoreQrModal);
+  $('#store-qr-modal').addEventListener('click', function (e) {
+    if (e.target === $('#store-qr-modal')) closeStoreQrModal();
+  });
+
+  $('#store-qr-download-btn').addEventListener('click', downloadStoreQr);
+}
+
 // ============ 初始化 ============
 
 async function init() {
@@ -894,6 +948,7 @@ async function init() {
   initRulesModal();
   initSearchAndFilter();
   initBatchLibraryModal();
+  initStoreQrModal();
 
   // 检查已登录状态
  currentToken = localStorage.getItem('admin_token');

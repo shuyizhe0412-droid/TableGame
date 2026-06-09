@@ -78,6 +78,7 @@
  <h2>我的桌游 <span id="game-count" class="count-badge">0</span></h2>
         <div class="header-buttons">
               <button id="batch-library-btn" class="btn btn-outline">📚 从游戏库添加</button>
+              <button id="store-qr-btn" class="btn btn-outline">📱 店铺入口码</button>
               <button id="batch-qr-btn" class="btn btn-outline">📱 批量二维码</button>
               <button id="add-game-btn" class="btn btn-primary">+ 添加桌游</button>
             </div>
@@ -362,6 +363,27 @@
         <button type="button" class="btn btn-ghost" id="batch-library-cancel-btn">取消</button>
         <span class="library-selected-summary" id="library-summary" style="display:none;">已选 <strong id="library-summary-count">0</strong> 款</span>
         <button type="button" class="btn btn-primary" id="batch-library-confirm-btn" disabled>添加到我的游戏</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== 弹窗：店铺入口二维码 ======== -->
+  <div id="store-qr-modal" class="modal-overlay" style="display:none">
+    <div class="modal store-qr-dialog">
+      <div class="modal-header">
+        <h3>📱 店铺入口码</h3>
+        <button class="modal-close" id="store-qr-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="store-qr-body">
+          <img id="store-qr-img" class="store-qr-image" src="" alt="店铺入口二维码">
+          <p class="store-qr-name" id="store-qr-name">扫描二维码进入店铺的桌游列表</p>
+          <p class="store-qr-hint">将此码打印贴在桌上供顾客扫码</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="store-qr-cancel-btn">关闭</button>
+        <button type="button" class="btn btn-primary" id="store-qr-download-btn">📥 下载二维码</button>
       </div>
     </div>
   </div>

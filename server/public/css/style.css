@@ -1568,3 +1568,38 @@ h1, h2, h3, h4 {
   color: var(--primary-light);
   font-weight: 600;
 }
+
+/* ========== 店铺入口二维码弹窗 ========== */
+.store-qr-dialog {
+  max-width: 400px;
+}
+
+.store-qr-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.store-qr-image {
+  width: 200px;
+  height: 200px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  margin-bottom: 16px;
+  object-fit: contain;
+}
+
+.store-qr-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 6px;
+}
+
+.store-qr-hint {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
