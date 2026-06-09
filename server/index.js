@@ -119,7 +119,9 @@ app.get(`/api/health`, (req, res) => {
     env: env.NODE_ENV,
     db: env.db.useSQLite ? `sqlite` : `supabase`,
     time: new Date().toISOString(),
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    version: '2.0.0',
+    commit: '8ffa1ea'
   });
 });
 
