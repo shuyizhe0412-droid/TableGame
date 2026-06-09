@@ -172,4 +172,115 @@ router.put('/update-profile', authMiddleware, async (req, res) => {
   }
 });
 
+// ============ 玩家认证 ============
+
+const playerAuthMiddleware = require('../middleware/player-auth');
+
+// POST /api/auth/player-register - 玩家注册
+router.post('/player-register', async (req, res) => {
+  try {
+    const { email, password, nickname, phone } = req.body;
+
+    if (!email || !password || !nickname) {
+      return res.status(400).json({ error: '昵称、邮箱和密码为必填项' });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ error: '密码至少6位' });
+    }
+
+    // 检查重复邮箱
+    const existing = await getOne('players', 'email', email);
+    if (existing) {
+      return res.status(409).json({ error: '该邮箱已注册' });
+    }
+
+    // 创建玩家
+    const id = uuidv4();
+    const password_hash = bcrypt.hashSync(password, 10);
+    const playerData = { id, email, password_hash, nickname: nickname.trim(), phone: phone || '', avatar: '' };
+
+    const { error: insertErr } = await supabase.from('players').insert([playerData]);
+    if (insertErr) throw insertErr;
+
+    console.log('[AUTH] 新玩家注册:', email, nickname);
+
+    const token = jwt.sign({ id, email, nickname, role: 'player' }, JWT_SECRET, { expiresIn: TOKEN_EXPIRES });
+
+    res.status(201).json({
+      message: '注册成功',
+      token,
+      player: { id, email, nickname: nickname.trim(), phone: phone || '' }
+    });
+  } catch (err) {
+    console.error('[AUTH] 玩家注册失败:', err.message);
+    res.status(500).json({ error: '注册失败，请稍后重试' });
+  }
+});
+
+// POST /api/auth/player-login - 玩家登录
+router.post('/player-login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: '邮箱和密码为必填项' });
+    }
+
+    const player = await getOne('players', 'email', email);
+    if (!player) {
+      return res.status(401).json({ error: '邮箱或密码错误' });
+    }
+
+    const valid = bcrypt.compareSync(password, player.password_hash);
+    if (!valid) {
+      return res.status(401).json({ error: '邮箱或密码错误' });
+    }
+
+    console.log('[AUTH] 玩家登录:', email);
+
+    const token = jwt.sign(
+      { id: player.id, email: player.email, nickname: player.nickname, role: 'player' },
+      JWT_SECRET,
+      { expiresIn: TOKEN_EXPIRES }
+    );
+
+    res.json({
+      message: '登录成功',
+      token,
+      player: {
+        id: player.id,
+        email: player.email,
+        nickname: player.nickname,
+        phone: player.phone,
+        avatar: player.avatar
+      }
+    });
+  } catch (err) {
+    console.error('[AUTH] 玩家登录失败:', err.message);
+    res.status(500).json({ error: '登录失败，请稍后重试' });
+  }
+});
+
+// GET /api/auth/player-me - 获取当前玩家信息（需认证）
+router.get('/player-me', playerAuthMiddleware, async (req, res) => {
+  try {
+    const player = await getOne('players', 'id', req.player.id);
+    if (!player) {
+      return res.status(404).json({ error: '玩家不存在' });
+    }
+
+    res.json({
+      id: player.id,
+      email: player.email,
+      nickname: player.nickname,
+      phone: player.phone,
+      avatar: player.avatar,
+      created_at: player.created_at
+    });
+  } catch (err) {
+    console.error('[AUTH] 获取玩家信息失败:', err.message);
+    res.status(500).json({ error: '获取信息失败' });
+  }
+});
+
 module.exports = router;

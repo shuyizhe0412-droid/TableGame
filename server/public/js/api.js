@@ -235,6 +235,45 @@ function authLogout() {
     sessionStorage.removeItem('shopId');
 }
 
+// ==================== 玩家认证 API ====================
+
+async function playerRegister(email, password, nickname, phone) {
+  console.log('[playerRegister] 注册:', email, nickname);
+  var data = await apiFetch(API_BASE_URL + '/auth/player-register', {
+    method: 'POST',
+    body: JSON.stringify({ email: email, password: password, nickname: nickname, phone: phone || '' })
+  });
+  if (data && data.token) setPlayerToken(data.token);
+  return data;
+}
+
+async function playerLogin(email, password) {
+  console.log('[playerLogin] 登录:', email);
+  var data = await apiFetch(API_BASE_URL + '/auth/player-login', {
+    method: 'POST',
+    body: JSON.stringify({ email: email, password: password })
+  });
+  if (data && data.token) setPlayerToken(data.token);
+  return data;
+}
+
+function setPlayerToken(token) {
+  localStorage.setItem('player_token', token);
+}
+
+function getPlayerToken() {
+  return localStorage.getItem('player_token');
+}
+
+function isPlayerLoggedIn() {
+  return !!getPlayerToken();
+}
+
+function playerLogout() {
+  localStorage.removeItem('player_token');
+  window._playerInfo = null;
+}
+
 // ==================== 桌游管理 API（需要认证） ====================
 
 /**
@@ -960,7 +999,7 @@ window.saveConversation = saveConversation;
 window.logScan = logScan;
 window.getScanStats = getScanStats;
 
-// 认证函数
+// 认证函数（店家）
 window.authRegister = authRegister;
 window.authLogin = authLogin;
 window.authGetMe = authGetMe;
@@ -968,6 +1007,14 @@ window.authLogout = authLogout;
 window.isLoggedIn = isLoggedIn;
 window.getToken = getToken;
 window.updateStoreProfile = updateStoreProfile;
+
+// 玩家认证函数
+window.playerRegister = playerRegister;
+window.playerLogin = playerLogin;
+window.setPlayerToken = setPlayerToken;
+window.getPlayerToken = getPlayerToken;
+window.isPlayerLoggedIn = isPlayerLoggedIn;
+window.playerLogout = playerLogout;
 
 // 管理端 API
 window.getMyGames = getMyGames;

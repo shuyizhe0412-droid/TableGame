@@ -1,5 +1,5 @@
 /**
- * 桌游AI教练 - 店家认证页（登录/注册）
+ * 桌游AI教练 - 玩家认证页（登录/注册）
  */
 console.log('[auth.js] 文件开始加载');
 
@@ -8,7 +8,7 @@ App.registerPage('auth', (function() {
         mode: 'login',   // 'login' | 'register'
         email: '',
         password: '',
-        storeName: '',
+        nickname: '',
         errorMsg: '',
         isLoading: false
     };
@@ -22,8 +22,8 @@ App.registerPage('auth', (function() {
 
     function render() {
         var isLogin = state.mode === 'login';
-        var title = isLogin ? '店家登录' : '店家注册';
-        var subtitle = isLogin ? '登录后管理您的桌游' : '创建账号，开始管理桌游';
+        var title = isLogin ? '玩家登录' : '玩家注册';
+        var subtitle = isLogin ? '登录后收藏桌游、查看历史' : '创建玩家账号，解锁全部功能';
         var submitText = isLogin ? '登 录' : '注 册';
         var toggleText = isLogin ? '还没有账号？立即注册' : '已有账号？立即登录';
         var toggleAction = isLogin ? 'authPage.switchToRegister()' : 'authPage.switchToLogin()';
@@ -42,6 +42,15 @@ App.registerPage('auth', (function() {
             // 表单卡片
             '<div style="background:#FFFFFF;border-radius:16px;padding:24px;width:100%;max-width:360px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">' +
             errorHtml +
+            // 昵称（仅注册显示）
+            (!isLogin ? '<div style="margin-bottom:16px;">' +
+            '<label style="display:block;font-size:13px;color:#4A4540;margin-bottom:6px;font-weight:500;">👤 昵称</label>' +
+            '<input type="text" id="auth-nickname" value="' + escapeHtml(state.nickname) + '" ' +
+            'placeholder="请输入昵称" ' +
+            'style="width:100%;padding:12px 14px;border:1px solid #E5E0D8;border-radius:10px;font-size:14px;' +
+            'color:#2D2A26;background:#F8F6F1;outline:none;box-sizing:border-box;transition:border 0.2s;" ' +
+            'onfocus="this.style.borderColor=\'#C4864B\'" onblur="this.style.borderColor=\'#E5E0D8\'">' +
+            '</div>' : '') +
             // 邮箱
             '<div style="margin-bottom:16px;">' +
             '<label style="display:block;font-size:13px;color:#4A4540;margin-bottom:6px;font-weight:500;">📧 邮箱</label>' +
@@ -52,7 +61,7 @@ App.registerPage('auth', (function() {
             'onfocus="this.style.borderColor=\'#C4864B\'" onblur="this.style.borderColor=\'#E5E0D8\'">' +
             '</div>' +
             // 密码
-            '<div style="margin-bottom:' + (isLogin ? '20' : '16') + 'px;">' +
+            '<div style="margin-bottom:20px;">' +
             '<label style="display:block;font-size:13px;color:#4A4540;margin-bottom:6px;font-weight:500;">🔒 密码</label>' +
             '<input type="password" id="auth-password" ' +
             'placeholder="请输入密码（至少6位）" ' +
@@ -60,15 +69,6 @@ App.registerPage('auth', (function() {
             'color:#2D2A26;background:#F8F6F1;outline:none;box-sizing:border-box;transition:border 0.2s;" ' +
             'onfocus="this.style.borderColor=\'#C4864B\'" onblur="this.style.borderColor=\'#E5E0D8\'">' +
             '</div>' +
-            // 店名（仅注册显示）
-            (!isLogin ? '<div style="margin-bottom:20px;">' +
-            '<label style="display:block;font-size:13px;color:#4A4540;margin-bottom:6px;font-weight:500;">🏪 店铺名称</label>' +
-            '<input type="text" id="auth-store-name" value="' + escapeHtml(state.storeName) + '" ' +
-            'placeholder="请输入店铺名称" ' +
-            'style="width:100%;padding:12px 14px;border:1px solid #E5E0D8;border-radius:10px;font-size:14px;' +
-            'color:#2D2A26;background:#F8F6F1;outline:none;box-sizing:border-box;transition:border 0.2s;" ' +
-            'onfocus="this.style.borderColor=\'#C4864B\'" onblur="this.style.borderColor=\'#E5E0D8\'">' +
-            '</div>' : '') +
             // 提交按钮
             '<button id="auth-submit-btn" onclick="authPage.submit()" ' +
             'style="width:100%;padding:13px 0;background:#C4864B;color:#FFFFFF;border:none;border-radius:10px;' +
@@ -95,7 +95,7 @@ App.registerPage('auth', (function() {
         state.errorMsg = '';
         state.isLoading = false;
         // 如果已登录，直接跳转到 profile
-        if (window.isLoggedIn && window.isLoggedIn()) {
+        if (window.isPlayerLoggedIn && window.isPlayerLoggedIn()) {
             window.location.hash = '/profile';
             return;
         }
@@ -121,7 +121,7 @@ App.registerPage('auth', (function() {
     async function submit() {
         var email = (document.getElementById('auth-email') || {}).value || '';
         var password = (document.getElementById('auth-password') || {}).value || '';
-        var storeName = state.mode === 'register' ? ((document.getElementById('auth-store-name') || {}).value || '') : '';
+        var nickname = state.mode === 'register' ? ((document.getElementById('auth-nickname') || {}).value || '') : '';
 
         // 基本验证
         if (!email) {
@@ -134,15 +134,15 @@ App.registerPage('auth', (function() {
             window.authPageRender();
             return;
         }
-        if (state.mode === 'register' && !storeName) {
-            state.errorMsg = '请输入店铺名称';
+        if (state.mode === 'register' && !nickname) {
+            state.errorMsg = '请输入昵称';
             window.authPageRender();
             return;
         }
 
         state.email = email;
         state.password = password;
-        state.storeName = storeName;
+        state.nickname = nickname;
         state.errorMsg = '';
         state.isLoading = true;
         window.authPageRender();
@@ -150,41 +150,23 @@ App.registerPage('auth', (function() {
         try {
             var result;
             if (state.mode === 'register') {
-                result = await window.authRegister(email, password, storeName);
+                result = await window.playerRegister(email, password, nickname, '');
             } else {
-                result = await window.authLogin(email, password);
+                result = await window.playerLogin(email, password);
             }
 
-            console.log('[auth.js] 认证成功:', result);
+            console.log('[auth.js] 玩家认证成功:', result);
 
-            // 登录成功后重置首页，确保切回首页时重新加载
+            // 重置首页状态
             if (window.homeState) {
                 window.homeState.allGames = [];
                 window.homeState._loading = false;
             }
 
-            // 获取店家信息并缓存
-            if (window.authGetMe) {
-                try {
-                    var me = await window.authGetMe();
-                    if (me) {
-                        window._shopInfo = {
-                            id: me.id || me.store_id || '',
-                            name: me.store_name || me.name || '我的桌游吧',
-                            logo_url: me.logo_url || '',
-                            theme_color: me.theme_color || '#C4864B'
-                        };
-                        console.log('[auth.js] 店家信息:', window._shopInfo.name);
-                    }
-                } catch (e) {
-                    console.warn('[auth.js] 获取店家信息失败:', e);
-                }
-            }
-
-            // 跳转到管理页
+            // 跳转到"我的"页面
             window.location.hash = '/profile';
         } catch (e) {
-            console.error('[auth.js] 认证失败:', e);
+            console.error('[auth.js] 玩家认证失败:', e);
             state.errorMsg = e.message || '操作失败，请检查网络后重试';
             state.isLoading = false;
             window.authPageRender();

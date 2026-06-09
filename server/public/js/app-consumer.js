@@ -17,7 +17,7 @@ var _lastNavTime = 0;
  * @returns {string} TabBar HTML 字符串
  */
 function getTabBarHtml(activeTab) {
-    var loggedIn = window.isLoggedIn && window.isLoggedIn();
+    var loggedIn = window.isPlayerLoggedIn && window.isPlayerLoggedIn();
 
     var tabs = [
         { name: 'home', icon: '🏠', text: '首页' },
@@ -171,18 +171,14 @@ function renderPageContent(pageName, params, activeTab) {
  * @returns {boolean} 是否允许访问
  */
 function authGuard(page) {
-    var loggedIn = window.isLoggedIn && window.isLoggedIn();
+    var playerLoggedIn = window.isPlayerLoggedIn && window.isPlayerLoggedIn();
 
-    // profile 页面需要登录 → 未登录跳转到关于页（而非登录页）
-    if (page === 'profile' && !loggedIn) {
-        console.log('[app.js] 未登录，跳转到关于页面');
-        window.location.hash = '/about';
-        return false;
-    }
+    // profile 页面：玩家未登录时显示"我的"Tab也可以进入（显示登录引导）
+    // 不再强制跳转，profile 页内部会检测登录状态显示不同内容
 
     // auth 页面：已登录则跳转到 profile
-    if (page === 'auth' && loggedIn) {
-        console.log('[app.js] 已登录，跳转到个人中心');
+    if (page === 'auth' && playerLoggedIn) {
+        console.log('[app.js] 玩家已登录，跳转到个人中心');
         window.location.hash = '/profile';
         return false;
     }
@@ -191,31 +187,40 @@ function authGuard(page) {
 }
 
 /**
- * 已登录时自动加载店家信息
+ * 已登录时自动加载玩家信息
  */
-async function loadAuthShopInfo() {
-    var loggedIn = window.isLoggedIn && window.isLoggedIn();
+async function loadPlayerInfo() {
+    var loggedIn = window.isPlayerLoggedIn && window.isPlayerLoggedIn();
     if (!loggedIn) return;
 
-    // 如果已经通过 URL shop 参数加载了店家信息，不覆盖
-    if (window._shopInfo) return;
-
+    // 如果已经有缓存的玩家信息，先读取
     try {
-        if (window.authGetMe) {
-            var me = await window.authGetMe();
-            if (me) {
-                window._shopInfo = {
-                    id: me.id || me.store_id || '',
-                    name: me.store_name || me.name || '我的桌游吧',
-                    logo_url: me.logo_url || '',
-                    theme_color: me.theme_color || '#C4864B'
-                };
-                sessionStorage.setItem('shopId', window._shopInfo.id);
-                console.log('[app.js] 已登录店家:', window._shopInfo.name);
+        var cached = localStorage.getItem('player_info');
+        if (cached) {
+            window._playerInfo = JSON.parse(cached);
+        }
+    } catch (e) {
+        window._playerInfo = null;
+    }
+
+    // 尝试从服务端刷新玩家信息
+    try {
+        var playerToken = window.getPlayerToken && window.getPlayerToken();
+        if (!playerToken) return;
+
+        var resp = await fetch(API_BASE_URL + '/auth/player-me', {
+            headers: { 'Authorization': 'Bearer ' + playerToken }
+        });
+        if (resp.ok) {
+            var data = await resp.json();
+            if (data && data.id) {
+                window._playerInfo = data;
+                localStorage.setItem('player_info', JSON.stringify(data));
+                console.log('[app.js] 玩家信息加载成功:', data.nickname);
             }
         }
     } catch (e) {
-        console.warn('[app.js] 自动加载店家信息失败:', e.message);
+        console.warn('[app.js] 加载玩家信息失败:', e.message);
     }
 }
 
@@ -229,8 +234,8 @@ async function initApp() {
     // 先加载店家信息（从URL shop参数）
     await loadShopInfo();
 
-    // 已登录店家自动加载信息
-    await loadAuthShopInfo();
+    // 已登录玩家自动加载信息
+    await loadPlayerInfo();
 
     // 路由到页面名的映射（/chat 无任何参数时映射到入口页）
     function resolvePage(route, params) {
