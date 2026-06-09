@@ -6,10 +6,13 @@
 // ==================== 环境检测 ====================
 function detectEnv() {
     var hostname = window.location.hostname;
-    // 生产域名（无 hash 前缀）
+    var protocol = window.location.protocol;
+    // 本地文件打开（file://）→ 本地开发
+    if (protocol === 'file:') return 'local';
+    // 生产域名
     if (hostname === 'boardgame-hub-deploy.pages.dev') return 'production';
     if (hostname === 'boardgame-ai.pages.dev') return 'production';
-    // Staging 域名（Cloudflare Pages 预览部署带 hash 前缀，如 f0d57769.boardgame-hub-deploy.pages.dev）
+    // Staging 域名
     if (hostname.endsWith('.boardgame-hub-deploy.pages.dev') && hostname.indexOf('.') !== hostname.lastIndexOf('.')) return 'staging';
     if (hostname.indexOf('staging') !== -1) return 'staging';
     if (hostname === 'localhost' || hostname === '127.0.0.1') return 'local';

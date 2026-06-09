@@ -19,6 +19,12 @@ function debounce(fn, delay = 300) {
 function $(sel) { return document.querySelector(sel); }
 function $$(sel) { return document.querySelectorAll(sel); }
 
+function escapeHtml(str) {
+  var div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
+}
+
 function showToast(msg, type = 'success') {
  const toast = $('#toast');
  toast.textContent = msg;
@@ -623,17 +629,270 @@ function initSearchAndFilter() {
   }
 }
 
+// ============ 批量从游戏库添加 ============
+
+var libraryState = {
+  allGames: [],
+  filteredGames: [],
+  selectedIds: {},
+  existingNames: {},
+  currentPage: 1,
+  pageSize: 20,
+  keyword: '',
+  category: ''
+};
+
+function openBatchLibraryModal() {
+  libraryState = {
+    allGames: [],
+    filteredGames: [],
+    selectedIds: {},
+    existingNames: {},
+    currentPage: 1,
+    pageSize: 20,
+    keyword: '',
+    category: ''
+  };
+  $('#batch-library-modal').style.display = '';
+  $('#library-search-input').value = '';
+  $$('#library-filter-tags .filter-tag').forEach(function (t) {
+    t.classList.toggle('active', t.dataset.cat === '');
+  });
+  loadLibraryGames();
+}
+
+function closeBatchLibraryModal() {
+  $('#batch-library-modal').style.display = 'none';
+}
+
+function loadLibraryGames() {
+  $('#library-game-list').innerHTML = '<div class="loading-state"><div class="spinner"></div><p>加载中...</p></div>';
+
+  // 加载全局游戏库
+  apiFetch('/admin/global-games').then(function (games) {
+    libraryState.allGames = games || [];
+
+    // 加载店家已有的游戏名（用于去重标记）
+    return apiFetch('/games');
+  }).then(function (existing) {
+    var names = {};
+    (existing || []).forEach(function (g) { names[g.name] = true; });
+    libraryState.existingNames = names;
+
+    // 预选已存在的游戏（勾选但禁用）
+    libraryState.allGames.forEach(function (g) {
+      if (names[g.game_name]) {
+        libraryState.selectedIds[g.id] = true;
+      }
+    });
+
+    applyLibraryFilter();
+  }).catch(function (err) {
+    // 如果获取已有游戏失败，至少显示全局库
+    if (libraryState.allGames.length > 0) {
+      applyLibraryFilter();
+    } else {
+      showToast('加载游戏库失败: ' + err.message, 'error');
+      closeBatchLibraryModal();
+    }
+  });
+}
+
+function applyLibraryFilter() {
+  var keyword = libraryState.keyword.toLowerCase();
+  var cat = libraryState.category;
+
+  libraryState.filteredGames = libraryState.allGames.filter(function (g) {
+    var name = (g.game_name || '').toLowerCase();
+    var tags = (g.tags || '').toLowerCase();
+    if (keyword && name.indexOf(keyword) === -1 && tags.indexOf(keyword) === -1) return false;
+    if (cat && tags.indexOf(cat.toLowerCase()) === -1) return false;
+    return true;
+  });
+
+  $('#library-total').textContent = libraryState.filteredGames.length;
+  libraryState.currentPage = 1;
+  renderLibraryPage();
+}
+
+function renderLibraryPage() {
+  var start = (libraryState.currentPage - 1) * libraryState.pageSize;
+  var end = start + libraryState.pageSize;
+  var page = libraryState.filteredGames.slice(start, end);
+  var totalPages = Math.ceil(libraryState.filteredGames.length / libraryState.pageSize) || 1;
+
+  $('#library-game-list').innerHTML = page.map(function (g) {
+    var isExisting = !!libraryState.existingNames[g.game_name];
+    var isChecked = !!libraryState.selectedIds[g.id];
+    var diff = g.difficulty || 2;
+    var stars = '\u2605'.repeat(diff) + '\u2606'.repeat(5 - diff);
+
+    return (
+      '<div class="library-game-item' + (isChecked ? ' selected' : '') + (isExisting ? ' existing' : '') + '">' +
+        '<label class="library-game-checkbox">' +
+          '<input type="checkbox" data-id="' + g.id + '" ' + (isChecked ? 'checked' : '') + (isExisting ? ' disabled' : '') + '>' +
+          '<span class="checkbox-custom"></span>' +
+        '</label>' +
+        '<div class="library-game-info">' +
+          '<div class="library-game-name">' +
+            escapeHtml(g.game_name) +
+            (isExisting ? ' <span class="tag tag-default">已拥有</span>' : '') +
+          '</div>' +
+          '<div class="library-game-meta">' +
+            '<span>\uD83D\uDC65 ' + (g.player_min || 2) + '-' + (g.player_max || 4) + '人</span>' +
+            '<span>\u23F1 ' + (g.duration || 30) + '分钟</span>' +
+            '<span>' + stars + '</span>' +
+          '</div>' +
+          '<div class="library-game-tags">' + (g.tags ? g.tags.split(',').map(function (t) { return '<span class="tag">' + escapeHtml(t.trim()) + '</span>'; }).join('') : '') + '</div>' +
+          '<div class="library-game-desc">' + escapeHtml((g.description || '').slice(0, 60)) + '</div>' +
+        '</div>' +
+      '</div>'
+    );
+  }).join('');
+
+  // 分页
+  var pagHtml = '';
+  if (totalPages > 1) {
+    for (var p = 1; p <= totalPages; p++) {
+      pagHtml += '<button class="page-btn' + (p === libraryState.currentPage ? ' active' : '') + '" data-page="' + p + '">' + p + '</button>';
+    }
+  }
+  $('#library-pagination').innerHTML = pagHtml;
+
+  // 更新选中计数
+  updateLibrarySelectedCount();
+}
+
+function updateLibrarySelectedCount() {
+  var count = 0;
+  var ids = Object.keys(libraryState.selectedIds);
+  for (var i = 0; i < ids.length; i++) {
+    if (libraryState.selectedIds[ids[i]]) count++;
+  }
+  $('#library-selected-count').textContent = count;
+  $('#library-summary-count').textContent = count;
+  if (count > 0) {
+    $('#library-summary').style.display = '';
+    $('#batch-library-confirm-btn').disabled = false;
+  } else {
+    $('#library-summary').style.display = 'none';
+    $('#batch-library-confirm-btn').disabled = true;
+  }
+}
+
+async function submitBatchLibrary() {
+  var ids = [];
+  var allIds = Object.keys(libraryState.selectedIds);
+  for (var i = 0; i < allIds.length; i++) {
+    if (libraryState.selectedIds[allIds[i]]) {
+      ids.push(allIds[i]);
+    }
+  }
+
+  // 去掉已存在的（后端也会去重，但前端先过滤减少请求）
+  ids = ids.filter(function (id) {
+    var game = libraryState.allGames.find(function (g) { return g.id === id; });
+    return game && !libraryState.existingNames[game.game_name];
+  });
+
+  if (ids.length === 0) {
+    showToast('没有新游戏需要添加', 'error');
+    return;
+  }
+
+  var confirmBtn = $('#batch-library-confirm-btn');
+  confirmBtn.disabled = true;
+  confirmBtn.textContent = '添加中...';
+
+  try {
+    var result = await apiFetch('/games/batch-add', {
+      method: 'POST',
+      body: { game_ids: ids }
+    });
+    showToast('\u2705 成功添加 ' + result.added + ' 款游戏' + (result.skipped > 0 ? '，跳过 ' + result.skipped + ' 款已有' : ''));
+    closeBatchLibraryModal();
+    loadGames();
+  } catch (err) {
+    showToast(err.message, 'error');
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = '添加到我的游戏';
+  }
+}
+
+function initBatchLibraryModal() {
+  // 打开弹窗
+  $('#batch-library-btn').addEventListener('click', openBatchLibraryModal);
+  // 空状态按钮
+  var emptyBtn = $('#empty-add-btn');
+  if (emptyBtn) {
+    emptyBtn.addEventListener('click', openBatchLibraryModal);
+  }
+
+  // 关闭弹窗
+  $('#batch-library-close-btn').addEventListener('click', closeBatchLibraryModal);
+  $('#batch-library-cancel-btn').addEventListener('click', closeBatchLibraryModal);
+  $('#batch-library-modal').addEventListener('click', function (e) {
+    if (e.target === $('#batch-library-modal')) closeBatchLibraryModal();
+  });
+
+  // 搜索
+  $('#library-search-input').addEventListener('input', debounce(function () {
+    libraryState.keyword = $('#library-search-input').value.trim();
+    applyLibraryFilter();
+  }, 300));
+
+  // 分类筛选
+  $('#library-filter-tags').addEventListener('click', function (e) {
+    var tag = e.target.closest('.filter-tag');
+    if (!tag) return;
+    $$('#library-filter-tags .filter-tag').forEach(function (t) { t.classList.remove('active'); });
+    tag.classList.add('active');
+    libraryState.category = tag.dataset.cat || '';
+    applyLibraryFilter();
+  });
+
+  // 分页点击
+  $('#library-pagination').addEventListener('click', function (e) {
+    var btn = e.target.closest('.page-btn');
+    if (!btn) return;
+    libraryState.currentPage = parseInt(btn.dataset.page);
+    renderLibraryPage();
+  });
+
+  // 复选框点击
+  $('#library-game-list').addEventListener('change', function (e) {
+    if (e.target.type !== 'checkbox') return;
+    var id = e.target.dataset.id;
+    var isExisting = e.target.disabled;
+    if (isExisting) {
+      e.target.checked = true; // 强制保持选中
+      return;
+    }
+    libraryState.selectedIds[id] = e.target.checked;
+
+    // 更新行样式
+    var row = e.target.closest('.library-game-item');
+    if (row) row.classList.toggle('selected', e.target.checked);
+
+    updateLibrarySelectedCount();
+  });
+
+  // 确认添加
+  $('#batch-library-confirm-btn').addEventListener('click', submitBatchLibrary);
+}
+
 // ============ 初始化 ============
 
 async function init() {
- initAuth();
- initGameModal();
- initUploadModal();
- initDelete();
- initNavigation();
+  initAuth();
+  initGameModal();
+  initUploadModal();
+  initDelete();
+  initNavigation();
 
   initRulesModal();
   initSearchAndFilter();
+  initBatchLibraryModal();
 
   // 检查已登录状态
  currentToken = localStorage.getItem('admin_token');

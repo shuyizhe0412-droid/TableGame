@@ -42,6 +42,11 @@ const corsOptions = {
       return callback(null, true);
     }
 
+    // file:// 协议（本地直接打开HTML文件）直接放行
+    if (origin === 'null' || origin === 'file://') {
+      return callback(null, true);
+    }
+
     // 精确匹配
     if (allowedOrigins.indexOf(origin) !== -1) {
       return callback(null, true);

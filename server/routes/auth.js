@@ -54,32 +54,7 @@ router.post('/register', async (req, res) => {
     const { error: insertErr } = await supabase.from('stores').insert([storeData]);
     if (insertErr) throw insertErr;
 
-    console.log('[AUTH] 新店家注册:', email, store_name);
-
-    // 自动复制全局默认桌游
-    const { data: globalGames, error: gErr } = await supabase
-      .from('global_games').select('*');
-    if (gErr) throw gErr;
-
-    if (globalGames && globalGames.length > 0) {
-      const gameRows = globalGames.map(g => ({
-        id: uuidv4(),
-        store_id: id,
-        name: g.game_name,
-        cover_image: g.cover_url || '',
-        min_players: g.player_min,
-        max_players: g.player_max,
-        duration: g.duration,
-        difficulty: g.difficulty,
-        tags: g.tags,
-        source: 'default'
-      }));
-
-      const { error: copyErr } = await supabase.from('store_games').insert(gameRows);
-      if (copyErr) throw copyErr;
-
-      console.log('[AUTH] 已为新店家复制', globalGames.length, '款默认桌游');
-    }
+    console.log('[AUTH] 新店家注册:', email, store_name, '| 不自动复制全局桌游，店家自行选择');
 
     const token = jwt.sign({ id, email, store_name }, JWT_SECRET, { expiresIn: TOKEN_EXPIRES });
 

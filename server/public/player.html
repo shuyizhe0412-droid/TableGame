@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>桌游AI教练</title>
+  <link rel="stylesheet" href="player.css">
+</head>
+<body>
+  <!-- ====== 顶部导航 ====== -->
+  <header id="app-header">
+    <button id="header-back-btn" class="btn-back">← 返回</button>
+    <h1 id="shop-name" class="shop-name">桌游吧</h1>
+    <div class="header-spacer"></div>
+  </header>
+
+  <!-- ====== 浏览模式：游戏列表 ====== -->
+  <main id="browse-view">
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="search-input" class="search-input" placeholder="搜索桌游...">
+    </div>
+    <div class="filter-tags" id="filter-tags">
+      <button class="filter-tag active" data-cat="全部">全部</button>
+      <button class="filter-tag" data-cat="策略">策略</button>
+      <button class="filter-tag" data-cat="家庭">家庭</button>
+      <button class="filter-tag" data-cat="聚会">聚会</button>
+      <button class="filter-tag" data-cat="卡牌">卡牌</button>
+      <button class="filter-tag" data-cat="推理">推理</button>
+      <button class="filter-tag" data-cat="经营">经营</button>
+    </div>
+    <div id="game-grid" class="game-grid"></div>
+    <div id="empty-state" class="empty-state" style="display:none;">
+      <div class="empty-icon">🎲</div>
+      <p>该店铺暂无桌游</p>
+    </div>
+    <div id="loading-state" class="loading-state">
+      <div class="spinner"></div>
+      <p>加载中...</p>
+    </div>
+  </main>
+
+  <!-- ====== 详情模式：游戏详情 + AI对话 ====== -->
+  <main id="detail-view" style="display:none;">
+    <!-- 游戏信息区 -->
+    <section class="game-detail-section">
+      <div id="detail-cover" class="detail-cover">
+        <div class="cover-placeholder">🎲</div>
+      </div>
+      <div class="detail-info-card">
+        <h2 id="detail-name" class="detail-name"></h2>
+        <div class="detail-meta">
+          <span class="meta-item" id="detail-players">👥 --</span>
+          <span class="meta-item" id="detail-duration">⏱ --</span>
+          <span class="meta-item" id="detail-difficulty">📊 --</span>
+        </div>
+        <div id="detail-tags" class="detail-tags-row"></div>
+        <p id="detail-desc" class="detail-desc"></p>
+      </div>
+    </section>
+
+    <!-- AI对话区 -->
+    <section class="chat-section">
+      <div class="chat-mode-bar" id="chat-mode-bar">
+        <button class="chat-mode-btn active" data-mode="setup">🎯 摆盘引导</button>
+        <button class="chat-mode-btn" data-mode="rules">📖 规则教学</button>
+        <button class="chat-mode-btn" data-mode="faq">⚡ 规则速查</button>
+        <button class="chat-mode-btn" data-mode="recommend">🎮 推荐</button>
+      </div>
+      <div class="chat-messages" id="chat-messages">
+        <div class="chat-welcome">
+          <div class="welcome-icon">🤖</div>
+          <p>你好！我是桌游AI教练～</p>
+          <p>选择上方模式，向我提问吧！</p>
+        </div>
+      </div>
+      <div class="chat-loading" id="chat-loading" style="display:none;">
+        <div class="typing-indicator">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+      <div class="chat-input-bar">
+        <input type="text" id="chat-input" class="chat-input" placeholder="输入你的问题...">
+        <button id="chat-send-btn" class="chat-send-btn">发送</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="player.js"></script>
+</body>
+</html>

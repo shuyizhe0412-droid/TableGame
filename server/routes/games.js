@@ -303,4 +303,87 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// ===== 批量添加（从全局游戏库复制） =====
+
+/**
+ * POST /api/games/batch-add
+ * 从 global_games 批量复制到 store_games（需认证）
+ * Body: { game_ids: ["id1","id2",...] }
+ * 返回: { added: N, skipped: M }
+ */
+router.post('/batch-add', async (req, res) => {
+  try {
+    const { game_ids } = req.body;
+    if (!game_ids || !Array.isArray(game_ids) || game_ids.length === 0) {
+      return res.status(400).json({ error: '请提供 game_ids 数组' });
+    }
+
+    // 1. 查全局游戏库中匹配的游戏
+    const { data: globalGames, error: gErr } = await supabase
+      .from('global_games')
+      .select('*')
+      .in('id', game_ids);
+
+    if (gErr) throw gErr;
+    if (!globalGames || globalGames.length === 0) {
+      return res.status(404).json({ error: '未找到匹配的全局游戏' });
+    }
+
+    // 2. 查店家已有的游戏（按 name 去重）
+    const { data: existingGames, error: eErr } = await supabase
+      .from('store_games')
+      .select('name')
+      .eq('store_id', req.store.id);
+
+    if (eErr) throw eErr;
+
+    var existingNames = {};
+    (existingGames || []).forEach(function (g) { existingNames[g.name] = true; });
+
+    // 3. 过滤出新增的
+    var newRows = [];
+    var skipped = 0;
+    globalGames.forEach(function (g) {
+      if (existingNames[g.game_name]) {
+        skipped++;
+      } else {
+        newRows.push({
+          id: uuidv4(),
+          store_id: req.store.id,
+          name: g.game_name,
+          cover_image: g.cover_url || '',
+          min_players: g.player_min,
+          max_players: g.player_max,
+          duration: g.duration,
+          difficulty: g.difficulty,
+          tags: g.tags || '',
+          source: 'default'
+        });
+      }
+    });
+
+    // 4. 批量插入新增的
+    if (newRows.length > 0) {
+      var batchSize = 100;
+      for (var i = 0; i < newRows.length; i += batchSize) {
+        var batch = newRows.slice(i, i + batchSize);
+        var { error: insErr } = await supabase.from('store_games').insert(batch);
+        if (insErr) throw insErr;
+      }
+    }
+
+    console.log('[GAMES] batch-add | 店家: ' + req.store.store_name +
+      ' | 新增: ' + newRows.length + ' | 跳过: ' + skipped);
+
+    res.json({
+      added: newRows.length,
+      skipped: skipped,
+      total: globalGames.length
+    });
+  } catch (err) {
+    console.error('[GAMES] batch-add 失败:', err.message);
+    res.status(500).json({ error: '批量添加失败: ' + err.message });
+  }
+});
+
 module.exports = router;

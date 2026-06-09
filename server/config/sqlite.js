@@ -1,4 +1,4 @@
-﻿/**
+/**
  * SQLite 本地数据库客户端
  * 提供与 Supabase 兼容的查询接口
  * 用于 local/development 环境
@@ -18,12 +18,15 @@ db.pragma(`journal_mode = WAL`);
 db.pragma(`foreign_keys = ON`);
 
 // ============ 表结构自动初始化 ============
-// 注意：不会覆盖已有表，仅补建缺失的表
 db.exec(`
   CREATE TABLE IF NOT EXISTS stores (
     id TEXT PRIMARY KEY,
     store_name TEXT NOT NULL,
+    email TEXT DEFAULT '',
     password_hash TEXT NOT NULL,
+    phone TEXT DEFAULT '',
+    address TEXT DEFAULT '',
+    avatar TEXT DEFAULT '',
     created_at TEXT,
     updated_at TEXT
   );
@@ -31,27 +34,42 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS global_games (
     id TEXT PRIMARY KEY,
     game_name TEXT NOT NULL UNIQUE,
-    cover_url TEXT DEFAULT \`\`,
+    cover_url TEXT DEFAULT '',
     player_min INTEGER DEFAULT 2,
     player_max INTEGER DEFAULT 4,
     duration INTEGER DEFAULT 60,
     difficulty INTEGER DEFAULT 3,
-    tags TEXT DEFAULT \`\`,
+    tags TEXT DEFAULT '',
     created_at TEXT
   );
 
   CREATE TABLE IF NOT EXISTS store_games (
     id TEXT PRIMARY KEY,
     store_id TEXT NOT NULL,
+    name TEXT DEFAULT '',
     game_name TEXT NOT NULL,
-    cover_url TEXT DEFAULT \`\`,
+    description TEXT DEFAULT '',
+    rules_text TEXT DEFAULT '',
+    rules_json TEXT DEFAULT '',
+    category TEXT DEFAULT '',
+    cover_url TEXT DEFAULT '',
+    cover_image TEXT DEFAULT '',
     player_min INTEGER,
     player_max INTEGER,
+    min_players INTEGER DEFAULT 2,
+    max_players INTEGER DEFAULT 4,
     duration INTEGER,
+    play_time INTEGER DEFAULT 30,
     difficulty INTEGER,
-    tags TEXT DEFAULT \`\`,
-    status TEXT DEFAULT \`available\`,
+    tags TEXT DEFAULT '',
+    rating REAL DEFAULT 0,
+    status TEXT DEFAULT 'available',
+    source TEXT DEFAULT 'manual',
+    price REAL DEFAULT 0,
+    stock INTEGER DEFAULT 0,
     added_at TEXT,
+    updated_at TEXT DEFAULT '',
+    created_at TEXT DEFAULT '',
     FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
   );
 
@@ -59,10 +77,10 @@ db.exec(`
     id TEXT PRIMARY KEY,
     store_id TEXT NOT NULL,
     game_name TEXT NOT NULL,
-    table_number TEXT DEFAULT \`\`,
+    table_number TEXT DEFAULT '',
     start_time TEXT,
     end_time TEXT,
-    status TEXT DEFAULT \`active\`,
+    status TEXT DEFAULT 'active',
     created_at TEXT,
     FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
   );
@@ -87,11 +105,65 @@ db.exec(`
     created_at TEXT,
     FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
   );
+
+  CREATE TABLE IF NOT EXISTS game_files (
+    id TEXT PRIMARY KEY,
+    game_id TEXT,
+    store_id TEXT,
+    original_name TEXT,
+    stored_name TEXT,
+    mime_type TEXT,
+    size INTEGER,
+    url TEXT,
+    created_at TEXT DEFAULT ''
+  );
+
+  CREATE TABLE IF NOT EXISTS scan_logs (
+    id TEXT PRIMARY KEY,
+    game_id TEXT,
+    shop_id TEXT,
+    created_at TEXT DEFAULT ''
+  );
+
+  CREATE TABLE IF NOT EXISTS user_favorites (
+    id TEXT PRIMARY KEY,
+    user_id TEXT,
+    game_id TEXT,
+    created_at TEXT DEFAULT ''
+  );
+
+  CREATE TABLE IF NOT EXISTS tables_info (
+    id TEXT PRIMARY KEY,
+    store_id TEXT,
+    table_number TEXT,
+    status TEXT DEFAULT 'available',
+    created_at TEXT DEFAULT ''
+  );
 `);
 
 console.log(`[SQLITE] 数据库表结构已就绪`);
 
 // ============ Supabase 兼容查询接口 ============
+
+function insert(table, rows) {
+  try {
+    if (!Array.isArray(rows)) rows = [rows];
+    const columns = Object.keys(rows[0]);
+    const placeholders = columns.map(() => `?`).join(`, `);
+    const sql = `INSERT INTO ${table} (${columns.join(`, `)}) VALUES (${placeholders})`;
+    const stmt = db.prepare(sql);
+    const insertAll = db.transaction((items) => {
+      for (const row of items) {
+        stmt.run(...columns.map(c => row[c]));
+      }
+    });
+    insertAll(rows);
+    return { data: rows, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+}
+
 function createQueryBuilder(table) {
   return {
     _table: table,
@@ -125,6 +197,65 @@ function createQueryBuilder(table) {
       return this;
     },
 
+    gte(column, value) {
+      this._where.push(`${column} >= ?`);
+      this._params.push(value);
+      return this;
+    },
+
+    lte(column, value) {
+      this._where.push(`${column} <= ?`);
+      this._params.push(value);
+      return this;
+    },
+
+    gt(column, value) {
+      this._where.push(`${column} > ?`);
+      this._params.push(value);
+      return this;
+    },
+
+    lt(column, value) {
+      this._where.push(`${column} < ?`);
+      this._params.push(value);
+      return this;
+    },
+
+    ilike(column, value) {
+      this._where.push(`${column} LIKE ? COLLATE NOCASE`);
+      this._params.push(value);
+      return this;
+    },
+
+    in(column, values) {
+      if (!Array.isArray(values) || values.length === 0) {
+        this._where.push(`1 = 0`);
+        return this;
+      }
+      const placeholders = values.map(() => `?`).join(`, `);
+      this._where.push(`${column} IN (${placeholders})`);
+      this._params.push(...values);
+      return this;
+    },
+
+    is(column, value) {
+      if (value === null) {
+        this._where.push(`${column} IS NULL`);
+      } else {
+        this._where.push(`${column} IS ?`);
+        this._params.push(value);
+      }
+      return this;
+    },
+
+    not(column, operator, value) {
+      if (operator === `eq`) {
+        this._where.push(`${column} != ?`);
+        this._params.push(value);
+      }
+      return this;
+    },
+
     order(column, opts = {}) {
       this._orderBy = column;
       this._orderDir = (opts.ascending === false) ? `DESC` : `ASC`;
@@ -146,6 +277,14 @@ function createQueryBuilder(table) {
       this._single = true;
       this._limit = 1;
       return this;
+    },
+
+    async insert(rows) {
+      return insert(this._table, rows);
+    },
+
+    async upsert(rows) {
+      return insert(this._table, rows);
     },
 
     _buildSelect() {
@@ -184,25 +323,6 @@ function createQueryBuilder(table) {
       }
     }
   };
-}
-
-async function insert(table, rows) {
-  try {
-    if (!Array.isArray(rows)) rows = [rows];
-    const columns = Object.keys(rows[0]);
-    const placeholders = columns.map(() => `?`).join(`, `);
-    const sql = `INSERT INTO ${table} (${columns.join(`, `)}) VALUES (${placeholders})`;
-    const stmt = db.prepare(sql);
-    const insertAll = db.transaction((items) => {
-      for (const row of items) {
-        stmt.run(...columns.map(c => row[c]));
-      }
-    });
-    insertAll(rows);
-    return { data: rows, error: null };
-  } catch (error) {
-    return { data: null, error };
-  }
 }
 
 function createUpdateBuilder(table) {

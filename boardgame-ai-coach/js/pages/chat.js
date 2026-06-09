@@ -147,12 +147,7 @@ App.registerPage('chat', (function() {
     };
 
     // ==================== 语音相关状态 ====================
-    var voiceState = {
-        recognition: null,         // SpeechRecognition 实例
-        isListening: false,        // 是否正在录音
-        speakingIndex: null,       // 当前朗读的消息索引
-        autoSpeak: localStorage.getItem('chat_auto_speak') === 'true'
-    };
+    // voiceState 已移除（语音功能暂不启用）
 
     // ==================== 工具函数 ====================
     function getParamFromHash(key) {
@@ -228,43 +223,51 @@ App.registerPage('chat', (function() {
     async function sendToAI(userMessage) {
         var session = state.session;
 
-        try {
-            var answer = await window.askAI(state.gameId, userMessage);
-
-            // 有规则文本且回答不含声明时，追加免责声明
-            var hasRules = session && session.gameData && session.gameData.rules_text;
-            if (hasRules && answer.indexOf('⚠️') === -1) {
-                answer += '\n\n💡 以上回答基于店家上传的规则';
-            }
-
-            session.messages.push({
-                role: 'assistant',
-                content: answer
-            });
-            state.isTyping = false;
-            refreshMessages();
-
-            // 自动朗读（如果开启）
-            if (voiceState.autoSpeak) {
-                const aiIndex = session.messages.length - 1;
-                speakMessage(aiIndex);
-            }
-        } catch (error) {
-            console.error('AI 回复失败:', error);
-            state.isTyping = false;
-            // 移除 typing 动画
-            var typingEl = document.getElementById('chat-typing');
-            if (typingEl) typingEl.remove();
-            // 显示错误消息
-            var messagesEl = document.getElementById('chat-messages');
-            if (messagesEl) {
-                messagesEl.innerHTML += '<div class="chat-message chat-message-ai">' +
-                    '<div class="chat-avatar">🤖</div>' +
-                    '<div class="chat-bubble chat-bubble-ai chat-bubble-error">AI暂时无法回答，请稍后再试</div>' +
-                    '</div>';
-                messagesEl.scrollTop = messagesEl.scrollHeight;
+        // 构建历史消息（多轮记忆）
+        var history = [];
+        if (session && session.messages) {
+            for (var i = 0; i < session.messages.length; i++) {
+                var msg = session.messages[i];
+                if (msg.role === 'user' || msg.role === 'assistant') {
+                    history.push({ role: msg.role, content: msg.content });
+                }
             }
         }
+
+        // 先添加一个空的 AI 消息占位
+        session.messages.push({
+            role: 'assistant',
+            content: ''
+        });
+        var aiIndex = session.messages.length - 1;
+        state.isTyping = true;
+        refreshMessages();
+
+        // 流式接收
+        var mode = state.currentMode || 'rules';
+        window.askAIStream(state.gameId, userMessage, mode, history, function(chunk) {
+            // 每收到一块内容，更新 AI 消息
+            session.messages[aiIndex].content += chunk;
+            // 更新 DOM 中的气泡
+            var bubbles = document.querySelectorAll('.chat-bubble-ai');
+            var lastBubble = bubbles[bubbles.length - 1];
+            if (lastBubble) {
+                lastBubble.innerHTML = formatAIMessage(session.messages[aiIndex].content);
+                var messagesEl = document.getElementById('chat-messages');
+                if (messagesEl) messagesEl.scrollTop = messagesEl.scrollHeight;
+            }
+        }).then(function(fullText) {
+            state.isTyping = false;
+            session.messages[aiIndex].content = fullText;
+            refreshMessages();
+
+            // 自动朗读已移除
+        }).catch(function(error) {
+            console.error('AI 回复失败:', error);
+            state.isTyping = false;
+            session.messages[aiIndex].content = 'AI暂时无法回答，请稍后再试';
+            refreshMessages();
+        });
     }
 
     // ==================== 渲染函数 ====================
@@ -273,12 +276,9 @@ App.registerPage('chat', (function() {
         var session = state.session;
         var modeInfo = modeConfig[session.mode];
         var styleInfo = styleConfig[session.style];
-        var autoIcon = voiceState.autoSpeak ? '🔊' : '🔇';
-        var autoTitle = voiceState.autoSpeak ? '自动朗读：开' : '自动朗读：关';
         return '<div class="chat-header">' +
             '<span class="chat-back" onclick="chatPage.goBack()">← 返回</span>' +
             '<span class="chat-mode-name">' + modeInfo.icon + ' ' + modeInfo.name + '</span>' +
-            '<span class="auto-speak-toggle" onclick="chatPage.toggleAutoSpeak()" title="' + autoTitle + '">' + autoIcon + '</span>' +
             '<span class="chat-style-btn" onclick="chatPage.toggleStyle()" title="' + styleInfo.name + '">' + styleInfo.icon + '</span>' +
             '</div>';
     }
@@ -290,11 +290,9 @@ App.registerPage('chat', (function() {
                 '<div class="chat-bubble chat-bubble-user">' + escapeHtml(msg.content) + '</div>' +
                 '</div>';
         } else {
-            var isSpeaking = (voiceState.speakingIndex === index) ? ' speaking' : '';
             return '<div class="chat-message chat-message-ai">' +
                 '<div class="chat-avatar">🤖</div>' +
                 '<div class="chat-bubble chat-bubble-ai">' + formatAIMessage(msg.content) +
-                '<button class="speak-btn' + isSpeaking + '" onclick="chatPage.speakMessage(' + index + ')" title="朗读">🔊</button>' +
                 '</div>' +
                 '</div>';
         }
@@ -383,15 +381,12 @@ App.registerPage('chat', (function() {
         var session = state.session;
         var modeInfo = modeConfig[session.mode];
         var placeholder = (modeInfo && modeInfo.placeholder) ? modeInfo.placeholder : '输入你的问题...';
-        var micClass = voiceState.isListening ? ' voice-btn listening' : ' voice-btn';
-
         return '<div class="chat-input-area">' +
             renderQuickQuestions() +
             '<div class="chat-input-row">' +
             '<input type="text" class="chat-input" id="chat-input" ' +
             'placeholder="' + placeholder + '" value="' + escapeHtml(state.inputText) + '" ' +
             'onkeydown="chatPage.handleKeyDown(event)">' +
-            '<button class="' + micClass + '" onclick="chatPage.toggleVoice()" title="语音输入">🎤</button>' +
             '<button class="chat-send-btn" onclick="chatPage.sendMessage()">➤</button>' +
             '</div>' +
             '</div>';
@@ -677,200 +672,6 @@ App.registerPage('chat', (function() {
         }, 50);
     }
 
-    // ==================== 语音功能 ====================
-
-    function toggleVoice() {
-        if (voiceState.isListening) {
-            stopListening();
-        } else {
-            startListening();
-        }
-    }
-
-    function startListening() {
-        var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-            alert('您的浏览器不支持语音识别，请使用 Chrome 浏览器。');
-            return;
-        }
-
-        // 停止当前朗读
-        stopSpeaking();
-
-        var recognition = new SpeechRecognition();
-        recognition.lang = 'zh-CN';
-        recognition.continuous = false;
-        recognition.interimResults = true;
-
-        recognition.onstart = function() {
-            voiceState.isListening = true;
-            var micBtn = document.querySelector('.voice-btn');
-            if (micBtn) {
-                micBtn.classList.add('listening');
-            }
-            var input = document.getElementById('chat-input');
-            if (input) {
-                input.placeholder = '正在聆听...';
-            }
-        };
-
-        recognition.onresult = function(event) {
-            var input = document.getElementById('chat-input');
-            if (!input) return;
-
-            var interim = '';
-            var finalText = '';
-
-            for (var i = event.resultIndex; i < event.results.length; i++) {
-                var transcript = event.results[i][0].transcript;
-                if (event.results[i].isFinal) {
-                    finalText += transcript;
-                } else {
-                    interim += transcript;
-                }
-            }
-
-            if (finalText) {
-                input.value = finalText;
-                state.inputText = finalText;
-                stopListening();
-                sendMessage();
-            } else if (interim) {
-                input.value = interim;
-                input.style.color = '#999';
-            }
-        };
-
-        recognition.onerror = function(event) {
-            console.error('[chat.js] 语音识别错误:', event.error);
-            voiceState.isListening = false;
-            var micBtn = document.querySelector('.voice-btn');
-            if (micBtn) {
-                micBtn.classList.remove('listening');
-            }
-            var input = document.getElementById('chat-input');
-            if (input) {
-                input.style.color = '';
-                input.placeholder = '输入你的问题...';
-            }
-
-            if (event.error === 'not-allowed') {
-                alert('请允许使用麦克风权限后进行语音输入。');
-            } else if (event.error === 'no-speech') {
-                // 静默处理
-            } else if (event.error !== 'aborted') {
-                alert('语音识别出错：' + event.error);
-            }
-        };
-
-        recognition.onend = function() {
-            voiceState.isListening = false;
-            voiceState.recognition = null;
-            var micBtn = document.querySelector('.voice-btn');
-            if (micBtn) {
-                micBtn.classList.remove('listening');
-            }
-            var input = document.getElementById('chat-input');
-            if (input) {
-                input.style.color = '';
-                if (!input.value) {
-                    input.placeholder = '输入你的问题...';
-                }
-            }
-        };
-
-        voiceState.recognition = recognition;
-        recognition.start();
-    }
-
-    function stopListening() {
-        if (voiceState.recognition) {
-            voiceState.recognition.stop();
-            voiceState.recognition = null;
-        }
-        voiceState.isListening = false;
-        var micBtn = document.querySelector('.voice-btn');
-        if (micBtn) {
-            micBtn.classList.remove('listening');
-        }
-    }
-
-    function speakMessage(index) {
-        const session = state.session;
-        if (!session || index >= session.messages.length) return;
-        const msg = session.messages[index];
-        if (msg.role !== 'assistant') return;
-
-        // 如果正在朗读同一条消息，则停止
-        if (voiceState.speakingIndex === index) {
-            stopSpeaking();
-            return;
-        }
-
-        // 先停止之前的朗读
-        window.speechSynthesis.cancel();
-
-        const utterance = new SpeechSynthesisUtterance(msg.content);
-        utterance.lang = 'zh-CN';
-        utterance.rate = 1.1;
-        utterance.pitch = 1.0;
-
-        // 查找中文女声
-        const voices = window.speechSynthesis.getVoices();
-        let zhVoice = null;
-        for (let i = 0; i < voices.length; i++) {
-            if (voices[i].lang.indexOf('zh') === 0 && voices[i].name.indexOf('Female') !== -1) {
-                zhVoice = voices[i];
-                break;
-            }
-        }
-        if (!zhVoice) {
-            for (let j = 0; j < voices.length; j++) {
-                if (voices[j].lang.indexOf('zh') === 0) {
-                    zhVoice = voices[j];
-                    break;
-                }
-            }
-        }
-        if (zhVoice) {
-            utterance.voice = zhVoice;
-        }
-
-        utterance.onstart = function() {
-            voiceState.speakingIndex = index;
-            refreshMessages();
-        };
-
-        utterance.onend = function() {
-            voiceState.speakingIndex = null;
-            refreshMessages();
-        };
-
-        utterance.onerror = function(e) {
-            console.error('[chat.js] 语音合成错误:', e);
-            voiceState.speakingIndex = null;
-            refreshMessages();
-        };
-
-        window.speechSynthesis.speak(utterance);
-    }
-
-    function stopSpeaking() {
-        window.speechSynthesis.cancel();
-        voiceState.speakingIndex = null;
-    }
-
-    function toggleAutoSpeak() {
-        voiceState.autoSpeak = !voiceState.autoSpeak;
-        localStorage.setItem('chat_auto_speak', voiceState.autoSpeak ? 'true' : 'false');
-
-        if (!voiceState.autoSpeak) {
-            stopSpeaking();
-        }
-
-        window.chatPageRender();
-    }
-
     // ==================== 导出页面对象 ====================
     var page = {
         render: render,
@@ -880,23 +681,17 @@ App.registerPage('chat', (function() {
         sendMessage: sendMessage,
         sendQuick: sendQuick,
         handleKeyDown: handleKeyDown,
-        toggleVoice: toggleVoice,
-        speakMessage: speakMessage,
-        toggleAutoSpeak: toggleAutoSpeak
+
     };
 
     // 全局暴露
     window.chatPage = page;
     window.chatPageRender = function() {
         if (window._activePage !== 'chat') {
-            stopSpeaking();
-            stopListening();
             return;
         }
         var app = document.getElementById('app');
         if (app) {
-            stopSpeaking();
-            stopListening();
             app.innerHTML = (window.renderShopHeader ? window.renderShopHeader() : '') + page.render();
             window.bindTabBarEvents();
             page.init();

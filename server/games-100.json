@@ -1,0 +1,902 @@
+[
+  {
+    "game_name": "盖亚计划",
+    "player_min": 1,
+    "player_max": 4,
+    "duration": 120,
+    "difficulty": 5,
+    "tags": "策略,科幻,建造",
+    "description": "重塑银河系的4X策略游戏，14个种族各有独特能力，深度极高"
+  },
+  {
+    "game_name": "历史巨轮",
+    "player_min": 1,
+    "player_max": 4,
+    "duration": 180,
+    "difficulty": 5,
+    "tags": "策略,文明,卡牌",
+    "description": "通过文明发展你的国家，从古代到现代，军事与科技并重"
+  },
+  {
+    "game_name": "冷战热斗",
+    "player_min": 2,
+    "player_max": 2,
+    "duration": 150,
+    "difficulty": 5,
+    "tags": "策略,历史,二人",
+    "description": "模拟美苏冷战的经典二人卡牌驱动策略游戏，全球博弈"
+  },
+  {
+    "game_name": "魔法骑士",
+    "player_min": 1,
+    "player_max": 4,
+    "duration": 150,
+    "difficulty": 5,
+    "tags": "策略,奇幻,冒险",
+    "description": "融合RPG元素的深度策略游戏，探索、征服、升级，单人体验极佳"
+  },
+  {
+    "game_name": "工业革命:伯明翰",
+    "player_min": 2,
+    "player_max": 4,
+    "duration": 90,
+    "difficulty": 4,
+    "tags": "策略,经济,工业",
+    "description": "BGG排名第一的经济策略游戏，管理煤矿、铁矿、啤酒和工厂网络"
+  },
+  {
+    "game_name": "灵迹岛",
+    "player_min": 1,
+    "player_max": 4,
+    "duration": 90,
+    "difficulty": 4,
+    "tags": "策略,合作,奇幻",
+    "description": "反殖民题材合作游戏，扮演精灵守护岛屿，驱逐入侵者"
+  },
+  {
+    "game_name": "方舟动物园",
+    "player_min": 1,
+    "player_max": 4,
+    "duration": 120,
+    "difficulty": 4,
+    "tags": "策略,经营,动物",
+    "description": "建造动物园的卡牌策略游戏，获取动物、赞助保护项目、吸引游客"
+  },
+  {
+    "game_name": "火星开发局",
+    "player_min": 1,
+    "player_max": 5,
+    "duration": 120,
+    "difficulty": 4,
+    "tags": "策略,科幻,卡牌",
+    "description": "扮演公司开发火星，建城市、绿地、海洋，卡片驱动经济引擎"
+  },
+  {
+    "game_name": "镰刀战争",
+    "player_min": 1,
+    "player_max": 5,
+    "duration": 90,
+    "difficulty": 4,
+    "tags": "策略,机甲,战争",
+    "description": "1920年代架空历史，驾驶机甲争夺东欧，美工顶级"
+  },
+  {
+    "game_name": "大西部铁路",
+    "player_min": 2,
+    "player_max": 4,
+    "duration": 75,
+    "difficulty": 4,
+    "tags": "策略,西部,经营",
+    "description": "运牛到堪萨斯城，沿途建造建筑、雇佣工人、买卖牛群"
+  },
+  {
+    "game_name": "翼展",
+    "player_min": 1,
+    "player_max": 5,
+    "duration": 60,
+    "difficulty": 3,
+    "tags": "策略,自然,卡牌",
+    "description": "收集各种鸟类卡牌，构建食物链引擎，美术精美，英文名Wingspan"
+  },
+  {
+    "game_name": "勃艮第城堡",
+    "player_min": 2,
+    "player_max": 4,
+    "duration": 70,
+    "difficulty": 3,
+    "tags": "策略,骰子,建造",
+    "description": "骰子驱动的领地建设游戏，组合板块获得最大收益"
+  },
+  {
+    "game_name": "康考迪亚",
+    "player_min": 2,
+    "player_max": 5,
+    "duration": 90,
+    "difficulty": 3,
+    "tags": "策略,古罗马,经济",
+    "description": "在古罗马帝国进行贸易和扩张，优雅的卡牌驱动经济系统"
+  },
+  {
+    "game_name": "托斯卡纳城堡",
+    "player_min": 2,
+    "player_max": 5,
+    "duration": 90,
+    "difficulty": 3,
+    "tags": "策略,建造,工人",
+    "description": "百变城堡建造游戏，每回合选择行动板块，策略多样"
+  },
+  {
+    "game_name": "阿纳克失落遗迹",
+    "player_min": 1,
+    "player_max": 4,
+    "duration": 60,
+    "difficulty": 3,
+    "tags": "策略,考古,冒险",
+    "description": "探索失落遗迹，结合DBG与工人放置，美术优秀"
+  },
+  {
+    "game_name": "沙丘:帝国",
+    "player_min": 1,
+    "player_max": 4,
+    "duration": 90,
+    "difficulty": 3,
+    "tags": "策略,科幻,IP",
+    "description": "基于沙丘IP的策略游戏，工人放置+DBG，争夺阿拉基斯控制权"
+  },
+  {
+    "game_name": "葡萄酒庄园",
+    "player_min": 1,
+    "player_max": 6,
+    "duration": 60,
+    "difficulty": 4,
+    "tags": "策略,经营,酿酒",
+    "description": "在托斯卡纳经营酒庄，种植葡萄、酿造、销售葡萄酒"
+  },
+  {
+    "game_name": "澳大利亚",
+    "player_min": 2,
+    "player_max": 5,
+    "duration": 75,
+    "difficulty": 3,
+    "tags": "策略,经济,区域",
+    "description": "澳洲开发主题，投骰子选行动，建造牧场和基础设施"
+  },
+  {
+    "game_name": "水下城市",
+    "player_min": 1,
+    "player_max": 4,
+    "duration": 80,
+    "difficulty": 4,
+    "tags": "策略,科幻,建造",
+    "description": "建造海底城市，管理氧气和食物，卡牌搭配农场和实验室"
+  },
+  {
+    "game_name": "重塑火星:前奏",
+    "player_min": 1,
+    "player_max": 5,
+    "duration": 100,
+    "difficulty": 4,
+    "tags": "策略,科幻,扩张",
+    "description": "火星开发局经典前奏扩展，加速开局，策略更多变"
+  },
+  {
+    "game_name": "卡坦岛",
+    "player_min": 3,
+    "player_max": 4,
+    "duration": 60,
+    "difficulty": 3,
+    "tags": "策略,交易,家庭",
+    "description": "经典入门策略游戏，通过交易和建造扩张殖民地，德策入门首选"
+  },
+  {
+    "game_name": "璀璨宝石",
+    "player_min": 2,
+    "player_max": 4,
+    "duration": 30,
+    "difficulty": 2,
+    "tags": "策略,收集,家庭",
+    "description": "收集宝石换取发展卡，简单优雅的经济引擎游戏"
+  },
+  {
+    "game_name": "卡卡颂",
+    "player_min": 2,
+    "player_max": 5,
+    "duration": 45,
+    "difficulty": 2,
+    "tags": "家庭,策略,拼图",
+    "description": "拼接版图放置随从，争夺城堡、道路和修道院"
+  },
+  {
+    "game_name": "七大奇迹",
+    "player_min": 2,
+    "player_max": 7,
+    "duration": 30,
+    "difficulty": 3,
+    "tags": "策略,卡牌,文明",
+    "description": "同时选牌，发展文明，建奇迹，三人以上体验最佳"
+  },
+  {
+    "game_name": "花砖物语",
+    "player_min": 2,
+    "player_max": 4,
+    "duration": 30,
+    "difficulty": 2,
+    "tags": "策略,收集,拼图",
+    "description": "选花砖拼图案，规则简单但策略深，抽象游戏代表作"
+  },
+  {
+    "game_name": "多米诺王国",
+    "player_min": 2,
+    "player_max": 4,
+    "duration": 20,
+    "difficulty": 1,
+    "tags": "家庭,轻度,拼图",
+    "description": "拼多米诺地块建王国，5x5网格得分，轻快有趣"
+  },
+  {
+    "game_name": "车票之旅",
+    "player_min": 2,
+    "player_max": 5,
+    "duration": 45,
+    "difficulty": 2,
+    "tags": "家庭,火车,收集",
+    "description": "收集火车卡建造铁路路线，完成旅程任务，家庭聚会首选"
+  },
+  {
+    "game_name": "丛林探险",
+    "player_min": 2,
+    "player_max": 5,
+    "duration": 30,
+    "difficulty": 1,
+    "tags": "家庭,冒险,运气",
+    "description": "探索丛林遗迹，收集宝藏和装备，轻策略+推运气"
+  },
+  {
+    "game_name": "拼布对决",
+    "player_min": 2,
+    "player_max": 2,
+    "duration": 30,
+    "difficulty": 2,
+    "tags": "家庭,二人,拼图",
+    "description": "二人拼布游戏，用时间和纽扣换取布料，拼出最完整的被子"
+  },
+  {
+    "game_name": "骆驼大赛",
+    "player_min": 3,
+    "player_max": 8,
+    "duration": 30,
+    "difficulty": 1,
+    "tags": "家庭,派对,竞速",
+    "description": "疯狂的骆驼赛跑，叠罗汉式跑法，下注竞猜，笑点不断"
+  },
+  {
+    "game_name": "七大奇迹:对决",
+    "player_min": 2,
+    "player_max": 2,
+    "duration": 30,
+    "difficulty": 3,
+    "tags": "策略,卡牌,二人",
+    "description": "七大奇迹的二人版本，三轮军备竞赛+科技+文化胜利"
+  },
+  {
+    "game_name": "璀璨宝石:对决",
+    "player_min": 2,
+    "player_max": 2,
+    "duration": 30,
+    "difficulty": 2,
+    "tags": "策略,收集,二人",
+    "description": "璀璨宝石二人版，棋盘式选牌，增加了策略维度"
+  },
+  {
+    "game_name": "斋普尔",
+    "player_min": 2,
+    "player_max": 2,
+    "duration": 30,
+    "difficulty": 2,
+    "tags": "家庭,交易,二人",
+    "description": "在印度市场交易货物，集齐套组出售获利，经典二人游戏"
+  },
+  {
+    "game_name": "失落的城市",
+    "player_min": 2,
+    "player_max": 2,
+    "duration": 30,
+    "difficulty": 2,
+    "tags": "家庭,卡牌,二人",
+    "description": "探险主题二人卡牌，下注+排序，风险与奖励并存"
+  },
+  {
+    "game_name": "水门事件",
+    "player_min": 2,
+    "player_max": 2,
+    "duration": 40,
+    "difficulty": 3,
+    "tags": "策略,历史,二人",
+    "description": "不对称二人游戏，尼克松vs记者，还原水门事件调查"
+  },
+  {
+    "game_name": "战锤入侵",
+    "player_min": 2,
+    "player_max": 2,
+    "duration": 30,
+    "difficulty": 3,
+    "tags": "策略,奇幻,二人",
+    "description": "战锤主题卡牌对战，召唤部队攻破对方堡垒"
+  },
+  {
+    "game_name": "星球大战:军团",
+    "player_min": 2,
+    "player_max": 2,
+    "duration": 90,
+    "difficulty": 3,
+    "tags": "策略,战棋,IP",
+    "description": "星球大战题材微型战棋，指挥部队在银河系战斗"
+  },
+  {
+    "game_name": "阿瓦隆",
+    "player_min": 5,
+    "player_max": 10,
+    "duration": 30,
+    "difficulty": 2,
+    "tags": "聚会,推理,嘴炮",
+    "description": "圆桌骑士主题身份推理游戏，好人做任务、坏人暗中破坏"
+  },
+  {
+    "game_name": "机密代号",
+    "player_min": 4,
+    "player_max": 8,
+    "duration": 15,
+    "difficulty": 2,
+    "tags": "聚会,派对,猜词",
+    "description": "队长给出单字线索，队员猜出本方所有特工，不能碰到暗杀者"
+  },
+  {
+    "game_name": "画物语",
+    "player_min": 3,
+    "player_max": 8,
+    "duration": 30,
+    "difficulty": 1,
+    "tags": "聚会,猜图,创意",
+    "description": "一图胜千言，用一句话描述手中的梦幻插图，猜对得分"
+  },
+  {
+    "game_name": "行动代号:图片版",
+    "player_min": 4,
+    "player_max": 8,
+    "duration": 15,
+    "difficulty": 2,
+    "tags": "聚会,派对,猜图",
+    "description": "图片版行动代号，用词语线索揭示本方特工"
+  },
+  {
+    "game_name": "谁是牛头王",
+    "player_min": 2,
+    "player_max": 10,
+    "duration": 20,
+    "difficulty": 1,
+    "tags": "聚会,数字,轻松",
+    "description": "出牌按序排列，被迫收到第6张就扣分，简单但上瘾"
+  },
+  {
+    "game_name": "爆炸猫咪",
+    "player_min": 2,
+    "player_max": 5,
+    "duration": 15,
+    "difficulty": 1,
+    "tags": "聚会,卡牌,轻松",
+    "description": "抽到爆炸猫就出局！各色道具卡互相坑害，俄罗斯轮盘桌游版"
+  },
+  {
+    "game_name": "禁忌之岛",
+    "player_min": 2,
+    "player_max": 4,
+    "duration": 30,
+    "difficulty": 2,
+    "tags": "合作,冒险,家庭",
+    "description": "合作逃离沉没中的岛屿，收集四件宝物，简单好上手"
+  },
+  {
+    "game_name": "爆炸猫:派对版",
+    "player_min": 2,
+    "player_max": 10,
+    "duration": 20,
+    "difficulty": 1,
+    "tags": "聚会,卡牌,派对",
+    "description": "支持更多人一起玩爆炸猫，规则不变，人数翻倍"
+  },
+  {
+    "game_name": "试个好游戏",
+    "player_min": 3,
+    "player_max": 8,
+    "duration": 30,
+    "difficulty": 1,
+    "tags": "聚会,派对,创意",
+    "description": "用奇怪的道具完成搞笑挑战，聚会气氛担当"
+  },
+  {
+    "game_name": "狼人杀",
+    "player_min": 6,
+    "player_max": 18,
+    "duration": 30,
+    "difficulty": 2,
+    "tags": "聚会,推理,身份",
+    "description": "经典身份推理游戏，村民找出隐藏的狼人"
+  },
+  {
+    "game_name": "抵抗组织",
+    "player_min": 5,
+    "player_max": 10,
+    "duration": 30,
+    "difficulty": 2,
+    "tags": "聚会,推理,嘴炮",
+    "description": "科幻版阿瓦隆，抵抗军对抗帝国间谍，无淘汰机制"
+  },
+  {
+    "game_name": "侦探笔记",
+    "player_min": 1,
+    "player_max": 6,
+    "duration": 90,
+    "difficulty": 3,
+    "tags": "推理,解谜,合作",
+    "description": "真实案件侦破，联网搜索线索，沉浸式体验"
+  },
+  {
+    "game_name": "亡灵古堡",
+    "player_min": 2,
+    "player_max": 6,
+    "duration": 60,
+    "difficulty": 2,
+    "tags": "推理,合作,恐怖",
+    "description": "克苏鲁主题合作推理，翻牌找线索，不死怪物会演变"
+  },
+  {
+    "game_name": "侦探:现代犯罪",
+    "player_min": 1,
+    "player_max": 5,
+    "duration": 120,
+    "difficulty": 3,
+    "tags": "推理,解谜,剧情",
+    "description": "用真实工具（数据库、网络搜索）破案，高度沉浸"
+  },
+  {
+    "game_name": "领土",
+    "player_min": 2,
+    "player_max": 4,
+    "duration": 30,
+    "difficulty": 3,
+    "tags": "策略,构筑,卡牌",
+    "description": "DBG鼻祖，每局从10种王国卡中选择，构建你的牌组"
+  },
+  {
+    "game_name": "银河竞逐",
+    "player_min": 2,
+    "player_max": 4,
+    "duration": 60,
+    "difficulty": 4,
+    "tags": "策略,卡牌,科幻",
+    "description": "同步选行动，发展星际文明，图标语言复杂但深度极高"
+  },
+  {
+    "game_name": "星域奇航",
+    "player_min": 2,
+    "player_max": 2,
+    "duration": 20,
+    "difficulty": 2,
+    "tags": "策略,构筑,科幻",
+    "description": "太空对战DBG，快速构筑牌组击破对方母舰"
+  },
+  {
+    "game_name": "暗杀神",
+    "player_min": 2,
+    "player_max": 4,
+    "duration": 45,
+    "difficulty": 2,
+    "tags": "策略,构筑,奇幻",
+    "description": "奇幻DBG，不断扩充牌组获取荣誉点数"
+  },
+  {
+    "game_name": "皇冠之心",
+    "player_min": 2,
+    "player_max": 4,
+    "duration": 45,
+    "difficulty": 2,
+    "tags": "策略,构筑,日本",
+    "description": "日本原创DBG，公主争夺战，美术华丽"
+  },
+  {
+    "game_name": "血怒",
+    "player_min": 2,
+    "player_max": 4,
+    "duration": 60,
+    "difficulty": 3,
+    "tags": "策略,维京,区域",
+    "description": "维京主题区域控制+卡牌，诸神黄昏降临，战死也能得分"
+  },
+  {
+    "game_name": "瘟疫危机",
+    "player_min": 2,
+    "player_max": 4,
+    "duration": 45,
+    "difficulty": 3,
+    "tags": "合作,策略,病毒",
+    "description": "经典合作游戏，全球病毒爆发，团队协作找解药"
+  },
+  {
+    "game_name": "瘟疫危机:传承",
+    "player_min": 2,
+    "player_max": 4,
+    "duration": 60,
+    "difficulty": 3,
+    "tags": "合作,剧情,传承",
+    "description": "剧情驱动的瘟疫危机，每次游戏都永久改变这个世界"
+  },
+  {
+    "game_name": "僵尸末日",
+    "player_min": 1,
+    "player_max": 6,
+    "duration": 90,
+    "difficulty": 3,
+    "tags": "合作,恐怖,生存",
+    "description": "经典合作求生，丧尸爆发、物资匮乏，每回合都可能是末日"
+  },
+  {
+    "game_name": "魔戒:卡牌游戏",
+    "player_min": 1,
+    "player_max": 4,
+    "duration": 60,
+    "difficulty": 4,
+    "tags": "合作,卡牌,IP",
+    "description": "指环王主题合作卡牌LCG，组队探索中土世界"
+  },
+  {
+    "game_name": "星际迷航:前沿",
+    "player_min": 1,
+    "player_max": 4,
+    "duration": 90,
+    "difficulty": 4,
+    "tags": "合作,科幻,冒险",
+    "description": "星际迷航主题合作冒险，指挥星舰探索未知象限"
+  },
+  {
+    "game_name": "疯狂诡宅",
+    "player_min": 2,
+    "player_max": 5,
+    "duration": 120,
+    "difficulty": 3,
+    "tags": "合作,恐怖,APP",
+    "description": "APP驱动的克苏鲁合作解谜，探索闹鬼庄园"
+  },
+  {
+    "game_name": "拉斯维加斯",
+    "player_min": 2,
+    "player_max": 5,
+    "duration": 30,
+    "difficulty": 1,
+    "tags": "家庭,骰子,派对",
+    "description": "投骰子抢赌场，同点数抵消，纯粹欢乐"
+  },
+  {
+    "game_name": "东京之王",
+    "player_min": 2,
+    "player_max": 6,
+    "duration": 30,
+    "difficulty": 2,
+    "tags": "家庭,骰子,怪兽",
+    "description": "扮演怪兽争夺东京，投骰子攻击、治疗、得分"
+  },
+  {
+    "game_name": "纽约之王",
+    "player_min": 2,
+    "player_max": 6,
+    "duration": 30,
+    "difficulty": 2,
+    "tags": "家庭,骰子,怪兽",
+    "description": "东京之王的续作，增加建筑摧毁机制，策略更深"
+  },
+  {
+    "game_name": "骰子街",
+    "player_min": 2,
+    "player_max": 4,
+    "duration": 30,
+    "difficulty": 2,
+    "tags": "家庭,骰子,建造",
+    "description": "投骰子建城市，类似卡牌版大富翁但好玩一百倍"
+  },
+  {
+    "game_name": "聪明骰子",
+    "player_min": 1,
+    "player_max": 4,
+    "duration": 30,
+    "difficulty": 2,
+    "tags": "家庭,骰子,纸笔",
+    "description": "骰子纸笔游戏的巅峰，每次投骰都有选择，Combo来得分"
+  },
+  {
+    "game_name": "并购大师",
+    "player_min": 3,
+    "player_max": 6,
+    "duration": 60,
+    "difficulty": 3,
+    "tags": "策略,经济,股票",
+    "description": "经典股票投资游戏，创建并购公司、决定何时套现"
+  },
+  {
+    "game_name": "电力网络",
+    "player_min": 2,
+    "player_max": 6,
+    "duration": 120,
+    "difficulty": 4,
+    "tags": "策略,经济,能源",
+    "description": "竞标电厂、购买燃料、建造电网，经典经济策略"
+  },
+  {
+    "game_name": "奴隶湾",
+    "player_min": 3,
+    "player_max": 6,
+    "duration": 60,
+    "difficulty": 3,
+    "tags": "策略,经济,恶搞",
+    "description": "扮演黑市商人，雇佣恶棍、走私货物，黑色幽默十足"
+  },
+  {
+    "game_name": "快餐连锁大亨",
+    "player_min": 2,
+    "player_max": 5,
+    "duration": 120,
+    "difficulty": 4,
+    "tags": "策略,经营,餐饮",
+    "description": "经营快餐连锁，雇佣员工、打广告、开分店，模拟经营极致"
+  },
+  {
+    "game_name": "斯波泰计划",
+    "player_min": 2,
+    "player_max": 5,
+    "duration": 90,
+    "difficulty": 3,
+    "tags": "策略,经营,主题公园",
+    "description": "建造和经营主题公园，设计游乐设施，吸引最多游客"
+  },
+  {
+    "game_name": "拉密",
+    "player_min": 2,
+    "player_max": 4,
+    "duration": 60,
+    "difficulty": 2,
+    "tags": "家庭,数字,抽象",
+    "description": "以色列麻将，打出同色顺子或同数数组，先出完获胜"
+  },
+  {
+    "game_name": "乌邦果",
+    "player_min": 1,
+    "player_max": 4,
+    "duration": 25,
+    "difficulty": 2,
+    "tags": "家庭,拼图,竞速",
+    "description": "俄罗斯方块式拼图竞速，用不同形状板块填满区域"
+  },
+  {
+    "game_name": "卡里巴岛",
+    "player_min": 2,
+    "player_max": 4,
+    "duration": 20,
+    "difficulty": 1,
+    "tags": "家庭,抽象,竞速",
+    "description": "同时掷骰子抢宝藏卡片，眼疾手快"
+  },
+  {
+    "game_name": "圣托里尼",
+    "player_min": 2,
+    "player_max": 4,
+    "duration": 20,
+    "difficulty": 2,
+    "tags": "家庭,抽象,建造",
+    "description": "在希腊圣托里尼岛上建塔，先爬上三层顶者获胜"
+  },
+  {
+    "game_name": "情书",
+    "player_min": 2,
+    "player_max": 4,
+    "duration": 15,
+    "difficulty": 1,
+    "tags": "聚会,卡牌,快速",
+    "description": "只有16张牌，每轮抽1打1，用角色能力淘汰对手，终极轻策"
+  },
+  {
+    "game_name": "间谍落网",
+    "player_min": 3,
+    "player_max": 8,
+    "duration": 15,
+    "difficulty": 1,
+    "tags": "聚会,推理,快速",
+    "description": "谁是卧底桌游版，间谍不知道地点，大家要揪出来"
+  },
+  {
+    "game_name": "花火",
+    "player_min": 2,
+    "player_max": 5,
+    "duration": 25,
+    "difficulty": 2,
+    "tags": "合作,记忆,卡牌",
+    "description": "合作放烟花，你看不见自己的牌但能看到别人的，靠提示排序"
+  },
+  {
+    "game_name": "骷髅牌",
+    "player_min": 3,
+    "player_max": 6,
+    "duration": 15,
+    "difficulty": 1,
+    "tags": "聚会,嘴炮,快速",
+    "description": "纯粹的猜测与虚张声势，每轮翻牌赌命"
+  },
+  {
+    "game_name": "亡者神抽",
+    "player_min": 2,
+    "player_max": 4,
+    "duration": 15,
+    "difficulty": 1,
+    "tags": "聚会,卡牌,快速",
+    "description": "赌命翻牌，碰到同样花色就爆炸，紧张刺激"
+  },
+  {
+    "game_name": "漫威群英传",
+    "player_min": 1,
+    "player_max": 4,
+    "duration": 45,
+    "difficulty": 3,
+    "tags": "合作,卡牌,IP",
+    "description": "漫威主题合作LCG，扮演超级英雄对抗反派"
+  },
+  {
+    "game_name": "哈利波特:霍格沃茨之战",
+    "player_min": 2,
+    "player_max": 4,
+    "duration": 60,
+    "difficulty": 3,
+    "tags": "合作,构筑,IP",
+    "description": "哈利波特主题DBG，七学年逐步解锁，对抗伏地魔"
+  },
+  {
+    "game_name": "星际争霸:版图版",
+    "player_min": 2,
+    "player_max": 6,
+    "duration": 180,
+    "difficulty": 4,
+    "tags": "策略,科幻,IP",
+    "description": "暴雪星际争霸改编，三族争霸，大规模战争"
+  },
+  {
+    "game_name": "上古卷轴:天际冒险",
+    "player_min": 1,
+    "player_max": 4,
+    "duration": 90,
+    "difficulty": 3,
+    "tags": "合作,冒险,IP",
+    "description": "上古卷轴主题合作冒险，探索天际省完成任务"
+  },
+  {
+    "game_name": "战锤40K:征服",
+    "player_min": 2,
+    "player_max": 2,
+    "duration": 60,
+    "difficulty": 4,
+    "tags": "策略,卡牌,IP",
+    "description": "战锤40K主题LCG卡牌对战，七大阵营对决"
+  },
+  {
+    "game_name": "三国杀",
+    "player_min": 4,
+    "player_max": 10,
+    "duration": 60,
+    "difficulty": 3,
+    "tags": "聚会,推理,三国",
+    "description": "三国主题身份推理卡牌，武将各有技能，杀闪桃经典"
+  },
+  {
+    "game_name": "风声",
+    "player_min": 3,
+    "player_max": 9,
+    "duration": 60,
+    "difficulty": 3,
+    "tags": "聚会,推理,谍战",
+    "description": "谍战主题身份推理，传递情报完成密电"
+  },
+  {
+    "game_name": "仙境幽谷",
+    "player_min": 2,
+    "player_max": 4,
+    "duration": 45,
+    "difficulty": 3,
+    "tags": "策略,建造,美术",
+    "description": "在森林中建造动物小镇，每季换新工人，美术美到窒息"
+  },
+  {
+    "game_name": "御竹园",
+    "player_min": 2,
+    "player_max": 4,
+    "duration": 90,
+    "difficulty": 3,
+    "tags": "策略,熊猫,建造",
+    "description": "养熊猫的中国风游戏，灌溉竹林、建造栖息地"
+  },
+  {
+    "game_name": "花间集",
+    "player_min": 2,
+    "player_max": 4,
+    "duration": 30,
+    "difficulty": 2,
+    "tags": "家庭,美术,收集",
+    "description": "中国水墨画风格，收集不同花卉组合，唯美轻策"
+  },
+  {
+    "game_name": "波多黎各",
+    "player_min": 2,
+    "player_max": 5,
+    "duration": 90,
+    "difficulty": 4,
+    "tags": "策略,经营,殖民",
+    "description": "经典角色选择经营游戏，种植作物、建造建筑、运输货物"
+  },
+  {
+    "game_name": "农场主",
+    "player_min": 1,
+    "player_max": 4,
+    "duration": 120,
+    "difficulty": 4,
+    "tags": "策略,经营,农业",
+    "description": "经典工人放置，经营农场、养动物、种庄稼、扩建房屋"
+  },
+  {
+    "game_name": "洞穴农夫",
+    "player_min": 1,
+    "player_max": 7,
+    "duration": 120,
+    "difficulty": 5,
+    "tags": "策略,经营,矮人",
+    "description": "农场主深化版，扮演矮人挖洞穴、锻造武器、探险"
+  },
+  {
+    "game_name": "幽港迷城",
+    "player_min": 1,
+    "player_max": 4,
+    "duration": 120,
+    "difficulty": 5,
+    "tags": "策略,合作,奇幻",
+    "description": "史诗级地牢爬行，剧情驱动，战棋+卡牌，BGG常年榜首"
+  },
+  {
+    "game_name": "复仇女神号",
+    "player_min": 1,
+    "player_max": 5,
+    "duration": 90,
+    "difficulty": 3,
+    "tags": "策略,科幻,生存",
+    "description": "异形主题半合作，在飞船上完成秘密目标，背叛或合作"
+  },
+  {
+    "game_name": "皇舆争霸",
+    "player_min": 2,
+    "player_max": 4,
+    "duration": 30,
+    "difficulty": 2,
+    "tags": "策略,构筑,卡牌",
+    "description": "领土中文化版，DBG入门首选，每局不同组合"
+  },
+  {
+    "game_name": "推理事件簿",
+    "player_min": 1,
+    "player_max": 4,
+    "duration": 60,
+    "difficulty": 2,
+    "tags": "推理,合作,APP",
+    "description": "APP驱动的侦探推理，扫描QR获取线索，破案体验"
+  },
+  {
+    "game_name": "璀璨宝石:漫威",
+    "player_min": 2,
+    "player_max": 4,
+    "duration": 30,
+    "difficulty": 2,
+    "tags": "策略,收集,IP",
+    "description": "漫威版璀璨宝石，收集无限宝石和复仇者卡片"
+  }
+]

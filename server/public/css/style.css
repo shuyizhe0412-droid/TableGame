@@ -1440,3 +1440,131 @@ h1, h2, h3, h4 {
 }
 
 .cover-actions { display: flex; gap: 8px; }
+
+/* ========== 批量从游戏库添加弹窗 ========== */
+.batch-library-search { margin-bottom: 12px; }
+
+.batch-library-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+
+.library-game-list {
+  max-height: 420px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.library-game-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  transition: all var(--transition);
+  cursor: pointer;
+}
+.library-game-item:hover { background: var(--bg-elevated); }
+.library-game-item.selected {
+  border-color: var(--primary);
+  background: rgba(45, 106, 79, 0.1);
+}
+.library-game-item.existing {
+  opacity: 0.6;
+  background: var(--bg-elevated);
+}
+
+.library-game-checkbox {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+.library-game-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+.library-game-checkbox input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+}
+
+.library-game-info { flex: 1; min-width: 0; }
+
+.library-game-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.library-game-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.library-game-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.library-game-desc {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.library-pagination {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 0 4px;
+}
+
+.library-pagination .page-btn {
+  min-width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  font-size: 13px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.library-pagination .page-btn:hover { border-color: var(--primary); }
+.library-pagination .page-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.library-selected-summary {
+  font-size: 14px;
+  color: var(--primary-light);
+  font-weight: 600;
+}

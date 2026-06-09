@@ -5,6 +5,74 @@
  */
 console.log('[api.js] 开始加载...');
 
+
+// ==================== AI 流式对话 ====================
+/**
+ * 流式调用 AI 对话
+ * @param {string} gameId - 游戏 ID
+ * @param {string} question - 用户问题
+ * @param {string} mode - 模式 (setup/rules/faq/recommend)
+ * @param {Array} history - 历史对话 [{role, content}]
+ * @param {function} onChunk - 每收到一块内容时回调 (content: string)
+ * @returns {Promise<string>} 完整回答
+ */
+async function askAIStream(gameId, question, mode, history, onChunk) {
+    console.log('[askAIStream] game:', gameId, 'mode:', mode, 'history:', (history||[]).length, '轮');
+
+    var resp = await fetch(API_BASE_URL + '/ai/ask-stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            game_id: gameId,
+            question: question,
+            mode: mode || 'rules',
+            history: history || []
+        })
+    });
+
+    if (!resp.ok) {
+        throw new Error('AI 服务异常: HTTP ' + resp.status);
+    }
+
+    var reader = resp.body.getReader();
+    var decoder = new TextDecoder();
+    var fullText = '';
+    var buffer = '';
+
+    while (true) {
+        var result = await reader.read();
+        if (result.done) break;
+
+        buffer += decoder.decode(result.value, { stream: true });
+
+        // 处理 SSE 行
+        var lines = buffer.split('\n');
+        buffer = lines.pop(); // 保留未完成的行
+
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i].trim();
+            if (line.indexOf('data: ') === 0) {
+                try {
+                    var payload = JSON.parse(line.substring(6));
+                    if (payload.done) {
+                        fullText = payload.full || fullText;
+                    } else if (payload.error) {
+                        throw new Error(payload.error);
+                    } else if (payload.content) {
+                        fullText += payload.content;
+                        if (onChunk) onChunk(payload.content);
+                    }
+                } catch (e) {
+                    if (e.message.indexOf('AI') === 0) throw e;
+                    // JSON parse error, skip
+                }
+            }
+        }
+    }
+
+    return fullText;
+}
+
 // ==================== Token 管理 ====================
 function getToken() {
     return localStorage.getItem('auth_token');
@@ -460,8 +528,36 @@ async function getGames(filters, storeId) {
         }
     }
 
-    // 无 storeId 且未登录 → 返回空数组
-    console.log('[getGames] 未登录且无 storeId，返回空数组');
+    // 无 storeId 且未登录 → 尝试加载第一个店家的游戏（本地开发模式）
+    console.log('[getGames] 未登录且无 storeId，尝试加载默认游戏');
+    try {
+        // 尝试获取任意一个店家的游戏列表
+        var resp = await fetch(API_BASE_URL + '/public/all-games', {
+            headers: { 'Content-Type': 'application/json' }
+        });
+        if (resp.ok) {
+            var games = await resp.json();
+            if (Array.isArray(games) && games.length > 0) {
+                console.log('[getGames] 默认游戏加载成功:', games.length, '个');
+                return games;
+            }
+        }
+    } catch (e) {
+        console.warn('[getGames] 默认游戏加载失败:', e.message);
+    }
+
+    // 最后兜底：尝试用全局游戏列表
+    try {
+        var resp2 = await fetch(API_BASE_URL + '/admin/global-games');
+        if (resp2.ok) {
+            var globalGames = await resp2.json();
+            console.log('[getGames] 全局游戏:', globalGames.length, '个');
+            return globalGames || [];
+        }
+    } catch (e2) {
+        console.warn('[getGames] 全局游戏也失败:', e2.message);
+    }
+
     return [];
 }
 
