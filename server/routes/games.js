@@ -177,6 +177,26 @@ router.post('/', async (req, res) => {
   }
 });
 
+// GET /api/games/:id/rules - 获取桌游规则内容（需认证）
+router.get('/:id/rules', async (req, res) => {
+  try {
+    const { data: existingArr, error: findErr } = await supabase
+      .from('store_games')
+      .select('id, name, store_id, rules_text, rules_json')
+      .eq('id', req.params.id)
+      .eq('store_id', req.store.id)
+      .limit(1);
+    if (findErr) throw findErr;
+    if (!existingArr || existingArr.length === 0) {
+      return res.status(404).json({ error: '游戏不存在或无权访问' });
+    }
+    res.json({ rules_text: existingArr[0].rules_text || '', rules_json: existingArr[0].rules_json || '' });
+  } catch (err) {
+    console.error('[GAMES] 获取规则失败:', err.message);
+    res.status(500).json({ error: '获取失败' });
+  }
+});
+
 // PUT /api/games/:id/rules - 更新桌游规则内容（需认证）
 // 放在 PUT /:id 前面，避免被通用更新路由先匹配
 router.put('/:id/rules', async (req, res) => {

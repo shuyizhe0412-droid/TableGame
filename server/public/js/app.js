@@ -532,7 +532,8 @@ function initNavigation() {
  $('#logout-btn').addEventListener('click', logout);
 
   $('#view-player-btn').addEventListener('click', () => {
-    window.open('https://boardgame-ai.pages.dev/#/home', '_blank');
+    var playerUrl = 'https://boardgame-hub-deploy.pages.dev/player.html?storeId=' + (currentUser ? currentUser.id : '');
+      window.open(playerUrl, '_blank');
   });
 }
 
