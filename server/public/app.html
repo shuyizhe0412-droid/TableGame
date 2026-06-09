@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>桌游AI教练</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/consumer-style.css?v=1">
+</head>
+<body>
+    <div id="app"></div>
+    <!-- 二维码 & 下载库（已本地化以避免微信/QQ浏览器拦截CDN） -->
+    <script src="js/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+    <!-- 按依赖顺序加载：注册器最先，然后页面，最后入口 -->
+    <script src="js/config.js?v=3"></script>
+    <script src="js/router.js?v=3"></script>
+    <script src="js/api.js?v=23"></script>
+    <script src="js/qrcode-utils.js?v=3"></script>
+    <script src="js/pages.js?v=2"></script>
+    <script src="js/pages/home.js?v=14"></script>
+    <script src="js/pages/detail.js?v=33"></script>
+    <script src="js/pages/chat.js?v=9"></script>
+    <script src="js/pages/chat-list.js?v=3"></script>
+    <script src="js/pages/search.js?v=7"></script>
+    <script src="js/pages/profile.js?v=11"></script>
+    <script src="js/pages/auth.js?v=5"></script>
+    <script src="js/pages/recommend.js?v=2"></script>
+    <script src="js/pages/guide.js?v=2"></script>
+    <script src="js/app-consumer.js?v=1"></script>
+</body>
+</html>

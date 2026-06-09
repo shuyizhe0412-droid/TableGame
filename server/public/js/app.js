@@ -237,7 +237,7 @@ function renderGameDetail(game) {
  loadGameFiles(game.id);
 
  // 二维码 — 指向玩家端 AI 教学页
- const playerBase = 'https://boardgame-hub-deploy.pages.dev';
+ const playerBase = 'https://boardgame-hub-deploy.pages.dev/app.html';
  const shopId = game.store_id || currentUser.id;
  const playUrl = `${playerBase}/#/chat?gameId=${game.id}&shop=${shopId}`;
  const qrApi = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(playUrl)}`;
@@ -532,7 +532,7 @@ function initNavigation() {
  $('#logout-btn').addEventListener('click', logout);
 
   $('#view-player-btn').addEventListener('click', () => {
-    var playerUrl = 'https://boardgame-hub-deploy.pages.dev/#/home?shop=' + (currentUser ? currentUser.id : '');
+    var playerUrl = 'https://boardgame-hub-deploy.pages.dev/app.html#/home?shop=' + (currentUser ? currentUser.id : '');
       window.open(playerUrl, '_blank');
   });
 }
@@ -887,7 +887,7 @@ function initBatchLibraryModal() {
 function openStoreQrModal() {
   var storeName = currentUser ? currentUser.store_name : '桌游吧';
   var storeId = currentUser ? currentUser.id : '';
-  var url = 'https://boardgame-hub-deploy.pages.dev/#/home?shop=' + storeId;
+  var url = 'https://boardgame-hub-deploy.pages.dev/app.html#/home?shop=' + storeId;
   var qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(url);
 
   $('#store-qr-img').src = qrSrc;
