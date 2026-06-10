@@ -44,12 +44,16 @@ function getTabBarHtml(activeTab) {
 
 // 绑定 TabBar 点击事件（含300ms冷却）
 function bindTabBarEvents() {
-    document.querySelectorAll('.tabbar-item').forEach(function(item) {
+    var items = document.querySelectorAll('.tabbar-item');
+    console.log('[TabBar] 绑定事件, 找到元素数:', items.length);
+    items.forEach(function(item) {
         item.addEventListener('click', function() {
             var now = Date.now();
+            var page = this.dataset.page;
+            console.log('[TabBar] 点击:', page, ', 冷却剩余:', Math.max(0, 300 - (now - _lastNavTime)), 'ms');
             if (now - _lastNavTime < 300) return;
             _lastNavTime = now;
-            navigate('/' + this.dataset.page);
+            navigate('/' + page);
         });
     });
 }
@@ -137,6 +141,7 @@ function renderShopHeader() {
  */
 function renderPageContent(pageName, params, activeTab) {
     // 活跃页面守卫：标记当前活跃页面，防止旧页面异步回调覆盖
+    console.log('[Router] renderPageContent:', pageName, ', activeTab:', activeTab);
     window._activePage = pageName;
 
     var app = document.getElementById('app');
@@ -264,6 +269,7 @@ async function initApp() {
     // 监听路由变化，渲染页面
     window.addEventListener('routechange', function(e) {
         var page = resolvePage(e.detail.page, e.detail.params);
+        console.log('[Router] routechange:', e.detail.page, '→', page, ', hash:', window.location.hash);
         var currentHash = window.location.hash;
 
         // Bug 4 修复：进入 detail/chat 页面前保存来源页
