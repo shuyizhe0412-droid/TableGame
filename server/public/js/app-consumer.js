@@ -337,12 +337,7 @@ App.registerPage('about', {
             '扫码学习桌游规则，让桌游入门不再难</div>' +
             // 版本
             '<div style="font-size:12px;color:#B5AFA6;margin-bottom:36px;">v1.0</div>' +
-            // 店家管理入口（醒目按钮区域）—— 仅未登录时显示
-            '<div style="background:#FFFFFF;border:1px solid #E5E0D8;border-radius:12px;padding:20px 28px;margin-bottom:24px;max-width:300px;width:100%;box-shadow:0 2px 8px rgba(0,0,0,0.04);">' +
-            '<div style="font-size:15px;font-weight:600;color:#2D2A26;margin-bottom:6px;">店家管理入口</div>' +
-            '<div style="font-size:13px;color:#9B9488;margin-bottom:16px;">登录后管理您的桌游和规则</div>' +
-            '<a href="#/auth' + shopAppend + '" style="display:inline-block;background:#C4864B;color:#FFFFFF;border:none;border-radius:20px;padding:10px 32px;font-size:14px;font-weight:500;text-decoration:none;cursor:pointer;">登录 / 注册</a>' +
-            '</div>' +
+
             '</div>';
     },
     init: function() {}  // 无异步初始化
