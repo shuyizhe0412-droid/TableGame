@@ -1,4 +1,4 @@
-﻿const API = `${window.location.origin}/api`;
+﻿var API = 'https://boardgame-hub-staging.onrender.com/api';
 
 let currentUser = null;
 let currentToken = null;
