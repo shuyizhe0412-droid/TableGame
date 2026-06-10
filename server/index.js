@@ -109,6 +109,7 @@ app.use(`/api/games`, require(`./routes/games`));
 app.use(`/api/upload`, require(`./routes/upload`));
 app.use(`/api/admin`, require(`./routes/admin`));
 app.use(`/api/ai`, require(`./routes/ai`));
+app.use(`/api/rules`, require(`./routes/rules`));
 app.use(`/api/public`, require(`./routes/public`));
 app.use(`/api/stats`, require(`./routes/stats`));
 

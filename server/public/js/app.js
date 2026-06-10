@@ -236,6 +236,9 @@ function renderGameDetail(game) {
  // 规则书文件
  loadGameFiles(game.id);
 
+ // 规则书智能解析段落
+ loadRuleSections(game.id);
+
  // 二维码 — 指向玩家端 AI 教学页
  const playerBase = 'https://boardgame-hub-deploy.pages.dev/app.html';
  const shopId = game.store_id || currentUser.id;
@@ -276,6 +279,93 @@ async function deleteFile(fileId) {
   } catch (err) {
     showToast(err.message, 'error');
   }
+}
+
+// ============ 规则书智能解析 ============
+
+async function loadRuleSections(gameId) {
+  var el = document.getElementById('detail-rule-sections');
+  if (!el) return;
+  try {
+    var data = await apiFetch('/rules/' + encodeURIComponent(gameId));
+    var sections = (data && data.sections) || [];
+    if (sections.length === 0) {
+      el.innerHTML = '<p class="text-muted">尚未上传规则书，点击「上传并解析」</p>';
+      return;
+    }
+    var html = '<div class="rule-sections-count">已提取 <b>' + sections.length + '</b> 段规则</div>';
+    html += '<div class="rule-sections-list-scroll">';
+    sections.forEach(function(s) {
+      html += '<div class="rule-section-item">' +
+        '<div class="rule-section-item-header">' +
+        '<span class="rule-section-badge">第' + s.page_number + '页</span>' +
+        '<span class="rule-section-title">' + (s.section_title || '') + '</span>' +
+        '<span class="rule-section-source">' + (s.source_type === 'image_ocr' ? '🖼️OCR' : s.source_type === 'pdf' ? '📄PDF' : '📝文本') + '</span>' +
+        '<button class="btn btn-sm btn-danger rule-section-del-btn" onclick="deleteRuleSection(\'' + s.id + '\')">✕</button>' +
+        '</div>' +
+        '<div class="rule-section-content">' + (s.content || '').substring(0, 200) + ((s.content || '').length > 200 ? '...' : '') + '</div>' +
+        '</div>';
+    });
+    html += '</div>';
+    el.innerHTML = html;
+  } catch (err) {
+    el.innerHTML = '<p class="text-muted" style="color:#e74c3c">加载规则段落失败: ' + err.message + '</p>';
+  }
+}
+
+async function triggerRulesUpload() {
+  var input = document.getElementById('rules-file-input');
+  if (!input) return;
+  input.click();
+}
+
+async function handleRulesFileSelected(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  if (!currentGameId) { showToast('请先选择游戏', 'error'); e.target.value = ''; return; }
+
+  var el = document.getElementById('detail-rule-sections');
+  if (el) el.innerHTML = '<p class="text-muted">⏳ 正在上传并解析规则书，请稍候...</p>';
+
+  try {
+    var fd = new FormData();
+    fd.append('file', file);
+    fd.append('game_id', currentGameId);
+
+    var resp = await fetch(API + '/rules/upload', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + currentToken },
+      body: fd
+    });
+    var data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || '上传失败');
+
+    showToast('✅ 成功提取 ' + data.sections + ' 段规则');
+    loadRuleSections(currentGameId);
+  } catch (err) {
+    showToast('规则解析失败: ' + err.message, 'error');
+    loadRuleSections(currentGameId);
+  }
+  e.target.value = '';
+}
+
+async function deleteRuleSection(sectionId) {
+  if (!confirm('确定要删除这条规则段落吗？')) return;
+  try {
+    await apiFetch('/rules/section/' + encodeURIComponent(sectionId), { method: 'DELETE' });
+    showToast('删除成功');
+    loadRuleSections(currentGameId);
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+function initRulesUpload() {
+  var btn = document.getElementById('upload-rules-btn');
+  if (btn) btn.addEventListener('click', triggerRulesUpload);
+
+  var input = document.getElementById('rules-file-input');
+  if (input) input.addEventListener('change', handleRulesFileSelected);
 }
 
 // ============ 添加/编辑桌游弹窗 ============
@@ -949,6 +1039,7 @@ async function init() {
   initSearchAndFilter();
   initBatchLibraryModal();
   initStoreQrModal();
+  initRulesUpload();
 
   // 检查已登录状态
  currentToken = localStorage.getItem('admin_token');

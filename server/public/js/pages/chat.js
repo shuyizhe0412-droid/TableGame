@@ -290,9 +290,31 @@ App.registerPage('chat', (function() {
                 '<div class="chat-bubble chat-bubble-user">' + escapeHtml(msg.content) + '</div>' +
                 '</div>';
         } else {
+            // 检测 AI 回复中是否包含规则书来源引用
+            var sourceFooter = '';
+            var content = msg.content || '';
+            var sourceMatch = content.match(/根据规则书第(\d+)页/g);
+            if (sourceMatch) {
+                var pages = [];
+                for (var i = 0; i < sourceMatch.length; i++) {
+                    var pm = sourceMatch[i].match(/(\d+)/);
+                    if (pm) pages.push(pm[1]);
+                }
+                // 去重
+                var uniquePages = [];
+                for (var j = 0; j < pages.length; j++) {
+                    if (uniquePages.indexOf(pages[j]) === -1) uniquePages.push(pages[j]);
+                }
+                if (uniquePages.length > 0) {
+                    sourceFooter = '<div class="chat-source-ref">' +
+                        '<span class="chat-source-icon">📖</span> 参考：规则书第' + uniquePages.join('页、第') + '页' +
+                        '</div>';
+                }
+            }
             return '<div class="chat-message chat-message-ai">' +
                 '<div class="chat-avatar">🤖</div>' +
                 '<div class="chat-bubble chat-bubble-ai">' + formatAIMessage(msg.content) +
+                sourceFooter +
                 '</div>' +
                 '</div>';
         }

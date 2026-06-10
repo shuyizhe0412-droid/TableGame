@@ -170,6 +170,16 @@
  </div>
 
  <div class="detail-section-card">
+ <div class="section-title-row">
+ <h3>🤖 规则书智能解析</h3>
+ <button id="upload-rules-btn" class="btn btn-primary btn-sm">上传并解析</button>
+ </div>
+ <div id="detail-rule-sections" class="rule-sections-list">
+ <p class="text-muted">上传规则书（PDF/图片/文本），自动 OCR 提取并分页存储</p>
+ </div>
+ </div>
+
+ <div class="detail-section-card">
  <h3>📱 玩家二维码</h3>
  <div class="qr-section">
  <div id="qr-code" class="qr-code-box"></div>
@@ -189,6 +199,7 @@
  </div>
  </div>
  <input type="file" id="cover-file-input" accept="image/*" style="display:none">
+ <input type="file" id="rules-file-input" accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.md" style="display:none">
  </div>
  </div>
  </div>
@@ -268,8 +279,8 @@
  <div class="form-group">
  <label>选择文件</label>
  <div class="file-input-wrapper">
- <input type="file" id="upload-file-input" accept=".pdf,.png,.jpg,.jpeg,.webp" required>
- <span class="file-hint">支持 PDF、PNG、JPG 格式</span>
+ <input type="file" id="upload-file-input" accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.md" required>
+ <span class="file-hint">支持 PDF、PNG、JPG、TXT、MD 格式</span>
  </div>
  </div>
  <div class="modal-footer">

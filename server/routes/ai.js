@@ -63,8 +63,48 @@ async function getGameInfo(game_id) {
   return null;
 }
 
+// 搜索规则书匹配段落
+async function searchRuleSections(game_id, question) {
+  try {
+    const { data: sections, error } = await supabase
+      .from('rule_sections')
+      .select('page_number, section_title, content')
+      .eq('game_id', game_id)
+      .order('page_number');
+
+    if (error || !sections || sections.length === 0) return null;
+
+    const keywords = (question || '')
+      .replace(/[?？,，。.!！]/g, '')
+      .split(/\s+/)
+      .filter(w => w.length > 1);
+
+    const scored = sections.map(s => {
+      let score = 0;
+      const c = (s.content || '').toLowerCase();
+      keywords.forEach(kw => {
+        const re = new RegExp(kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+        const m = c.match(re);
+        if (m) score += m.length;
+      });
+      return { ...s, score };
+    }).filter(s => s.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3);
+
+    if (scored.length === 0) return null;
+
+    return '\n\n【规则书引用】\n' + scored.map(s =>
+      '第' + s.page_number + '页' + (s.section_title ? '「' + s.section_title + '」' : '') + '：' + s.content
+    ).join('\n\n');
+  } catch (e) {
+    console.warn('[AI] 规则搜索失败（非致命）:', e.message);
+    return null;
+  }
+}
+
 // 构建 system prompt（共用）
-function buildSystemPrompt(game, mode) {
+async function buildSystemPrompt(game, mode, userMessage, game_id) {
   const gameName = game.name;
   const gameCategory = game.category;
   const rules_text = game.rules_text;
@@ -78,11 +118,25 @@ function buildSystemPrompt(game, mode) {
 
   const modeText = modeInstructions[mode] || modeInstructions.rules;
 
-  if (rules_text && rules_text.trim() !== '') {
+  // 搜索 rule_sections 中的匹配段落
+  let ruleContext = rules_text || '';
+  if (game_id && userMessage) {
+    const matched = await searchRuleSections(game_id, userMessage);
+    if (matched) {
+      ruleContext += matched;
+    }
+  }
+
+  let sourceInstruction = '';
+  if (ruleContext.indexOf('【规则书引用】') !== -1) {
+    sourceInstruction = '\n如果提供了【规则书引用】，你的回答必须基于这些内容，并标注来源如"根据规则书第X页..."。如果规则书内容不足以回答问题，明确说明"规则书中未找到相关内容"。';
+  }
+
+  if (ruleContext && ruleContext.trim() !== '') {
     return modeText + '\n\n' +
-      '严格基于以下规则内容回答。如果规则中没有提到，回答"这部分规则中没有记录，建议查阅官方规则书"。\n\n' +
+      '严格基于以下规则内容回答。如果规则中没有提到，回答"这部分规则中没有记录，建议查阅官方规则书"。' + sourceInstruction + '\n\n' +
       '游戏名称：' + gameName + '\n' +
-      '规则内容：\n' + rules_text;
+      '规则内容：\n' + ruleContext;
   } else {
     return modeText + '\n\n' +
       '游戏名称：「' + gameName + '」，分类：「' + gameCategory + '」。\n' +
@@ -106,7 +160,7 @@ router.post('/ask-stream', async (req, res) => {
       if (found) game = found;
     }
 
-    const systemPrompt = buildSystemPrompt(game, mode || 'rules');
+    const systemPrompt = await buildSystemPrompt(game, mode || 'rules', question, game_id);
 
     // 构建消息列表（支持多轮）
     const messages = [{ role: 'system', content: systemPrompt }];
@@ -172,7 +226,7 @@ router.post('/ask', async (req, res) => {
       return res.status(404).json({ error: '游戏不存在' });
     }
 
-    const systemPrompt = buildSystemPrompt(game, 'rules');
+    const systemPrompt = await buildSystemPrompt(game, 'rules', question, game_id);
 
     const completion = await getOpenAI().chat.completions.create({
       model: 'deepseek-v4-pro',
