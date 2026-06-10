@@ -25,11 +25,8 @@ function getTabBarHtml(activeTab) {
         { name: 'chat', icon: '🤖', text: 'AI' }
     ];
 
-    if (loggedIn) {
-        tabs.push({ name: 'profile', icon: '👤', text: '我的' });
-    } else {
-        tabs.push({ name: 'about', icon: 'ℹ️', text: '关于' });
-    }
+    // 始终显示「我的」标签，未登录时展示登录引导
+    tabs.push({ name: 'profile', icon: '👤', text: '我的' });
 
     var items = tabs.map(function(tab) {
         var isActive = activeTab === tab.name ? 'active' : '';
