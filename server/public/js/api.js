@@ -533,70 +533,32 @@ async function getPublicGame(id) {
  * @param {string} [storeId] - 店家ID（玩家端使用）
  */
 async function getGames(filters, storeId) {
-    console.log('[getGames] 开始, storeId:', storeId, ', loggedIn:', isLoggedIn());
-
-    // 店家已登录 → 直接返回我的桌游（不合并全局桌游）
-    if (isLoggedIn()) {
-        console.log('[getGames] 店家模式，直接返回我的桌游');
-        try {
-            var myGames = await getMyGames();
-            myGames = myGames || [];
-            console.log('[getGames] 返回我的桌游数量:', myGames.length);
-            return myGames;
-        } catch (e) {
-            console.warn('[getGames] getMyGames 失败:', e.message);
-            return [];
-        }
+    // 优先用传入的 storeId，其次从 URL hash 读取，再次从 session 取
+    if (!storeId) {
+        var hash = window.location.hash || '';
+        var match = hash.match(/[?&]shop=([^&]+)/);
+        if (!match) match = hash.match(/[?&]shopId=([^&]+)/);
+        storeId = match ? decodeURIComponent(match[1]) : null;
     }
-
-    // 未登录顾客端：优先用传入的 storeId，其次从 session 取
     if (!storeId) {
         storeId = sessionStorage.getItem('shopId');
     }
 
-    // 有 storeId → 调用店家公开 API GET /api/public/games/:shopId
+    // 有 storeId → 调用店家公开 API
     if (storeId) {
         try {
             var publicGames = await getPublicGames(storeId);
             publicGames = publicGames || [];
-            console.log('[getGames] 公开API命中, shopId:', storeId, ', 数量:', publicGames.length);
+            console.log('[getGames] 公开API, shopId:', storeId, ', 数量:', publicGames.length);
             return publicGames;
         } catch (e) {
-            console.error('[getGames] 公开API获取失败:', e.message);
+            console.error('[getGames] 公开API失败:', e.message);
             return [];
         }
     }
 
-    // 无 storeId 且未登录 → 尝试加载第一个店家的游戏（本地开发模式）
-    console.log('[getGames] 未登录且无 storeId，尝试加载默认游戏');
-    try {
-        // 尝试获取任意一个店家的游戏列表
-        var resp = await fetch(API_BASE_URL + '/public/all-games', {
-            headers: { 'Content-Type': 'application/json' }
-        });
-        if (resp.ok) {
-            var games = await resp.json();
-            if (Array.isArray(games) && games.length > 0) {
-                console.log('[getGames] 默认游戏加载成功:', games.length, '个');
-                return games;
-            }
-        }
-    } catch (e) {
-        console.warn('[getGames] 默认游戏加载失败:', e.message);
-    }
-
-    // 最后兜底：尝试用全局游戏列表
-    try {
-        var resp2 = await fetch(API_BASE_URL + '/admin/global-games');
-        if (resp2.ok) {
-            var globalGames = await resp2.json();
-            console.log('[getGames] 全局游戏:', globalGames.length, '个');
-            return globalGames || [];
-        }
-    } catch (e2) {
-        console.warn('[getGames] 全局游戏也失败:', e2.message);
-    }
-
+    // 无 storeId → 返回空数组（不加载全局游戏）
+    console.log('[getGames] 无 storeId，返回空');
     return [];
 }
 
