@@ -271,6 +271,10 @@ function isPlayerLoggedIn() {
 
 function playerLogout() {
   localStorage.removeItem('player_token');
+  // 清理玩家数据缓存
+  localStorage.removeItem('player_info');
+  localStorage.removeItem('player_games');
+  sessionStorage.removeItem('shopId');
   window._playerInfo = null;
 }
 
