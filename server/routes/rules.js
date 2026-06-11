@@ -69,12 +69,12 @@ const upload = multer({
 function splitTextIntoSections(text) {
   const sections = [];
   // 先尝试按【第X页】或【XXX】标记分割
-  // 匹配【第X页】、第X页：、第X页 等格式
-  const bracketPattern = /【第(\d+)页[^】]*】|【([^】]+)】|第(\d+)页[：: ]/g;
+  // 匹配【第X页】、第X页：等分页标记（不匹配【杀】【闪】等短词）
+  const bracketPattern = /【第(\d+)页[^】]*】|第(\d+)页[：:\s]/g;
   const matches = [];
   let match;
   while ((match = bracketPattern.exec(text)) !== null) {
-    matches.push({ index: match.index, len: match[0].length, page: match[1] || match[3], title: match[2] });
+    matches.push({ index: match.index, len: match[0].length, page: match[1] || match[2], title: null });
   }
 
   if (matches.length > 0) {
@@ -92,7 +92,7 @@ function splitTextIntoSections(text) {
       }
 
       const pageNum = matches[i].page ? parseInt(matches[i].page) : i + 1;
-      const sectionTitle = matches[i].title ? matches[i].title.trim() : ('第' + pageNum + '页');
+      const sectionTitle = '第' + pageNum + '页';
 
       if (content) {
         sections.push({ page_number: pageNum, section_title: sectionTitle, content });
