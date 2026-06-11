@@ -274,4 +274,21 @@ router.post('/ask', async (req, res) => {
   }
 });
 
+
+// 调试：测试 DeepSeek API 连通性
+router.get('/debug', async (req, res) => {
+  try {
+    const client = getOpenAI();
+    const result = await client.chat.completions.create({
+      model: 'deepseek-chat',
+      messages: [{ role: 'user', content: '回复OK' }],
+      max_tokens: 10,
+    });
+    res.json({ ok: true, reply: result.choices[0]?.message?.content });
+  } catch (err) {
+    res.json({ ok: false, error: err.message, stack: err.stack?.split('\n').slice(0,3).join(' | ') });
+  }
+});
+
 module.exports = router;
+
