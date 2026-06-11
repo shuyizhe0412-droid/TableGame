@@ -24,40 +24,68 @@ function getOpenAI() {
 
 // 读取游戏信息（共用）
 async function getGameInfo(game_id) {
-  // 先查 store_games
-  const { data: storeGames } = await supabase
-    .from('store_games')
-    .select('name, game_name, rules_text, category, description')
-    .eq('id', game_id)
-    .limit(1);
+  // 先查 store_games（用 select('*') 避免 RLS 列限制）
+  try {
+    const { data: storeGames, error } = await supabase
+      .from('store_games')
+      .select('*')
+      .eq('id', game_id)
+      .limit(1);
 
-  if (storeGames && storeGames.length > 0) {
-    const g = storeGames[0];
-    return {
-      name: g.name || g.game_name || '该游戏',
-      category: g.category || '桌游',
-      rules_text: g.rules_text || '',
-      description: g.description || '',
-      source: 'store_games'
-    };
+    if (!error && storeGames && storeGames.length > 0) {
+      const g = storeGames[0];
+      return {
+        name: g.name || g.game_name || '该游戏',
+        category: g.category || '桌游',
+        rules_text: g.rules_text || '',
+        description: g.description || '',
+        source: 'store_games'
+      };
+    }
+  } catch (e) {
+    console.warn('[AI] store_games 查询异常:', e.message);
   }
 
   // 再查 global_games
-  const { data: globalGames } = await supabase
-    .from('global_games')
-    .select('game_name, tags, description')
-    .eq('id', game_id)
-    .limit(1);
+  try {
+    const { data: globalGames, error } = await supabase
+      .from('global_games')
+      .select('*')
+      .eq('id', game_id)
+      .limit(1);
 
-  if (globalGames && globalGames.length > 0) {
-    const g = globalGames[0];
-    return {
-      name: g.game_name || '该游戏',
-      category: Array.isArray(g.tags) ? g.tags.join('、') : (g.tags || '桌游'),
-      rules_text: '',
-      description: g.description || '',
-      source: 'global_games'
-    };
+    if (!error && globalGames && globalGames.length > 0) {
+      const g = globalGames[0];
+      return {
+        name: g.game_name || g.name || '该游戏',
+        category: Array.isArray(g.tags) ? g.tags.join('、') : (g.tags || '桌游'),
+        rules_text: g.rules_text || '',
+        description: g.description || '',
+        source: 'global_games'
+      };
+    }
+  } catch (e) {
+    console.warn('[AI] global_games 查询异常:', e.message);
+  }
+
+  // 兜底：检查 rule_sections 是否有该游戏数据
+  try {
+    const { data: sections, error } = await supabase
+      .from('rule_sections')
+      .select('id')
+      .eq('game_id', game_id)
+      .limit(1);
+    if (!error && sections && sections.length > 0) {
+      return {
+        name: '该游戏',
+        category: '桌游',
+        rules_text: '',
+        description: '',
+        source: 'rule_sections'
+      };
+    }
+  } catch (e) {
+    // 忽略
   }
 
   return null;
