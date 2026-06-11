@@ -70,7 +70,7 @@ function splitTextIntoSections(text) {
   const sections = [];
   // 先尝试按【第X页】或【XXX】标记分割
   // 匹配【第X页】、第X页：等分页标记（不匹配【杀】【闪】等短词）
-  const bracketPattern = /【第(\d+)页[^】]*】|第(\d+)页[：:\s]/g;
+  const bracketPattern = /【第(\d+)页[^】]*】|第(\d+)页[：:]/g;
   const matches = [];
   let match;
   while ((match = bracketPattern.exec(text)) !== null) {
