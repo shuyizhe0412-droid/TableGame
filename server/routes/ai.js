@@ -211,7 +211,7 @@ router.post('/ask-stream', async (req, res) => {
     res.setHeader('X-Accel-Buffering', 'no');
 
     const stream = await getOpenAI().chat.completions.create({
-      model: 'deepseek-v4-pro',
+      model: 'deepseek-chat',
       messages,
       max_tokens: 1000,
       temperature: 0.7,
@@ -257,7 +257,7 @@ router.post('/ask', async (req, res) => {
     const systemPrompt = await buildSystemPrompt(game, 'rules', question, game_id);
 
     const completion = await getOpenAI().chat.completions.create({
-      model: 'deepseek-v4-pro',
+      model: 'deepseek-chat',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: question }
