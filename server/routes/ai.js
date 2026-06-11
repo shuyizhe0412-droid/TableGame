@@ -15,7 +15,7 @@ function getOpenAI() {
   const key = (process.env.DEEPSEEK_API_KEY || '').trim();
   if (!key) throw new Error('DEEPSEEK_API_KEY 未配置');
   return new OpenAI({
-    baseURL: 'https://api.deepseek.com',
+    baseURL: 'https://api.deepseek.com/v1',
     apiKey: key,
     timeout: 60000,
     maxRetries: 0,
