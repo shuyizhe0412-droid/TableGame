@@ -102,10 +102,20 @@ async function searchRuleSections(game_id, question) {
 
     if (error || !sections || sections.length === 0) return null;
 
-    const keywords = (question || '')
-      .replace(/[?？,，。.!！]/g, '')
-      .split(/\s+/)
-      .filter(w => w.length > 1);
+    // 中文：按常见分隔词切分；英文：按空格
+    const cleanQ = (question || '').replace(/[?？,，。.!！\s]+/g, ' ');
+    // 对中文做二字词切分（2-gram），解决无空格分词问题
+    let keywords = cleanQ.split(/\s+/).filter(w => w.length > 1);
+    // 额外生成二字词：对每个>2字的中文词，切分出所有连续二字组合
+    const extraKW = [];
+    keywords.forEach(kw => {
+      if (/^[\u4e00-\u9fff]{3,}$/.test(kw)) {
+        for (let i = 0; i <= kw.length - 2; i++) {
+          extraKW.push(kw.substring(i, i + 2));
+        }
+      }
+    });
+    keywords = [...new Set([...keywords, ...extraKW])];
 
     const scored = sections.map(s => {
       let score = 0;
@@ -275,20 +285,4 @@ router.post('/ask', async (req, res) => {
 });
 
 
-// 调试：测试 DeepSeek API 连通性
-router.get('/debug', async (req, res) => {
-  try {
-    const client = getOpenAI();
-    const result = await client.chat.completions.create({
-      model: 'deepseek-chat',
-      messages: [{ role: 'user', content: '回复OK' }],
-      max_tokens: 10,
-    });
-    res.json({ ok: true, reply: result.choices[0]?.message?.content });
-  } catch (err) {
-    res.json({ ok: false, error: err.message, stack: err.stack?.split('\n').slice(0,3).join(' | ') });
-  }
-});
-
 module.exports = router;
-

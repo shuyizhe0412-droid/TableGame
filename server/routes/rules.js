@@ -69,18 +69,19 @@ const upload = multer({
 function splitTextIntoSections(text) {
   const sections = [];
   // 先尝试按【第X页】或【XXX】标记分割
-  const bracketPattern = /【第(\d+)页[^】]*】|【([^】]+)】/g;
+  // 匹配【第X页】、第X页：、第X页 等格式
+  const bracketPattern = /【第(\d+)页[^】]*】|【([^】]+)】|第(\d+)页[：: ]/g;
   const matches = [];
   let match;
   while ((match = bracketPattern.exec(text)) !== null) {
-    matches.push({ index: match.index, len: match[0].length, page: match[1], title: match[2] });
+    matches.push({ index: match.index, len: match[0].length, page: match[1] || match[3], title: match[2] });
   }
 
   if (matches.length > 0) {
     for (let i = 0; i < matches.length; i++) {
       const start = matches[i].index + matches[i].len;
       const end = i + 1 < matches.length ? matches[i].index : text.length;
-      let content = text.substring(start, end).trim();
+      let content = text.substring(start, end).replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
 
       // 处理跨匹配的冗余
       if (i > 0) {
@@ -99,7 +100,7 @@ function splitTextIntoSections(text) {
     }
     // 如果标题前还有内容，作为第0页
     if (matches.length > 0 && matches[0].index > 0) {
-      const preContent = text.substring(0, matches[0].index).trim();
+      const preContent = text.substring(0, matches[0].index).replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
       if (preContent) {
         sections.unshift({ page_number: 0, section_title: '前言', content: preContent });
       }
