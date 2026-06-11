@@ -80,7 +80,7 @@ function splitTextIntoSections(text) {
   if (matches.length > 0) {
     for (let i = 0; i < matches.length; i++) {
       const start = matches[i].index + matches[i].len;
-      const end = i + 1 < matches.length ? matches[i].index : text.length;
+      const end = i + 1 < matches.length ? matches[i + 1].index : text.length;
       let content = text.substring(start, end).replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
 
       const pageNum = matches[i].page ? parseInt(matches[i].page) : i + 1;
