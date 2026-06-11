@@ -83,14 +83,6 @@ function splitTextIntoSections(text) {
       const end = i + 1 < matches.length ? matches[i].index : text.length;
       let content = text.substring(start, end).replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
 
-      // 处理跨匹配的冗余
-      if (i > 0) {
-        content = text.substring(matches[i].index + matches[i].len, end).trim();
-      } else {
-        // 第一个章节取标题之后的内容
-        content = text.substring(matches[i].index + matches[i].len, end).trim();
-      }
-
       const pageNum = matches[i].page ? parseInt(matches[i].page) : i + 1;
       const sectionTitle = '第' + pageNum + '页';
 
